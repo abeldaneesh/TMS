@@ -3,7 +3,7 @@ services:
   - type: web
     name: training-app-backend
     env: node
-    root: Training Management Web Application/server
+    root: "Training Management Web Application/server"
     buildCommand: npm install && npm run build
     startCommand: npm start
     envVars:
