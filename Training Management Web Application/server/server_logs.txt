@@ -1,0 +1,215 @@
+
+> server@1.0.0 dev
+> nodemon src/index.ts
+
+[33m[nodemon] 3.1.11[39m
+[33m[nodemon] to restart at any time, enter `rs`[39m
+[33m[nodemon] watching path(s): *.*[39m
+[33m[nodemon] watching extensions: ts,json[39m
+[32m[nodemon] starting `ts-node src/index.ts`[39m
+[dotenv@17.2.4] injecting env (4) from .env -- tip: ΓÜÖ∩╕Å  override existing env vars with { override: true }
+[dotenv@17.2.4] injecting env (0) from .env -- tip: ≡ƒæÑ sync secrets across teammates & machines: https://dotenvx.com/ops
+Connecting to MongoDB at: mongodb+srv://abeldaneesh_db_user:TheDarkAvenger%40@abelswolf.ipogkci.mongodb.net/training_db?retryWrites=true&w=majority&appName=abelswolf...
+MongoDB Connected...
+Server running on port 3000
+[REQUEST] GET /api/notifications | Origin: http://localhost:5173 | Bypass-Header: true
+[REQUEST] POST /api/auth/login | Origin: undefined | Bypass-Header: undefined
+[REQUEST] POST /api/auth/register | Origin: undefined | Bypass-Header: undefined
+[REQUEST] POST /api/halls | Origin: undefined | Bypass-Header: undefined
+[REQUEST] POST /api/trainings | Origin: undefined | Bypass-Header: undefined
+[REQUEST] POST /api/trainings | Origin: undefined | Bypass-Header: undefined
+[REQUEST] POST /api/nominations | Origin: undefined | Bypass-Header: undefined
+[DEBUG] Checking existing nomination for T=14ab3851-35be-4035-ba5a-98767ee1caf7, P=3ad9cbcf-8cb0-408e-af64-022c5fcd2ba4
+[REQUEST] GET /api/institutions | Origin: undefined | Bypass-Header: undefined
+[REQUEST] POST /api/nominations | Origin: undefined | Bypass-Header: undefined
+[DEBUG] Checking existing nomination for T=14ab3851-35be-4035-ba5a-98767ee1caf7, P=3ad9cbcf-8cb0-408e-af64-022c5fcd2ba4
+[DEBUG] Found existing nomination: {
+  _id: '1f840c93-76f0-4bab-b905-c5bc535e5f13',
+  trainingId: '14ab3851-35be-4035-ba5a-98767ee1caf7',
+  participantId: '3ad9cbcf-8cb0-408e-af64-022c5fcd2ba4',
+  institutionId: 'inst-1',
+  status: 'nominated',
+  nominatedBy: 'user-1',
+  nominatedAt: 2026-02-14T17:53:34.489Z,
+  __v: 0
+}
+[REQUEST] GET /api/notifications | Origin: http://localhost:5173 | Bypass-Header: true
+[REQUEST] POST /api/auth/login | Origin: undefined | Bypass-Header: undefined
+[REQUEST] POST /api/auth/register | Origin: undefined | Bypass-Header: undefined
+[REQUEST] POST /api/halls | Origin: undefined | Bypass-Header: undefined
+[REQUEST] POST /api/trainings | Origin: undefined | Bypass-Header: undefined
+[REQUEST] POST /api/trainings | Origin: undefined | Bypass-Header: undefined
+[REQUEST] GET /api/institutions | Origin: undefined | Bypass-Header: undefined
+[REQUEST] POST /api/nominations | Origin: undefined | Bypass-Header: undefined
+[DEBUG] Checking existing nomination for T=d24ae872-34e0-4011-baac-2a5de898a058, P=e09e5e55-6954-42f8-b79d-f2e4148285b9
+[REQUEST] POST /api/nominations | Origin: undefined | Bypass-Header: undefined
+[DEBUG] Checking existing nomination for T=0835f9a4-e87a-47cd-b4fd-cf4d48c3ede1, P=e09e5e55-6954-42f8-b79d-f2e4148285b9
+[REQUEST] GET /api/trainings | Origin: undefined | Bypass-Header: undefined
+[REQUEST] GET /api/notifications | Origin: http://localhost:5173 | Bypass-Header: true
+[REQUEST] POST /api/auth/login | Origin: undefined | Bypass-Header: undefined
+[REQUEST] POST /api/auth/register | Origin: undefined | Bypass-Header: undefined
+[REQUEST] POST /api/users/17195619-7f21-4f76-8f09-723ad95cd1aa/approve | Origin: undefined | Bypass-Header: undefined
+[REQUEST] POST /api/auth/login | Origin: undefined | Bypass-Header: undefined
+[REQUEST] POST /api/halls | Origin: undefined | Bypass-Header: undefined
+[REQUEST] POST /api/trainings | Origin: undefined | Bypass-Header: undefined
+[REQUEST] POST /api/trainings | Origin: undefined | Bypass-Header: undefined
+[REQUEST] GET /api/institutions | Origin: undefined | Bypass-Header: undefined
+[REQUEST] POST /api/nominations | Origin: undefined | Bypass-Header: undefined
+[DEBUG] Checking existing nomination for T=83ab7c26-3919-4bcf-a405-70b0d3e65bef, P=17195619-7f21-4f76-8f09-723ad95cd1aa
+[REQUEST] POST /api/nominations | Origin: undefined | Bypass-Header: undefined
+[DEBUG] Checking existing nomination for T=8cadfc1b-5273-46d6-b01b-c6958099828f, P=17195619-7f21-4f76-8f09-723ad95cd1aa
+[REQUEST] GET /api/trainings | Origin: undefined | Bypass-Header: undefined
+[REQUEST] POST /api/attendance | Origin: undefined | Bypass-Header: undefined
+[DEBUG] Attendance marked for training 83ab7c26-3919-4bcf-a405-70b0d3e65bef by 17195619-7f21-4f76-8f09-723ad95cd1aa
+[DEBUG] Sending notifications to 1 recipients: [ 'user-1' ]
+[DEBUG] Notification created for user-1: 3b3f7b22-b16e-45bb-ad1a-c781e0d16040
+[REQUEST] POST /api/attendance | Origin: undefined | Bypass-Header: undefined
+[REQUEST] DELETE /api/trainings/83ab7c26-3919-4bcf-a405-70b0d3e65bef | Origin: undefined | Bypass-Header: undefined
+[REQUEST] DELETE /api/trainings/8cadfc1b-5273-46d6-b01b-c6958099828f | Origin: undefined | Bypass-Header: undefined
+[REQUEST] DELETE /api/halls/b0e266e9-1765-477c-9fbe-c0c08b8e6b34 | Origin: undefined | Bypass-Header: undefined
+[REQUEST] GET /api/notifications | Origin: http://localhost:5173 | Bypass-Header: true
+[REQUEST] POST /api/auth/login | Origin: undefined | Bypass-Header: undefined
+[REQUEST] POST /api/auth/register | Origin: undefined | Bypass-Header: undefined
+[REQUEST] POST /api/users/65e8f184-3303-484a-8eb4-519334ba40d9/approve | Origin: undefined | Bypass-Header: undefined
+[REQUEST] POST /api/auth/login | Origin: undefined | Bypass-Header: undefined
+[REQUEST] POST /api/halls | Origin: undefined | Bypass-Header: undefined
+[REQUEST] POST /api/trainings | Origin: undefined | Bypass-Header: undefined
+[REQUEST] POST /api/trainings | Origin: undefined | Bypass-Header: undefined
+[REQUEST] GET /api/institutions | Origin: undefined | Bypass-Header: undefined
+[REQUEST] POST /api/nominations | Origin: undefined | Bypass-Header: undefined
+[DEBUG] Checking existing nomination for T=34b9f65f-73df-4157-a6bc-ea456ad39103, P=65e8f184-3303-484a-8eb4-519334ba40d9
+[REQUEST] POST /api/nominations | Origin: undefined | Bypass-Header: undefined
+[DEBUG] Checking existing nomination for T=dd94b7aa-6ce2-454e-a8c6-a055dc7c8691, P=65e8f184-3303-484a-8eb4-519334ba40d9
+[REQUEST] GET /api/trainings | Origin: undefined | Bypass-Header: undefined
+[REQUEST] POST /api/attendance | Origin: undefined | Bypass-Header: undefined
+[DEBUG] Attendance marked for training 34b9f65f-73df-4157-a6bc-ea456ad39103 by 65e8f184-3303-484a-8eb4-519334ba40d9
+[DEBUG] Sending notifications to 1 recipients: [ 'user-1' ]
+[DEBUG] Notification created for user-1: ca3c9934-6bc1-44a9-a383-938a894623e7
+[REQUEST] POST /api/attendance | Origin: undefined | Bypass-Header: undefined
+[REQUEST] DELETE /api/trainings/34b9f65f-73df-4157-a6bc-ea456ad39103 | Origin: undefined | Bypass-Header: undefined
+[REQUEST] DELETE /api/trainings/dd94b7aa-6ce2-454e-a8c6-a055dc7c8691 | Origin: undefined | Bypass-Header: undefined
+[REQUEST] DELETE /api/halls/ff8d5709-0727-4f06-af56-3ef49142a90c | Origin: undefined | Bypass-Header: undefined
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/index.ts`[39m
+[dotenv@17.2.4] injecting env (4) from .env -- tip: ΓÜÖ∩╕Å  suppress all logs with { quiet: true }
+[dotenv@17.2.4] injecting env (0) from .env -- tip: ΓÜÖ∩╕Å  enable debug logging with { debug: true }
+Connecting to MongoDB at: mongodb+srv://abeldaneesh_db_user:TheDarkAvenger%40@abelswolf.ipogkci.mongodb.net/training_db?retryWrites=true&w=majority&appName=abelswolf...
+MongoDB Connected...
+Server running on port 3000
+[REQUEST] GET /api/notifications | Origin: http://localhost:5173 | Bypass-Header: true
+[REQUEST] GET /api/notifications | Origin: http://localhost:5173 | Bypass-Header: true
+[REQUEST] GET /api/trainings | Origin: http://localhost:5173 | Bypass-Header: true
+[REQUEST] GET /api/halls | Origin: http://localhost:5173 | Bypass-Header: true
+[REQUEST] GET /api/users | Origin: http://localhost:5173 | Bypass-Header: true
+[REQUEST] GET /api/trainings/1f7ee12d-a30c-4753-84fd-d75a92cf82d8 | Origin: http://localhost:5173 | Bypass-Header: true
+[REQUEST] GET /api/attendance/my | Origin: http://localhost:5173 | Bypass-Header: true
+[REQUEST] GET /api/trainings | Origin: http://localhost:5173 | Bypass-Header: true
+[REQUEST] GET /api/halls | Origin: http://localhost:5173 | Bypass-Header: true
+[REQUEST] GET /api/users | Origin: http://localhost:5173 | Bypass-Header: true
+[REQUEST] POST /api/auth/login | Origin: http://localhost:5173 | Bypass-Header: true
+[REQUEST] GET /api/analytics/dashboard | Origin: http://localhost:5173 | Bypass-Header: true
+[REQUEST] GET /api/trainings | Origin: http://localhost:5173 | Bypass-Header: true
+[REQUEST] GET /api/notifications | Origin: http://localhost:5173 | Bypass-Header: true
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/index.ts`[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/index.ts`[39m
+[dotenv@17.2.4] injecting env (4) from .env -- tip: ≡ƒöæ add access controls to secrets: https://dotenvx.com/ops
+[dotenv@17.2.4] injecting env (0) from .env -- tip: ΓÜÖ∩╕Å  write to custom object with { processEnv: myObject }
+Connecting to MongoDB at: mongodb+srv://abeldaneesh_db_user:TheDarkAvenger%40@abelswolf.ipogkci.mongodb.net/training_db?retryWrites=true&w=majority&appName=abelswolf...
+MongoDB Connected...
+Server running on port 3000
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/index.ts`[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/index.ts`[39m
+[dotenv@17.2.4] injecting env (4) from .env -- tip: ≡ƒùé∩╕Å backup and recover secrets: https://dotenvx.com/ops
+[dotenv@17.2.4] injecting env (0) from .env -- tip: ≡ƒùé∩╕Å backup and recover secrets: https://dotenvx.com/ops
+Connecting to MongoDB at: mongodb+srv://abeldaneesh_db_user:TheDarkAvenger%40@abelswolf.ipogkci.mongodb.net/training_db?retryWrites=true&w=majority&appName=abelswolf...
+MongoDB Connected...
+Server running on port 3000
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/index.ts`[39m
+[dotenv@17.2.4] injecting env (4) from .env -- tip: ≡ƒùé∩╕Å backup and recover secrets: https://dotenvx.com/ops
+[dotenv@17.2.4] injecting env (0) from .env -- tip: Γ£à audit secrets and track compliance: https://dotenvx.com/ops
+Connecting to MongoDB at: mongodb+srv://abeldaneesh_db_user:TheDarkAvenger%40@abelswolf.ipogkci.mongodb.net/training_db?retryWrites=true&w=majority&appName=abelswolf...
+MongoDB Connected...
+Server running on port 3000
+[REQUEST] POST /api/auth/login | Origin: undefined | Bypass-Header: undefined
+[REQUEST] POST /api/auth/register | Origin: undefined | Bypass-Header: undefined
+[REQUEST] POST /api/users/65f799ae-026b-4eb8-a340-c493321c2fb1/approve | Origin: undefined | Bypass-Header: undefined
+[REQUEST] POST /api/auth/login | Origin: undefined | Bypass-Header: undefined
+[REQUEST] POST /api/halls | Origin: undefined | Bypass-Header: undefined
+[REQUEST] POST /api/trainings | Origin: undefined | Bypass-Header: undefined
+[REQUEST] POST /api/attendance | Origin: undefined | Bypass-Header: undefined
+[REQUEST] POST /api/attendance/9194326f-2e07-46be-a648-ff7e3c0cb63b/session/start | Origin: undefined | Bypass-Header: undefined
+[REQUEST] POST /api/attendance | Origin: undefined | Bypass-Header: undefined
+[REQUEST] POST /api/attendance | Origin: undefined | Bypass-Header: undefined
+[DEBUG] Attendance marked for training 9194326f-2e07-46be-a648-ff7e3c0cb63b by 65f799ae-026b-4eb8-a340-c493321c2fb1
+[DEBUG] Sending notifications to 1 recipients: [ 'user-1' ]
+[DEBUG] Notification created for user-1: f5dd767c-27f7-406e-a50a-ce99d743d5b0
+[REQUEST] POST /api/attendance/9194326f-2e07-46be-a648-ff7e3c0cb63b/session/stop | Origin: undefined | Bypass-Header: undefined
+[REQUEST] POST /api/attendance | Origin: undefined | Bypass-Header: undefined
+[REQUEST] DELETE /api/trainings/9194326f-2e07-46be-a648-ff7e3c0cb63b | Origin: undefined | Bypass-Header: undefined
+[REQUEST] DELETE /api/halls/ad62b83e-2ef2-4edd-bc96-a29fcc5f393b | Origin: undefined | Bypass-Header: undefined
+[REQUEST] POST /api/auth/login | Origin: undefined | Bypass-Header: undefined
+[REQUEST] POST /api/auth/register | Origin: undefined | Bypass-Header: undefined
+[REQUEST] POST /api/users/317fa0f6-5803-45d6-8c88-c77c070d4bd1/approve | Origin: undefined | Bypass-Header: undefined
+[REQUEST] POST /api/auth/login | Origin: undefined | Bypass-Header: undefined
+[REQUEST] POST /api/halls | Origin: undefined | Bypass-Header: undefined
+[REQUEST] POST /api/trainings | Origin: undefined | Bypass-Header: undefined
+[REQUEST] POST /api/attendance | Origin: undefined | Bypass-Header: undefined
+[REQUEST] POST /api/attendance/46290acd-2f4e-4030-89d2-859acc85da3a/session/start | Origin: undefined | Bypass-Header: undefined
+[REQUEST] POST /api/attendance | Origin: undefined | Bypass-Header: undefined
+[REQUEST] POST /api/attendance | Origin: undefined | Bypass-Header: undefined
+[DEBUG] Attendance marked for training 46290acd-2f4e-4030-89d2-859acc85da3a by 317fa0f6-5803-45d6-8c88-c77c070d4bd1
+[DEBUG] Sending notifications to 1 recipients: [ 'user-1' ]
+[DEBUG] Notification created for user-1: 42cc02a7-3b4b-435d-bd20-93c1039905b9
+[REQUEST] POST /api/attendance/46290acd-2f4e-4030-89d2-859acc85da3a/session/stop | Origin: undefined | Bypass-Header: undefined
+[REQUEST] POST /api/attendance | Origin: undefined | Bypass-Header: undefined
+[REQUEST] DELETE /api/trainings/46290acd-2f4e-4030-89d2-859acc85da3a | Origin: undefined | Bypass-Header: undefined
+[REQUEST] DELETE /api/halls/5cf4f127-8252-41ba-b462-3f8dc39add0a | Origin: undefined | Bypass-Header: undefined
+[REQUEST] POST /api/auth/login | Origin: http://localhost:5173 | Bypass-Header: true
+[REQUEST] GET /api/analytics/dashboard | Origin: http://localhost:5173 | Bypass-Header: true
+[REQUEST] GET /api/trainings | Origin: http://localhost:5173 | Bypass-Header: true
+[REQUEST] GET /api/notifications | Origin: http://localhost:5173 | Bypass-Header: true
+[REQUEST] GET /api/trainings | Origin: http://localhost:5173 | Bypass-Header: true
+[REQUEST] GET /api/nominations? | Origin: http://localhost:5173 | Bypass-Header: true
+[REQUEST] GET /api/trainings | Origin: http://localhost:5173 | Bypass-Header: true
+[REQUEST] GET /api/users? | Origin: http://localhost:5173 | Bypass-Header: true
+[REQUEST] GET /api/institutions | Origin: http://localhost:5173 | Bypass-Header: true
+[REQUEST] GET /api/trainings | Origin: http://localhost:5173 | Bypass-Header: true
+[REQUEST] GET /api/halls | Origin: http://localhost:5173 | Bypass-Header: true
+[REQUEST] GET /api/hall-blocks/hall-4?date=2026-02-14 | Origin: http://localhost:5173 | Bypass-Header: true
+[REQUEST] GET /api/hall-blocks/ad62b83e-2ef2-4edd-bc96-a29fcc5f393b?date=2026-02-14 | Origin: http://localhost:5173 | Bypass-Header: true
+[REQUEST] GET /api/hall-blocks/5cf4f127-8252-41ba-b462-3f8dc39add0a?date=2026-02-14 | Origin: http://localhost:5173 | Bypass-Header: true
+[REQUEST] GET /api/hall-blocks/ca8171dd-123a-4828-be87-a4043817e8c2?date=2026-02-14 | Origin: http://localhost:5173 | Bypass-Header: true
+[REQUEST] GET /api/hall-blocks/hall-5?date=2026-02-14 | Origin: http://localhost:5173 | Bypass-Header: true
+[REQUEST] GET /api/hall-blocks/hall-1?date=2026-02-14 | Origin: http://localhost:5173 | Bypass-Header: true
+[REQUEST] GET /api/hall-blocks/232e2430-1ff4-44f9-8f7d-ad5487413439?date=2026-02-14 | Origin: http://localhost:5173 | Bypass-Header: true
+[REQUEST] GET /api/hall-blocks/79163945-e988-4210-80f1-6e375626ba39?date=2026-02-14 | Origin: http://localhost:5173 | Bypass-Header: true
+[REQUEST] GET /api/hall-blocks/2b63d5b6-ad15-448f-8bc2-6a69fdd364ba?date=2026-02-14 | Origin: http://localhost:5173 | Bypass-Header: true
+[REQUEST] GET /api/hall-blocks/0385102d-de4a-40ef-b39f-4d7b874b12ee?date=2026-02-14 | Origin: http://localhost:5173 | Bypass-Header: true
+[REQUEST] GET /api/hall-blocks/b0e266e9-1765-477c-9fbe-c0c08b8e6b34?date=2026-02-14 | Origin: http://localhost:5173 | Bypass-Header: true
+[REQUEST] GET /api/hall-blocks/ff8d5709-0727-4f06-af56-3ef49142a90c?date=2026-02-14 | Origin: http://localhost:5173 | Bypass-Header: true
+[REQUEST] GET /api/hall-blocks/hall-2?date=2026-02-14 | Origin: http://localhost:5173 | Bypass-Header: true
+[REQUEST] GET /api/hall-blocks/hall-3?date=2026-02-14 | Origin: http://localhost:5173 | Bypass-Header: true
+[REQUEST] GET /api/halls/available?date=2026-02-14T00%3A00%3A00.000Z&startTime=09%3A00&endTime=17%3A00 | Origin: http://localhost:5173 | Bypass-Header: true
+[REQUEST] GET /api/nominations? | Origin: http://localhost:5173 | Bypass-Header: true
+[REQUEST] GET /api/trainings | Origin: http://localhost:5173 | Bypass-Header: true
+[REQUEST] GET /api/users? | Origin: http://localhost:5173 | Bypass-Header: true
+[REQUEST] GET /api/institutions | Origin: http://localhost:5173 | Bypass-Header: true
+[REQUEST] GET /api/halls | Origin: http://localhost:5173 | Bypass-Header: true
+[REQUEST] GET /api/institutions | Origin: http://localhost:5173 | Bypass-Header: true
+[REQUEST] GET /api/halls | Origin: http://localhost:5173 | Bypass-Header: true
+[REQUEST] GET /api/trainings?createdById=user-2 | Origin: http://localhost:5173 | Bypass-Header: true
+[REQUEST] GET /api/users | Origin: http://localhost:5173 | Bypass-Header: true
+[REQUEST] GET /api/trainings | Origin: http://localhost:5173 | Bypass-Header: true
+[REQUEST] GET /api/institutions | Origin: http://localhost:5173 | Bypass-Header: true
+[REQUEST] GET /api/trainings | Origin: http://localhost:5173 | Bypass-Header: true
+[REQUEST] GET /api/institutions | Origin: http://localhost:5173 | Bypass-Header: true
+[REQUEST] GET /api/analytics/training/train-4 | Origin: http://localhost:5173 | Bypass-Header: true
+[REQUEST] GET /api/trainings | Origin: http://localhost:5173 | Bypass-Header: true
+[32m[nodemon] restarting child process[39m
+[32m[nodemon] starting `ts-node src/index.ts`[39m
+[dotenv@17.2.4] injecting env (4) from .env -- tip: ≡ƒöæ add access controls to secrets: https://dotenvx.com/ops

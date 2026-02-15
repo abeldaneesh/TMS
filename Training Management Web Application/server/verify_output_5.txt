@@ -1,0 +1,29 @@
+[dotenv@17.2.4] injecting env (4) from .env -- tip: ΓÜÖ∩╕Å  write to custom object with { processEnv: myObject }
+≡ƒÜÇ Starting Hall Request Flow Verification...
+Γä╣∩╕Å Using Hall: Main Conference Hall (hall-1)
+Γä╣∩╕Å Using User: Dr. Priya Sharma (user-2)
+
+≡ƒöÉ Logging in as Admin...
+Γ£à Logged in.
+
+≡ƒôà Creating a conflicting confirmed training...
+≡ƒæÇ Existing Trainings after cleanup: 0
+≡ƒæÇ Existing Blocks: 0
+Γ£à Conflicting training created.
+
+≡ƒô¥ Creating a Draft Training (should succeed despite conflict)...
+Γ£à Draft training created: 3a19293c-59fc-4562-a6ca-2507af79cb25
+
+≡ƒô¿ Creating Hall Booking Request...
+Γ£à Request created: 38e6bd9b-eef8-4720-bac3-dd93d8b63439
+
+≡ƒæ« Admin trying to approve request (Should FAIL due to conflict)...
+Γ£à Request approval correctly rejected with 409 Conflict.
+
+≡ƒùæ∩╕Å Deleting the conflicting training...
+Γ£à Conflicting training deleted.
+
+≡ƒæ« Admin approving request again (Should SUCCEED)...
+Γ£à Request approved: approved
+Γ£à Associated training status updated to SCHEDULED.
+Γ£à Notification created.

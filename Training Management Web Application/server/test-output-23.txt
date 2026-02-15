@@ -1,0 +1,24 @@
+--- Starting Integration Test ---
+Logging in as Program Officer...
+Officer logged in.
+Creating Training...
+Training created: 4d5b905d-d480-4592-967c-1091021d2fac
+Logging in as Participant...
+Participant logged in.
+Testing Ping...
+Ping status: 200
+Ping text: pong
+Nominating participant...
+Nomination created.
+Marking Attendance...
+Attendance marked.
+Checking Officer Notifications...
+SUCCESS: Notification found! {
+  id: '0ba974e7-381e-4fda-b978-d088d8340345',
+  userId: 'user-2',
+  title: 'Attendance Marked',
+  message: 'Nurse Kavita Singh has marked attendance for "Integration Test Training 1770567617093".',
+  read: false,
+  createdAt: '2026-02-08T16:20:17.222Z',
+  type: 'info'
+}

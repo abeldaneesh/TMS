@@ -1,0 +1,146 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String   @id @default(uuid())
+  email         String   @unique
+  password      String
+  name          String
+  role          UserRole
+  institutionId String?
+  designation   String?
+  phone         String?
+  department    String?
+  createdAt     DateTime @default(now())
+  isApproved    Boolean  @default(false)
+  
+  institution   Institution? @relation(fields: [institutionId], references: [id])
+  trainings     Training[]   @relation("CreatedTrainings")
+  nominations   Nomination[]
+  attendance    Attendance[]
+  notifications Notification[]
+}
+
+enum UserRole {
+  master_admin
+  program_officer
+  institutional_admin
+  participant
+}
+
+model Institution {
+  id        String   @id @default(uuid())
+  name      String
+  type      String
+  location  String
+  createdAt DateTime @default(now())
+  
+  users       User[]
+  nominations Nomination[]
+}
+
+model Hall {
+  id        String   @id @default(uuid())
+  name      String
+  location  String
+  capacity  Int
+  createdAt DateTime @default(now())
+  
+  trainings       Training[]
+  availability    HallAvailability[]
+}
+
+model HallAvailability {
+  id        String   @id @default(uuid())
+  hallId    String
+  dayOfWeek Int?     // 0-6 for recurring
+  specificDate DateTime? // For specific date slots
+  startTime String   // HH:mm
+  endTime   String   // HH:mm
+  
+  hall      Hall     @relation(fields: [hallId], references: [id])
+}
+
+model Training {
+  id          String         @id @default(uuid())
+  title       String
+  description String
+  program     String
+  date        DateTime
+  startTime   String
+  endTime     String
+  hallId      String
+  capacity    Int
+  trainerId   String
+  createdById String
+  status      TrainingStatus @default(scheduled)
+  requiredInstitutions Json? // Storing array of institution IDs
+  createdAt   DateTime       @default(now())
+ 
+  hall        Hall     @relation(fields: [hallId], references: [id])
+  creator     User     @relation("CreatedTrainings", fields: [createdById], references: [id])
+  nominations Nomination[]
+  attendance  Attendance[]
+}
+
+enum TrainingStatus {
+  draft
+  scheduled
+  ongoing
+  completed
+  cancelled
+}
+
+model Nomination {
+  id            String           @id @default(uuid())
+  trainingId    String
+  participantId String
+  institutionId String
+  status        NominationStatus @default(nominated)
+  nominatedBy   String
+  nominatedAt   DateTime         @default(now())
+  approvedBy    String?
+  approvedAt    DateTime?
+  rejectionReason String?
+  
+  training    Training    @relation(fields: [trainingId], references: [id])
+  participant User        @relation(fields: [participantId], references: [id])
+  institution Institution @relation(fields: [institutionId], references: [id])
+}
+
+enum NominationStatus {
+  nominated
+  approved
+  rejected
+  attended
+}
+
+model Attendance {
+  id            String   @id @default(uuid())
+  trainingId    String
+  participantId String
+  timestamp     DateTime @default(now())
+  method        String
+  qrData        String?
+  
+  training    Training @relation(fields: [trainingId], references: [id])
+  participant User     @relation(fields: [participantId], references: [id])
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String
+  title     String
+  message   String
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+  type      String   @default("info") // info, success, warning, error
+
+  user      User     @relation(fields: [userId], references: [id])
+}

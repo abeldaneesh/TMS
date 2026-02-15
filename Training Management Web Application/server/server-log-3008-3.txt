@@ -1,0 +1,20 @@
+[dotenv@17.2.4] injecting env (0) from .env -- tip: ≡ƒùé∩╕Å backup and recover secrets: https://dotenvx.com/ops
+C:\Users\LENOVO\Desktop\Training Management Web Application\server\node_modules\ts-node\src\index.ts:859
+    return new TSError(diagnosticText, diagnosticCodes, diagnostics);
+           ^
+TSError: Γ¿» Unable to compile TypeScript:
+src/routes/nominationRoutes.ts(12,18): error TS2304: Cannot find name 'authMiddleware_1'.
+src/routes/nominationRoutes.ts(12,123): error TS2304: Cannot find name 'nominationController_1'.
+
+    at createTSError (C:\Users\LENOVO\Desktop\Training Management Web Application\server\node_modules\ts-node\src\index.ts:859:12)
+    at reportTSError (C:\Users\LENOVO\Desktop\Training Management Web Application\server\node_modules\ts-node\src\index.ts:863:19)
+    at getOutput (C:\Users\LENOVO\Desktop\Training Management Web Application\server\node_modules\ts-node\src\index.ts:1077:36)
+    at Object.compile (C:\Users\LENOVO\Desktop\Training Management Web Application\server\node_modules\ts-node\src\index.ts:1433:41)
+    at Module.m._compile (C:\Users\LENOVO\Desktop\Training Management Web Application\server\node_modules\ts-node\src\index.ts:1617:30)
+    at node:internal/modules/cjs/loader:1839:10
+    at Object.require.extensions.<computed> [as .ts] (C:\Users\LENOVO\Desktop\Training Management Web Application\server\node_modules\ts-node\src\index.ts:1621:12)
+    at Module.load (node:internal/modules/cjs/loader:1441:32)
+    at Function._load (node:internal/modules/cjs/loader:1263:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14) {
+  diagnosticCodes: [ 2304, 2304 ]
+}

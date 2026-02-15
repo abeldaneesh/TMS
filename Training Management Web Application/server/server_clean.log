@@ -1,0 +1,46 @@
+
+> server@1.0.0 dev
+> nodemon src/index.ts
+
+[33m[nodemon] 3.1.11[39m
+[33m[nodemon] to restart at any time, enter `rs`[39m
+[33m[nodemon] watching path(s): *.*[39m
+[33m[nodemon] watching extensions: ts,json[39m
+[32m[nodemon] starting `ts-node src/index.ts`[39m
+[dotenv@17.2.4] injecting env (4) from .env -- tip: ≡ƒôí add observability to secrets: https://dotenvx.com/ops
+[dotenv@17.2.4] injecting env (0) from .env -- tip: ≡ƒöä add secrets lifecycle management: https://dotenvx.com/ops
+MongoDB Connected...
+Server running on port 3000
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/index.ts`[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/index.ts`[39m
+[dotenv@17.2.4] injecting env (4) from .env -- tip: ≡ƒæÑ sync secrets across teammates & machines: https://dotenvx.com/ops
+[dotenv@17.2.4] injecting env (0) from .env -- tip: ≡ƒ¢á∩╕Å  run anywhere with `dotenvx run -- yourcommand`
+MongoDB Connected...
+Server running on port 3001
+[REQUEST] POST /api/auth/register | Origin: undefined
+[DEBUG] Registering user using Mongoose connection:
+[DEBUG] Host: localhost
+[DEBUG] DB Name: training_db
+[DEBUG] Port: 27017
+[REQUEST] POST /api/auth/login | Origin: undefined
+[REQUEST] POST /api/attendance | Origin: undefined
+[DEBUG] Attendance marked for training d122535d-0065-4dad-b417-b92765e04021 by 69f1def9-b8ef-4f02-9014-eaa374162d3c
+[DEBUG] Sending notifications to 2 recipients: [ 'user-2', 'user-1' ]
+[DEBUG] Notification created for user-2: ae64c526-2547-4812-abd2-f0358c771a56
+[DEBUG] Notification created for user-1: f3a0e131-d445-4eda-a10e-d86b4d663031
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/index.ts`[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/index.ts`[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/index.ts`[39m
+[dotenv@17.2.4] injecting env (4) from .env -- tip: ≡ƒöÉ prevent building .env in docker: https://dotenvx.com/prebuild
+[dotenv@17.2.4] injecting env (0) from .env -- tip: ≡ƒöÉ prevent committing .env to code: https://dotenvx.com/precommit
+MongoDB Connected...
+Server running on port 3001
+[31m[nodemon] app crashed - waiting for file changes before starting...[39m
+[32m[nodemon] restarting child process[39m
+[32m[nodemon] starting `ts-node src/index.ts`[39m
+[dotenv@17.2.4] injecting env (4) from .env -- tip: ΓÜÖ∩╕Å  suppress all logs with { quiet: true }

@@ -1,0 +1,21 @@
+[dotenv@17.2.4] injecting env (0) from .env -- tip: ≡ƒöä add secrets lifecycle management: https://dotenvx.com/ops
+[DEBUG] LOADING nominationController VERSION 5
+Connected to database
+Server running on port 3013
+[REQUEST] POST /api/auth/login
+[REQUEST] POST /api/trainings
+[REQUEST] POST /api/auth/login
+[REQUEST] GET /api/nominations/ping
+[REQUEST] POST /api/nominations
+[DEBUG] VERSION 5 (TS-NODE) Creating nomination: {
+  trainingId: '4d5b905d-d480-4592-967c-1091021d2fac',
+  participantId: 'user-6',
+  institutionId: 'inst-1',
+  nominatedBy: 'user-2'
+}
+[REQUEST] POST /api/attendance
+[DEBUG] Attendance marked for training 4d5b905d-d480-4592-967c-1091021d2fac by user-6
+[DEBUG] Sending notifications to 2 recipients: [ 'user-2', 'user-1' ]
+[DEBUG] Notification created for user-2: 0ba974e7-381e-4fda-b978-d088d8340345
+[DEBUG] Notification created for user-1: 60c25dfa-d8a5-40b6-9c9e-bc06a659242d
+[REQUEST] GET /api/notifications

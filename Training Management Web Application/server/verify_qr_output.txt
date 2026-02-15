@@ -1,0 +1,33 @@
+[dotenv@17.2.4] injecting env (4) from .env -- tip: ≡ƒöä add secrets lifecycle management: https://dotenvx.com/ops
+1. Setup: Login as Admin...
+Admin logged in.
+2. Creating dummy participant...
+Participant created and logged in: qr_test_1771092173676_869@example.com
+3. Creating Training...
+Training created: 46290acd-2f4e-4030-89d2-859acc85da3a
+4. Scenario A: Attempt attendance without session...
+Γ£à Attendance failed as expected (No Session).
+5. Scenario B: Starting Session (1 min)...
+Γ£à Session started. Token: ada0a752-46b3-4f2c-9866-6a07b71062fa
+6. Scenario D: Valid Session, Invalid Token...
+Γ£à Attendance failed as expected (Invalid Token).
+7. Scenario C: Valid Token...
+Γ£à Attendance SUCCEEDED.
+8. Scenario E: Stop Session...
+Session stopped.
+Γ£à Attendance blocked (Already marked). Deleting attendance to test session stop...
+Cleanup...
+Error Details: {
+  message: 'Request failed with status code 404',
+  status: 404,
+  data: '<!DOCTYPE html>\n' +
+    '<html lang="en">\n' +
+    '<head>\n' +
+    '<meta charset="utf-8">\n' +
+    '<title>Error</title>\n' +
+    '</head>\n' +
+    '<body>\n' +
+    '<pre>Cannot DELETE /api/halls/5cf4f127-8252-41ba-b462-3f8dc39add0a</pre>\n' +
+    '</body>\n' +
+    '</html>\n'
+}

@@ -1,0 +1,25 @@
+C:\Users\LENOVO\Downloads\Telegram Desktop\Training Management Web Application\server\node_modules\ts-node\src\index.ts:859
+    return new TSError(diagnosticText, diagnosticCodes, diagnostics);
+           ^
+TSError: Γ¿» Unable to compile TypeScript:
+scripts/migrate-to-mongo.ts(73,17): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Type '{ dayOfWeek: number | null; specificDate: Date | null; startTime: string; endTime: string; }[]' is not assignable to type '{ dayOfWeek?: number | undefined; specificDate?: Date | undefined; startTime?: string | undefined; endTime?: string | undefined; }[] | ({ dayOfWeek?: number | undefined; specificDate?: Date | undefined; startTime?: string | undefined; endTime?: string | undefined; } | { ...; })[] | undefined'.
+      Type '{ dayOfWeek: number | null; specificDate: Date | null; startTime: string; endTime: string; }[]' is not assignable to type '{ dayOfWeek?: number | undefined; specificDate?: Date | undefined; startTime?: string | undefined; endTime?: string | undefined; }[]'.
+        Type '{ dayOfWeek: number | null; specificDate: Date | null; startTime: string; endTime: string; }' is not assignable to type '{ dayOfWeek?: number | undefined; specificDate?: Date | undefined; startTime?: string | undefined; endTime?: string | undefined; }'.
+          Types of property 'dayOfWeek' are incompatible.
+            Type 'number | null' is not assignable to type 'number | undefined'.
+              Type 'null' is not assignable to type 'number | undefined'.
+
+    at createTSError (C:\Users\LENOVO\Downloads\Telegram Desktop\Training Management Web Application\server\node_modules\ts-node\src\index.ts:859:12)
+    at reportTSError (C:\Users\LENOVO\Downloads\Telegram Desktop\Training Management Web Application\server\node_modules\ts-node\src\index.ts:863:19)
+    at getOutput (C:\Users\LENOVO\Downloads\Telegram Desktop\Training Management Web Application\server\node_modules\ts-node\src\index.ts:1077:36)
+    at Object.compile (C:\Users\LENOVO\Downloads\Telegram Desktop\Training Management Web Application\server\node_modules\ts-node\src\index.ts:1433:41)
+    at Module.m._compile (C:\Users\LENOVO\Downloads\Telegram Desktop\Training Management Web Application\server\node_modules\ts-node\src\index.ts:1617:30)
+    at node:internal/modules/cjs/loader:1839:10
+    at Object.require.extensions.<computed> [as .ts] (C:\Users\LENOVO\Downloads\Telegram Desktop\Training Management Web Application\server\node_modules\ts-node\src\index.ts:1621:12)
+    at Module.load (node:internal/modules/cjs/loader:1441:32)
+    at Function._load (node:internal/modules/cjs/loader:1263:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14) {
+  diagnosticCodes: [ 2769 ]
+}

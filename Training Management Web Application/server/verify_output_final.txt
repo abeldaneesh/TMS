@@ -1,0 +1,38 @@
+[dotenv@17.2.4] injecting env (4) from .env -- tip: ≡ƒöæ add access controls to secrets: https://dotenvx.com/ops
+Starting Notification System Verification...
+Connected to MongoDB
+[DEBUG Script] DB Name: training_db
+[DEBUG Script] Host: localhost
+Setting up test data...
+Admin: admin@dmo.gov, PO: priya@dmo.gov, Inst: District General Hospital
+Registering test participant via API...
+Registration Response: {
+  message: 'Registration successful! Your account is pending admin approval.',
+  user: {
+    id: 'd958702d-e602-439b-a229-2332a95d8548',
+    email: 'test-notif-1770887083252@example.com',
+    name: 'Test Notification User',
+    role: 'participant',
+    isApproved: false
+  }
+}
+User check via Mongoose: Not Found
+Total users in DB: 12
+Available emails: [
+  'adnan@mail',
+  'admin@dmo.gov',
+  'lakshmi@hospital1.gov',
+  'priya@dmo.gov',
+  'rajesh@dmo.gov',
+  'anjali@hospital1.gov',
+  'suresh@hospital2.gov',
+  'kavita@hospital1.gov',
+  'amit@hospital1.gov',
+  'meera@hospital2.gov',
+  'ramesh@phc1.gov',
+  'test-notif-1770886239882@example.com'
+]
+(node:23540) [MONGOOSE] Warning: mongoose: the `new` option for `findOneAndUpdate()` and `findOneAndReplace()` is deprecated. Use `returnDocument: 'after'` instead.
+(Use `node --trace-warnings ...` to show where the warning was created)
+Verification Failed: Test participant not found after registration
+No response received or setup error.

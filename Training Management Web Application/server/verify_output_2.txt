@@ -1,0 +1,11 @@
+≡ƒÜÇ Starting Hall Request Flow Verification...
+Γä╣∩╕Å Using Hall: Conference Hall (6990a0ab1ea66b04129f394e)
+Γä╣∩╕Å Using User: Test Officer (6990a0ab1ea66b04129f394f)
+
+≡ƒöÉ Logging in as Admin...
+Γ£à Logged in.
+
+≡ƒôà Creating a conflicting confirmed training...
+Γ¥î Failed to create conflicting training:
+Message: Hall is already booked for this time slot.
+Error Details: undefined

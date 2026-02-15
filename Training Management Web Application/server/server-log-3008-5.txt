@@ -1,0 +1,4 @@
+[dotenv@17.2.4] injecting env (0) from .env -- tip: ≡ƒöæ add access controls to secrets: https://dotenvx.com/ops
+[DEBUG] LOADING nominationController VERSION 5
+Connected to database
+Server running on port 3008

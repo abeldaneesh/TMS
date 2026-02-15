@@ -1,0 +1,2 @@
+src/controllers/notificationController.ts(33,17): error TS2322: Type 'string | string[]' is not assignable to type 'string | StringFilter<"Notification"> | undefined'.
+  Type 'string[]' is not assignable to type 'string | StringFilter<"Notification"> | undefined'.
