@@ -12,6 +12,8 @@ export const useAuth = () => {
   return context;
 };
 
+import LoadingScreen from '../app/components/LoadingScreen';
+
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
@@ -56,11 +58,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-lg">Loading...</div>
-      </div>
-    );
+    return <LoadingScreen />;
   }
 
   const updateUser = (userData: User) => {

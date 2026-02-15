@@ -21,6 +21,17 @@ import { Label } from '../components/ui/label';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 
+const safeFormatDate = (date: any, formatStr: string = 'MMM dd, yyyy') => {
+  if (!date) return 'N/A';
+  try {
+    const d = new Date(date);
+    if (isNaN(d.getTime())) return 'Invalid Date';
+    return format(d, formatStr);
+  } catch (e) {
+    return 'Invalid Date';
+  }
+};
+
 const Nominations: React.FC = () => {
   const { user } = useAuth();
   const [nominations, setNominations] = useState<Nomination[]>([]);
@@ -38,8 +49,12 @@ const Nominations: React.FC = () => {
 
   useEffect(() => {
     const fetchData = async () => {
-      if (!user) return;
+      if (!user) {
+        setLoading(false);
+        return;
+      }
 
+      setLoading(true);
       try {
         const [nominationsData, trainingsData, usersData, institutionsData] = await Promise.all([
           nominationsApi.getAll(
@@ -52,17 +67,24 @@ const Nominations: React.FC = () => {
           trainingsApi.getAll(
             user.role === 'program_officer' ? { createdById: user.id } : {}
           ),
-
           usersApi.getAll(),
           institutionsApi.getAll(),
         ]);
 
-        setNominations(nominationsData);
-        setTrainings(trainingsData);
-        setUsers(usersData);
-        setInstitutions(institutionsData);
+        console.log('Nominations diagnostic:', {
+          nominationsCount: Array.isArray(nominationsData) ? nominationsData.length : 'NOT_ARRAY',
+          trainingsCount: Array.isArray(trainingsData) ? trainingsData.length : 'NOT_ARRAY',
+          usersCount: Array.isArray(usersData) ? usersData.length : 'NOT_ARRAY',
+          institutionsCount: Array.isArray(institutionsData) ? institutionsData.length : 'NOT_ARRAY'
+        });
+
+        setNominations(Array.isArray(nominationsData) ? nominationsData : []);
+        setTrainings(Array.isArray(trainingsData) ? trainingsData : []);
+        setUsers(Array.isArray(usersData) ? usersData : []);
+        setInstitutions(Array.isArray(institutionsData) ? institutionsData : []);
       } catch (error) {
-        console.error('Error fetching nominations:', error);
+        console.error('Error fetching nominations data:', error);
+        toast.error('Strategic synchronization failed. Some intelligence reports may be missing.');
       } finally {
         setLoading(false);
       }
@@ -72,22 +94,27 @@ const Nominations: React.FC = () => {
   }, [user]);
 
   const getTrainingName = (trainingId: string) => {
+    if (!Array.isArray(trainings)) return 'Unknown Training';
     return trainings.find(t => t.id === trainingId)?.title || 'Unknown Training';
   };
 
   const getTraining = (trainingId: string) => {
+    if (!Array.isArray(trainings)) return undefined;
     return trainings.find(t => t.id === trainingId);
   };
 
   const getParticipantName = (participantId: string) => {
+    if (!Array.isArray(users)) return 'Unknown';
     return users.find(u => u.id === participantId)?.name || 'Unknown';
   };
 
   const getParticipant = (participantId: string) => {
+    if (!Array.isArray(users)) return undefined;
     return users.find(u => u.id === participantId);
   };
 
   const getInstitutionName = (institutionId: string) => {
+    if (!Array.isArray(institutions)) return 'Unknown';
     return institutions.find(i => i.id === institutionId)?.name || 'Unknown';
   };
 
@@ -114,7 +141,7 @@ const Nominations: React.FC = () => {
           ? { institutionId: user.institutionId }
           : {}
       );
-      setNominations(updatedNominations);
+      setNominations(Array.isArray(updatedNominations) ? updatedNominations : []);
     } catch (error: any) {
       toast.error(error.message || 'Error approving nomination');
     }
@@ -144,7 +171,7 @@ const Nominations: React.FC = () => {
           ? { institutionId: user.institutionId }
           : {}
       );
-      setNominations(updatedNominations);
+      setNominations(Array.isArray(updatedNominations) ? updatedNominations : []);
       setShowRejectDialog(false);
       setSelectedNomination(null);
     } catch (error: any) {
@@ -162,7 +189,7 @@ const Nominations: React.FC = () => {
 
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
-      const allParticipantIds = users
+      const allParticipantIds = (users || [])
         .filter(u => u.role === 'participant')
         .map(u => u.id);
       setSelectedParticipantIds(allParticipantIds);
@@ -175,58 +202,98 @@ const Nominations: React.FC = () => {
     if (!user || !selectedTrainingId || selectedParticipantIds.length === 0) return;
 
     setLoading(true);
-    try {
-      const nominationsToCreate = selectedParticipantIds.map(participantId => {
-        const participant = users.find(u => u.id === participantId);
-        if (!participant || !participant.institutionId) {
-          throw new Error(`Participant ${participant?.name || participantId} has no institution assigned`);
-        }
-        return {
-          trainingId: selectedTrainingId,
-          participantId: participantId,
-          institutionId: participant.institutionId,
-          status: 'nominated' as const,
-          nominatedBy: user.id,
-        };
-      });
+    const results = {
+      success: [] as string[],
+      failed: [] as { name: string; reason: string }[],
+    };
 
-      // Sequential creation for safety with current API
-      for (const nomination of nominationsToCreate) {
-        await nominationsApi.create(nomination);
+    try {
+      // Process nominations one by one to collect individual results
+      for (const participantId of selectedParticipantIds) {
+        const participant = users.find(u => u.id === participantId);
+        const participantName = participant?.name || participantId;
+
+        if (!participant || !participant.institutionId) {
+          results.failed.push({
+            name: participantName,
+            reason: 'No institution assigned',
+          });
+          continue;
+        }
+
+        try {
+          await nominationsApi.create({
+            trainingId: selectedTrainingId,
+            participantId: participantId,
+            institutionId: participant.institutionId,
+            status: 'nominated' as const,
+            nominatedBy: user.id,
+          });
+          results.success.push(participantName);
+        } catch (error: any) {
+          const reason = error.response?.data?.message || error.message || 'Unknown error';
+          results.failed.push({
+            name: participantName,
+            reason: reason,
+          });
+        }
       }
 
-      toast.success(`${selectedParticipantIds.length} participants nominated successfully`);
-      setShowNominateDialog(false);
-      setSelectedTrainingId('');
-      setSelectedParticipantIds([]);
+      // Provide comprehensive feedback
+      if (results.success.length > 0) {
+        toast.success(`Successfully nominated ${results.success.length} participants`);
+      }
 
-      // Refresh nominations
-      const updatedNominations = await nominationsApi.getAll(
-        user.role === 'institutional_admin' && user.institutionId
-          ? { institutionId: user.institutionId }
-          : {}
-      );
-      setNominations(updatedNominations);
+      if (results.failed.length > 0) {
+        // If there are failures, show them in a list
+        const failureMessages = results.failed.map(f => `${f.name}: ${f.reason}`).join('\n');
+        console.warn('Nomination failures:', failureMessages);
+
+        toast.error(`${results.failed.length} nominations failed`, {
+          description: results.failed.slice(0, 3).map(f => f.reason).join(', '),
+          duration: 6000,
+        });
+      }
+
+      if (results.success.length > 0) {
+        setShowNominateDialog(false);
+        setSelectedTrainingId('');
+        setSelectedParticipantIds([]);
+
+        // Refresh nominations
+        const updatedNominations = await nominationsApi.getAll(
+          user.role === 'institutional_admin' && user.institutionId
+            ? { institutionId: user.institutionId }
+            : {}
+        );
+        setNominations(Array.isArray(updatedNominations) ? updatedNominations : []);
+      }
     } catch (error: any) {
-      console.error('Nomination error:', error);
-      const errorMessage = error.response?.data?.message || error.message || 'Error nominating participants';
-      toast.error(errorMessage);
+      console.error('Fatal nomination error:', error);
+      toast.error('A fatal error occurred during nomination');
     } finally {
       setLoading(false);
     }
   };
 
-  const filteredNominations = nominations.filter(nom => {
+  const safeNominations = Array.isArray(nominations) ? nominations : [];
+  const safeUsers = Array.isArray(users) ? users : [];
+  const safeTrainings = Array.isArray(trainings) ? trainings : [];
+
+  const filteredNominations = safeNominations.filter(nom => {
+    if (!nom) return false;
     const participant = getParticipant(nom.participantId);
     const training = getTraining(nom.trainingId);
     const institution = getInstitutionName(nom.institutionId);
 
-    const searchLower = searchTerm.toLowerCase();
-    return (
-      participant?.name.toLowerCase().includes(searchLower) ||
-      training?.title.toLowerCase().includes(searchLower) ||
-      institution.toLowerCase().includes(searchLower)
-    );
+    const searchLower = (searchTerm || '').toLowerCase();
+
+    // Safely check names and titles, defaulting to empty string if missing
+    const participantMatch = (participant?.name || '').toLowerCase().includes(searchLower);
+    const trainingMatch = (training?.title || '').toLowerCase().includes(searchLower);
+    const institutionMatch = (institution || '').toLowerCase().includes(searchLower);
+
+    return participantMatch || trainingMatch || institutionMatch;
   });
 
   const pendingNominations = filteredNominations.filter(n => n.status === 'nominated');
@@ -244,7 +311,17 @@ const Nominations: React.FC = () => {
     );
   }
 
-  const canManageNominations = user?.role === 'program_officer' || user?.role === 'master_admin';
+  if (!user) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[400px] text-center">
+        <Users className="size-12 mb-4 text-muted-foreground opacity-20" />
+        <h3 className="text-lg font-bold text-muted-foreground tracking-widest uppercase">ACCESS DENIED</h3>
+        <p className="text-muted-foreground text-[10px] font-mono uppercase mt-2">Authentication required for mission intel.</p>
+      </div>
+    );
+  }
+
+  const canManageNominations = user.role === 'program_officer' || user.role === 'master_admin';
 
   return (
     <div className="space-y-6">
@@ -392,7 +469,7 @@ const Nominations: React.FC = () => {
                         </p>
                         {training && (
                           <div className="flex items-center gap-4 mt-2 text-[10px] font-mono text-muted-foreground">
-                            <span className="flex items-center gap-1.5"><Clock className="size-3" /> {format(new Date(training.date), 'MMM dd, yyyy')}</span>
+                            <span className="flex items-center gap-1.5"><Clock className="size-3" /> {safeFormatDate(training.date)}</span>
                             <span className="flex items-center gap-1.5"><Search className="size-3" /> {training.startTime} HRS</span>
                           </div>
                         )}
@@ -401,7 +478,7 @@ const Nominations: React.FC = () => {
                       {nomination.rejectionReason && (
                         <div className="mt-3 p-3 rounded-xl bg-destructive/5 border border-destructive/10">
                           <p className="text-[10px] font-bold text-destructive tracking-widest uppercase">REJECTION PROTOCOL REASON:</p>
-                          <p className="text-xs text-destructive/80 mt-1 italic italic">"{nomination.rejectionReason}"</p>
+                          <p className="text-xs text-destructive/80 mt-1 italic">"{nomination.rejectionReason}"</p>
                         </div>
                       )}
                     </div>
@@ -465,9 +542,9 @@ const Nominations: React.FC = () => {
                 onChange={(e) => setSelectedTrainingId(e.target.value)}
               >
                 <option value="">Select a training</option>
-                {trainings.filter(t => t.status !== 'cancelled').map((t) => (
+                {safeTrainings.filter(t => t.status !== 'cancelled').map((t) => (
                   <option key={t.id} value={t.id}>
-                    {t.title} ({format(new Date(t.date), 'MMM dd, yyyy')})
+                    {t.title} ({safeFormatDate(t.date)})
                   </option>
                 ))}
               </select>
@@ -477,13 +554,13 @@ const Nominations: React.FC = () => {
               <div className="flex items-center space-x-2 mb-4 p-2 bg-muted/50 rounded-lg">
                 <Checkbox
                   id="select-all"
-                  checked={selectedParticipantIds.length === users.filter(u => u.role === 'participant').length && users.filter(u => u.role === 'participant').length > 0}
+                  checked={selectedParticipantIds.length === safeUsers.filter(u => u.role === 'participant').length && safeUsers.filter(u => u.role === 'participant').length > 0}
                   onCheckedChange={(checked) => handleSelectAll(checked as boolean)}
                 />
                 <label htmlFor="select-all" className="text-sm font-medium leading-none cursor-pointer">SELECT ALL PERSONNEL</label>
               </div>
               <div className="max-h-[300px] overflow-y-auto space-y-2 pr-2 custom-scrollbar">
-                {users.filter(u => u.role === 'participant').map((u) => (
+                {safeUsers.filter(u => u.role === 'participant').map((u) => (
                   <div
                     key={u.id}
                     className={`flex items-center space-x-3 p-3 rounded-xl border transition-all cursor-pointer ${selectedParticipantIds.includes(u.id)

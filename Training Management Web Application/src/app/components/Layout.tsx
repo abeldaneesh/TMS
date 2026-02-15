@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
 import api, { BASE_URL } from '../../services/api';
+import BottomNav from './BottomNav';
 import {
   LayoutDashboard, Calendar, Users, Building2, DoorOpen,
   FileText, Settings, Bell, Menu, X, LogOut, QrCode,
@@ -348,8 +349,8 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       </aside>
 
       {/* Main Content */}
-      <main className="lg:pl-64 pt-16 relative z-10 transition-all duration-300">
-        <div className="px-4 sm:px-6 lg:px-8 py-10 max-w-7xl mx-auto">
+      <main className="lg:pl-64 pt-16 relative z-10 transition-all duration-300 min-h-screen">
+        <div className="px-4 sm:px-6 lg:px-8 py-10 pb-24 lg:pb-10 max-w-7xl mx-auto">
           {children}
         </div>
       </main>
@@ -361,6 +362,9 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           onClick={() => setSidebarOpen(false)}
         />
       )}
+
+      {/* Bottom Navigation for Mobile */}
+      <BottomNav />
     </div>
   );
 };

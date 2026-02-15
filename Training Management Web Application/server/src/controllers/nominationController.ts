@@ -23,14 +23,18 @@ export const nominateParticipant = async (req: AuthRequest, res: Response): Prom
 
         if (!institutionId) {
             // Fetch participant's institution
-            const participant = await User.findById(participantId).select('institutionId');
+            const participant = await User.findById(participantId).select('institutionId name');
             institutionId = participant?.institutionId;
+            const participantName = participant?.name || 'User';
+
+            if (!institutionId) {
+                res.status(400).json({ message: `${participantName} has no institution assigned` });
+                return;
+            }
         }
 
-        if (!institutionId) {
-            res.status(400).json({ message: 'Institution ID required' });
-            return;
-        }
+        const participant = await User.findById(participantId).select('name');
+        const participantName = participant?.name || 'User';
 
         // Check if participant is already nominated/appointed for this training
         const existingNomination = await Nomination.findOne({
@@ -40,7 +44,7 @@ export const nominateParticipant = async (req: AuthRequest, res: Response): Prom
         });
 
         if (existingNomination) {
-            res.status(400).json({ message: 'Already has been appointed with the specified training' });
+            res.status(400).json({ message: `${participantName} is already appointed for this training` });
             return;
         }
 
@@ -83,7 +87,7 @@ export const nominateParticipant = async (req: AuthRequest, res: Response): Prom
             });
 
             if (conflictingNomination) {
-                res.status(400).json({ message: 'Participant has another training schedule at this time' });
+                res.status(400).json({ message: `${participantName} has another training schedule at this time` });
                 return;
             }
         }

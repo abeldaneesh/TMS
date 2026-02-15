@@ -34,15 +34,13 @@ export const register = async (req: Request, res: Response): Promise<void> => {
             isApproved: false, // Explicitly set to false (also default)
         });
 
+        const { password: _, ...userWithoutPassword } = user.toObject();
+        // @ts-ignore
+        userWithoutPassword.id = user._id;
+
         res.status(201).json({
             message: 'Registration successful! Your account is pending admin approval.',
-            user: {
-                id: user._id,
-                email: user.email,
-                name: user.name,
-                role: user.role,
-                isApproved: user.isApproved,
-            },
+            user: userWithoutPassword,
         });
     } catch (error) {
         console.error('Registration error:', error);
@@ -86,15 +84,14 @@ export const login = async (req: Request, res: Response): Promise<void> => {
             { expiresIn: '24h' }
         );
 
+        const { password: _, ...userWithoutPassword } = user.toObject();
+        // @ts-ignore
+        userWithoutPassword.id = user._id;
+
         res.status(200).json({
             message: 'Login successful',
             token,
-            user: {
-                id: user._id,
-                email: user.email,
-                name: user.name,
-                role: user.role,
-            },
+            user: userWithoutPassword,
         });
     } catch (error) {
         console.error('Login error:', error);

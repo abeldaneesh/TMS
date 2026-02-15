@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/table';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '../components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../components/ui/dialog';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
@@ -9,24 +9,30 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Trash2, MapPin, Users, Activity, ShieldCheck, Clock, Settings2, Plus, AlertCircle, CheckCircle2, Calendar } from 'lucide-react';
 import { Hall, HallBlock } from '../../types';
 import { hallsApi, hallBlocksApi } from '../../services/api';
+import { useAuth } from '../../contexts/AuthContext';
 import { toast } from 'sonner';
 
 const Halls: React.FC = () => {
+    const { user } = useAuth();
+    const isMasterAdmin = user?.role === 'master_admin';
+
     const [halls, setHalls] = useState<Hall[]>([]);
     const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
-        const fetchHalls = async () => {
-            try {
-                const data = await hallsApi.getAll();
-                setHalls(data);
-            } catch (error) {
-                console.error('Failed to fetch halls', error);
-            } finally {
-                setLoading(false);
-            }
-        };
+    const fetchHalls = async () => {
+        setLoading(true);
+        try {
+            const data = await hallsApi.getAll();
+            setHalls(data);
+        } catch (error) {
+            console.error('Failed to fetch halls', error);
+            toast.error('Failed to load sectors');
+        } finally {
+            setLoading(false);
+        }
+    };
 
+    useEffect(() => {
         fetchHalls();
     }, []);
 
@@ -35,6 +41,8 @@ const Halls: React.FC = () => {
     const [blocks, setBlocks] = useState<HallBlock[]>([]);
 
     const [showAvailabilityDialog, setShowAvailabilityDialog] = useState(false);
+    const [showCreateDialog, setShowCreateDialog] = useState(false);
+    const [isSaving, setIsSaving] = useState(false);
     const [slotType, setSlotType] = useState<'weekly' | 'date'>('weekly'); // Tab switcher
     const [actionType, setActionType] = useState<'available' | 'block'>('available'); // Action type for specific date
 
@@ -48,6 +56,48 @@ const Halls: React.FC = () => {
         startTime: '09:00',
         endTime: '17:00'
     });
+
+    const [newHallForm, setNewHallForm] = useState({
+        name: '',
+        location: '',
+        capacity: 50
+    });
+
+    const handleCreateHall = async () => {
+        if (!newHallForm.name || !newHallForm.location) {
+            toast.error('Sector name and location are required');
+            return;
+        }
+
+        setIsSaving(true);
+        try {
+            await hallsApi.create({
+                name: newHallForm.name,
+                location: newHallForm.location,
+                capacity: newHallForm.capacity
+            });
+            toast.success('Sector registered successfully');
+            setShowCreateDialog(false);
+            setNewHallForm({ name: '', location: '', capacity: 50 });
+            fetchHalls();
+        } catch (error: any) {
+            toast.error(error.response?.data?.message || 'Failed to create sector');
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    const handleDeleteHall = async (id: string, name: string) => {
+        if (!window.confirm(`Are you sure you want to terminate sector ${name}? This cannot be undone.`)) return;
+
+        try {
+            await hallsApi.delete(id);
+            toast.success('Sector terminated from registry');
+            fetchHalls();
+        } catch (error: any) {
+            toast.error(error.response?.data?.message || 'Failed to delete sector');
+        }
+    };
 
     const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
     const reasons = [
@@ -155,15 +205,24 @@ const Halls: React.FC = () => {
 
     return (
         <div className="space-y-6">
-            <div className="flex justify-between items-center">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div>
-                    <h1 className="text-3xl font-extrabold tracking-tighter text-foreground flex items-center gap-3">
-                        <MapPin className="size-8 text-primary animate-pulse-glow" />
+                    <h1 className="text-2xl md:text-3xl font-extrabold tracking-tighter text-foreground flex items-center gap-3">
+                        <MapPin className="size-6 md:size-8 text-primary animate-pulse-glow" />
                         DEPLOYMENT HALLS
                         <div className="h-1 w-20 bg-gradient-to-r from-primary to-transparent rounded-full ml-4 hidden md:block" />
                     </h1>
-                    <p className="text-muted-foreground mt-1 font-mono text-xs uppercase tracking-widest opacity-70">Physical Training Sectors & Capacity Oversight</p>
+                    <p className="text-muted-foreground mt-1 font-mono text-[10px] md:text-xs uppercase tracking-widest opacity-70">Physical Training Sectors & Capacity Oversight</p>
                 </div>
+                {isMasterAdmin && (
+                    <Button
+                        onClick={() => setShowCreateDialog(true)}
+                        className="w-full md:w-auto bg-primary hover:bg-primary/90 text-primary-foreground font-bold tracking-widest uppercase rounded-xl border border-primary/20 shadow-[0_0_20px_rgba(0,236,255,0.2)]"
+                    >
+                        <Plus className="size-4 mr-2" />
+                        REGISTER NEW SECTOR
+                    </Button>
+                )}
             </div>
 
             <Card className="glass-card overflow-hidden">
@@ -219,15 +278,27 @@ const Halls: React.FC = () => {
                                             </div>
                                         </TableCell>
                                         <TableCell className="py-4 text-right">
-                                            <Button
-                                                variant="outline"
-                                                size="sm"
-                                                onClick={() => handleManageAvailability(hall)}
-                                                className="bg-primary/5 hover:bg-primary text-primary hover:text-primary-foreground border-primary/20 font-bold tracking-widest text-[10px] rounded-lg transition-all"
-                                            >
-                                                <Settings2 className="size-3 mr-1.5" />
-                                                MANAGE AVAILABILITY
-                                            </Button>
+                                            <div className="flex items-center justify-end gap-2">
+                                                <Button
+                                                    variant="outline"
+                                                    size="sm"
+                                                    onClick={() => handleManageAvailability(hall)}
+                                                    className="bg-primary/5 hover:bg-primary text-primary hover:text-primary-foreground border-primary/20 font-bold tracking-widest text-[10px] rounded-lg transition-all"
+                                                >
+                                                    <Settings2 className="size-3 mr-1.5" />
+                                                    MANAGE AVAILABILITY
+                                                </Button>
+                                                {isMasterAdmin && (
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        onClick={() => handleDeleteHall(hall.id, hall.name)}
+                                                        className="h-8 w-8 text-destructive/40 hover:text-destructive hover:bg-destructive/10 rounded-lg"
+                                                    >
+                                                        <Trash2 className="size-3" />
+                                                    </Button>
+                                                )}
+                                            </div>
                                         </TableCell>
                                     </TableRow>
                                 ))}
@@ -468,6 +539,62 @@ const Halls: React.FC = () => {
                             </div>
                         )}
                     </div>
+                </DialogContent>
+            </Dialog>
+
+            {/* Create Hall Dialog */}
+            <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
+                <DialogContent className="sm:max-w-[425px] glass border-primary/20 text-foreground">
+                    <DialogHeader>
+                        <DialogTitle className="text-xl font-bold tracking-tight flex items-center gap-2">
+                            <Plus className="size-5 text-primary" />
+                            REGISTER NEW SECTOR
+                        </DialogTitle>
+                        <p className="text-muted-foreground font-mono text-[10px] uppercase tracking-widest mt-1">
+                            Establish a new geographical training zone.
+                        </p>
+                    </DialogHeader>
+                    <div className="grid gap-4 py-4">
+                        <div className="grid gap-2">
+                            <Label htmlFor="name" className="text-[10px] font-bold tracking-widest text-primary/70 uppercase">Sector Name</Label>
+                            <Input
+                                id="name"
+                                value={newHallForm.name}
+                                onChange={(e) => setNewHallForm({ ...newHallForm, name: e.target.value })}
+                                placeholder="E.g. Alpha Wing Conference Hall"
+                                className="bg-input/50 border-input text-foreground font-mono text-xs"
+                            />
+                        </div>
+                        <div className="grid gap-2">
+                            <Label htmlFor="location" className="text-[10px] font-bold tracking-widest text-primary/70 uppercase">Coordinates / Location</Label>
+                            <Input
+                                id="location"
+                                value={newHallForm.location}
+                                onChange={(e) => setNewHallForm({ ...newHallForm, location: e.target.value })}
+                                placeholder="E.g. Level 3, Section B"
+                                className="bg-input/50 border-input text-foreground font-mono text-xs"
+                            />
+                        </div>
+                        <div className="grid gap-2">
+                            <Label htmlFor="capacity" className="text-[10px] font-bold tracking-widest text-primary/70 uppercase">Maximum Capacity</Label>
+                            <Input
+                                id="capacity"
+                                type="number"
+                                value={newHallForm.capacity}
+                                onChange={(e) => setNewHallForm({ ...newHallForm, capacity: parseInt(e.target.value) })}
+                                className="bg-input/50 border-input text-foreground font-mono text-xs"
+                            />
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button
+                            onClick={handleCreateHall}
+                            disabled={isSaving}
+                            className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-bold tracking-widest uppercase py-6"
+                        >
+                            {isSaving ? 'SYCHRONIZING...' : 'COMMIT TO GRID'}
+                        </Button>
+                    </DialogFooter>
                 </DialogContent>
             </Dialog>
         </div>

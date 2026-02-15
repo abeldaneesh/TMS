@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { usersApi, BASE_URL } from '../../services/api';
 import { toast } from 'sonner';
@@ -24,6 +24,19 @@ const Settings: React.FC = () => {
         department: user?.department || '',
         profilePicture: user?.profilePicture || '',
     });
+
+    // Sync state when user object changes
+    useEffect(() => {
+        if (user) {
+            setProfileData({
+                name: user.name || '',
+                phone: user.phone || '',
+                designation: user.designation || '',
+                department: user.department || '',
+                profilePicture: user.profilePicture || '',
+            });
+        }
+    }, [user]);
 
     // Password State
     const [passwordData, setPasswordData] = useState({
@@ -116,14 +129,16 @@ const Settings: React.FC = () => {
             <h1 className="text-3xl font-bold mb-6">Account Settings</h1>
 
             <Tabs defaultValue="profile" className="w-full">
-                <TabsList className="grid w-full grid-cols-2 mb-8">
-                    <TabsTrigger value="profile" className="text-lg">
-                        <User className="mr-2 size-5" />
-                        Profile Details
+                <TabsList className="grid grid-cols-2 w-full mb-8 bg-muted/20 p-1 h-auto min-h-12 overflow-hidden">
+                    <TabsTrigger value="profile" className="py-3 px-1 sm:px-4 text-sm md:text-lg transition-all">
+                        <User className="mr-1.5 sm:mr-2 size-4 sm:size-5" />
+                        <span className="font-bold">Profile</span>
+                        <span className="hidden lg:inline ml-1 opacity-70">Details</span>
                     </TabsTrigger>
-                    <TabsTrigger value="security" className="text-lg">
-                        <Lock className="mr-2 size-5" />
-                        Security & Password
+                    <TabsTrigger value="security" className="py-3 px-1 sm:px-4 text-sm md:text-lg transition-all">
+                        <Lock className="mr-1.5 sm:mr-2 size-4 sm:size-5" />
+                        <span className="font-bold">Security</span>
+                        <span className="hidden lg:inline ml-1 opacity-70">& Password</span>
                     </TabsTrigger>
                 </TabsList>
 
@@ -183,7 +198,9 @@ const Settings: React.FC = () => {
                                         <Label htmlFor="email">Email</Label>
                                         <Input
                                             id="email"
-                                            className="bg-muted text-muted-foreground"
+                                            value={user?.email || ''}
+                                            readOnly
+                                            className="bg-muted text-muted-foreground cursor-not-allowed"
                                         />
                                     </div>
                                     <div className="space-y-2">
@@ -217,7 +234,9 @@ const Settings: React.FC = () => {
                                         <Label htmlFor="role">Role</Label>
                                         <Input
                                             id="role"
-                                            className="bg-muted capitalize text-muted-foreground"
+                                            value={user?.role?.replace('_', ' ') || ''}
+                                            readOnly
+                                            className="bg-muted capitalize text-muted-foreground cursor-not-allowed"
                                         />
                                     </div>
                                 </div>

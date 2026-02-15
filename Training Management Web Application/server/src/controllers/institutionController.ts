@@ -23,6 +23,26 @@ export const getInstitutions = async (req: Request, res: Response): Promise<void
     }
 };
 
+export const createInstitution = async (req: Request, res: Response): Promise<void> => {
+    try {
+        const { name, type, location } = req.body;
+
+        const newInstitution = await Institution.create({
+            name,
+            type,
+            location
+        });
+
+        res.status(201).json({
+            ...newInstitution.toObject(),
+            id: newInstitution._id
+        });
+    } catch (error) {
+        console.error('Error creating institution:', error);
+        res.status(500).json({ message: 'Error creating institution' });
+    }
+};
+
 export const deleteInstitution = async (req: Request, res: Response): Promise<void> => {
     try {
         const { id } = req.params;

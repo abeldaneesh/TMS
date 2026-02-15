@@ -150,11 +150,12 @@ const Dashboard: React.FC = () => {
   return (
     <div className="space-y-10">
       <div className="relative">
-        <h1 className="text-4xl font-extrabold tracking-tighter text-foreground uppercase">
+        <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tighter text-foreground uppercase">
           OPERATIONAL <span className="text-primary italic">DASHBOARD</span>
         </h1>
-        <p className="text-primary/60 font-mono text-xs uppercase tracking-[0.3em] mt-2">
-          Authorized personnel: {user?.name} | Access Level: <span className="text-secondary">{user?.role?.toUpperCase()}</span>
+        <p className="text-primary/60 font-mono text-[10px] sm:text-xs uppercase tracking-[0.2em] sm:tracking-[0.3em] mt-2 leading-relaxed">
+          Authorized personnel: <span className="text-white">{user?.name}</span> <br className="sm:hidden" />
+          Access Level: <span className="text-secondary">{user?.role?.toUpperCase()}</span>
         </p>
       </div>
 
@@ -265,15 +266,15 @@ const Dashboard: React.FC = () => {
               <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
                 <Icon className="size-20 -mr-6 -mt-6" />
               </div>
-              <CardContent className="p-6 relative z-10">
+              <CardContent className="p-5 sm:p-6 relative z-10">
                 <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <p className="text-[10px] font-mono text-muted-foreground uppercase tracking-widest">{stat.title}</p>
-                    <p className="text-4xl font-black mt-2 text-foreground group-hover:text-primary transition-colors">{stat.value}</p>
-                    <p className="text-[10px] text-primary/40 mt-1 uppercase font-mono">{stat.description}</p>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[9px] sm:text-[10px] font-mono text-muted-foreground uppercase tracking-widest truncate">{stat.title}</p>
+                    <p className="text-3xl sm:text-4xl font-black mt-2 text-foreground group-hover:text-primary transition-colors">{stat.value}</p>
+                    <p className="text-[9px] sm:text-[10px] text-primary/40 mt-1 uppercase font-mono truncate">{stat.description}</p>
                   </div>
-                  <div className={`${stat.color} p-3 rounded-2xl border border-white/5 backdrop-blur-md`}>
-                    <Icon className="size-6 group-hover:scale-110 transition-transform" />
+                  <div className={`${stat.color} p-2.5 sm:p-3 rounded-xl sm:rounded-2xl border border-white/5 backdrop-blur-md shrink-0`}>
+                    <Icon className="size-5 sm:size-6 group-hover:scale-110 transition-transform" />
                   </div>
                 </div>
               </CardContent>

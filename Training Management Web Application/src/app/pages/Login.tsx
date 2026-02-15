@@ -144,14 +144,19 @@ const Login: React.FC<LoginProps> = ({ roleTitle = 'Sign In', allowedRoles }) =>
                 </Button>
               </form>
 
-              <div className="mt-10 pt-6 border-t border-border text-center">
-                <p className="text-[10px] font-mono text-muted-foreground uppercase tracking-widest">
-                  NEW FIELD OPERATIVE?{' '}
-                  <Link to="/register" className="text-primary font-black hover:underline transition-colors ml-2">
-                    REQUEST ACCESS
-                  </Link>
-                </p>
-              </div>
+              {(!allowedRoles || (!allowedRoles.includes('master_admin') && !allowedRoles.includes('institutional_admin'))) && (
+                <div className="mt-10 pt-6 border-t border-border text-center">
+                  <p className="text-[10px] font-mono text-muted-foreground uppercase tracking-widest">
+                    NEW FIELD OPERATIVE?{' '}
+                    <Link
+                      to={`/register?role=${allowedRoles?.includes('program_officer') ? 'program_officer' : 'participant'}`}
+                      className="text-primary font-black hover:underline transition-colors ml-2"
+                    >
+                      REQUEST ACCESS
+                    </Link>
+                  </p>
+                </div>
+              )}
             </CardContent>
           </Card>
 

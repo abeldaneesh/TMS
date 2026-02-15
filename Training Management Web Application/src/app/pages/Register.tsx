@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { Building2, Mail, Lock, User, Phone, Briefcase, ChevronLeft, ShieldCheck } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
@@ -11,6 +11,10 @@ import { usersApi } from '../../services/api';
 import { toast } from 'sonner';
 
 const Register: React.FC = () => {
+    const [searchParams] = useSearchParams();
+    const roleParam = searchParams.get('role') || 'participant';
+    const displayRole = roleParam === 'program_officer' ? 'Program Officer' : 'Field Personnel';
+
     const [formData, setFormData] = useState({
         name: '',
         email: '',
@@ -24,6 +28,13 @@ const Register: React.FC = () => {
     const [loading, setLoading] = useState(false);
     const [success, setSuccess] = useState(false);
     const navigate = useNavigate();
+
+    // Redirect if admin role is manually entered in URL
+    useEffect(() => {
+        if (roleParam === 'master_admin' || roleParam === 'institutional_admin') {
+            navigate('/login');
+        }
+    }, [roleParam, navigate]);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setFormData({ ...formData, [e.target.id]: e.target.value });
@@ -43,7 +54,7 @@ const Register: React.FC = () => {
         setLoading(true);
         try {
             const { confirmPassword, ...registerData } = formData;
-            await usersApi.create(registerData);
+            await usersApi.create({ ...registerData, role: roleParam });
             setSuccess(true);
             toast.success('REGISTRATION PROTOCOL INITIATED');
         } catch (err: any) {
@@ -101,9 +112,9 @@ const Register: React.FC = () => {
                             <ChevronLeft className="size-5" />
                         </Link>
                         <div>
-                            <CardTitle className="text-3xl font-black text-foreground uppercase tracking-tight">New Operative</CardTitle>
+                            <CardTitle className="text-3xl font-black text-foreground uppercase tracking-tight">{displayRole}</CardTitle>
                             <CardDescription className="text-primary/60 font-mono text-[10px] uppercase tracking-[0.2em] mt-1">
-                                REGISTRATION PROTOCOL — DMO_CORE_V4
+                                REGISTRATION PROTOCOL — {roleParam === 'program_officer' ? 'COMMAND_UNIT' : 'FIELD_OPERATIVE'}
                             </CardDescription>
                         </div>
                     </div>

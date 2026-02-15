@@ -1,42 +1,106 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/table';
 import { Badge } from '../components/ui/badge';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../components/ui/dialog';
+import { Button } from '../components/ui/button';
+import { Input } from '../components/ui/input';
+import { Label } from '../components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { Institution } from '../../types';
 import { institutionsApi } from '../../services/api';
-import { Building2, MapPin, Activity, ShieldCheck } from 'lucide-react';
+import { useAuth } from '../../contexts/AuthContext';
+import { Building2, MapPin, Activity, ShieldCheck, Plus, Trash2 } from 'lucide-react';
+import { toast } from 'sonner';
 
 const Institutions: React.FC = () => {
+    const { user } = useAuth();
+    const isMasterAdmin = user?.role === 'master_admin';
+
     const [institutions, setInstitutions] = useState<Institution[]>([]);
     const [loading, setLoading] = useState(true);
+    const [showCreateDialog, setShowCreateDialog] = useState(false);
+    const [isSaving, setIsSaving] = useState(false);
+
+    const [newInstitutionForm, setNewInstitutionForm] = useState({
+        name: '',
+        type: 'Medical College',
+        location: ''
+    });
+
+    const fetchInstitutions = async () => {
+        setLoading(true);
+        try {
+            const data = await institutionsApi.getAll();
+            setInstitutions(data);
+        } catch (error) {
+            console.error('Failed to fetch institutions', error);
+            toast.error('Failed to load institutions');
+        } finally {
+            setLoading(false);
+        }
+    };
 
     useEffect(() => {
-        const fetchInstitutions = async () => {
-            try {
-                const data = await institutionsApi.getAll();
-                setInstitutions(data);
-            } catch (error) {
-                console.error('Failed to fetch institutions', error);
-            } finally {
-                setLoading(false);
-            }
-        };
-
         fetchInstitutions();
     }, []);
 
+    const handleCreateInstitution = async () => {
+        if (!newInstitutionForm.name || !newInstitutionForm.location) {
+            toast.error('Institution name and location are required');
+            return;
+        }
+
+        setIsSaving(true);
+        try {
+            await institutionsApi.create({
+                name: newInstitutionForm.name,
+                type: newInstitutionForm.type,
+                location: newInstitutionForm.location
+            });
+            toast.success('Institution registered successfully');
+            setShowCreateDialog(false);
+            setNewInstitutionForm({ name: '', type: 'Medical College', location: '' });
+            fetchInstitutions();
+        } catch (error: any) {
+            toast.error(error.response?.data?.message || 'Failed to create institution');
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    const handleDeleteInstitution = async (id: string, name: string) => {
+        if (!window.confirm(`Are you sure you want to terminate institution ${name}? This cannot be undone.`)) return;
+
+        try {
+            await institutionsApi.delete(id);
+            toast.success('Institution removed from registry');
+            fetchInstitutions();
+        } catch (error: any) {
+            toast.error(error.response?.data?.message || 'Failed to delete institution');
+        }
+    };
+
     return (
         <div className="space-y-6">
-            <div className="flex justify-between items-center">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div>
-                    <h1 className="text-3xl font-extrabold tracking-tighter text-foreground flex items-center gap-3">
-                        <Building2 className="size-8 text-primary animate-pulse-glow" />
+                    <h1 className="text-2xl md:text-3xl font-extrabold tracking-tighter text-foreground flex items-center gap-3">
+                        <Building2 className="size-6 md:size-8 text-primary animate-pulse-glow" />
                         INSTITUTIONS
                         <div className="h-1 w-20 bg-gradient-to-r from-primary to-transparent rounded-full ml-4 hidden md:block" />
                     </h1>
-                    <p className="text-muted-foreground mt-1 font-mono text-xs uppercase tracking-widest opacity-70">Sector Registry & Organizational Matrix</p>
+                    <p className="text-muted-foreground mt-1 font-mono text-[10px] md:text-xs uppercase tracking-widest opacity-70">Sector Registry & Organizational Matrix</p>
                 </div>
+                {isMasterAdmin && (
+                    <Button
+                        onClick={() => setShowCreateDialog(true)}
+                        className="w-full md:w-auto bg-primary hover:bg-primary/90 text-primary-foreground font-bold tracking-widest uppercase rounded-xl border border-primary/20 shadow-[0_0_20px_rgba(0,236,255,0.2)]"
+                    >
+                        <Plus className="size-4 mr-2" />
+                        REGISTER NEW INSTITUTION
+                    </Button>
+                )}
             </div>
 
             <Card className="glass-card overflow-hidden">
@@ -68,6 +132,7 @@ const Institutions: React.FC = () => {
                                     <TableHead>SECTOR / NAME</TableHead>
                                     <TableHead>CLASSIFICATION</TableHead>
                                     <TableHead>COORDINATES / LOCATION</TableHead>
+                                    <TableHead className="text-right">ACTIONS</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -86,9 +151,23 @@ const Institutions: React.FC = () => {
                                                 {institution.type}
                                             </Badge>
                                         </TableCell>
-                                        <TableCell className="py-4 text-muted-foreground font-mono text-xs flex items-center gap-2">
-                                            <MapPin className="size-3 text-primary/50" />
-                                            {institution.location}
+                                        <TableCell className="py-4 text-muted-foreground font-mono text-xs">
+                                            <div className="flex items-center gap-2">
+                                                <MapPin className="size-3 text-primary/50" />
+                                                {institution.location}
+                                            </div>
+                                        </TableCell>
+                                        <TableCell className="py-4 text-right">
+                                            {isMasterAdmin && (
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    onClick={() => handleDeleteInstitution(institution.id, institution.name)}
+                                                    className="h-8 w-8 text-destructive/40 hover:text-destructive hover:bg-destructive/10 rounded-lg transition-all"
+                                                >
+                                                    <Trash2 className="size-3" />
+                                                </Button>
+                                            )}
                                         </TableCell>
                                     </TableRow>
                                 ))}
@@ -97,6 +176,69 @@ const Institutions: React.FC = () => {
                     )}
                 </CardContent>
             </Card>
+
+            {/* Create Institution Dialog */}
+            <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
+                <DialogContent className="sm:max-w-[425px] glass border-primary/20 text-foreground">
+                    <DialogHeader>
+                        <DialogTitle className="text-xl font-bold tracking-tight flex items-center gap-2">
+                            <Plus className="size-5 text-primary" />
+                            REGISTER INSTITUTION
+                        </DialogTitle>
+                        <p className="text-muted-foreground font-mono text-[10px] uppercase tracking-widest mt-1">
+                            Establish a new organizational entity.
+                        </p>
+                    </DialogHeader>
+                    <div className="grid gap-4 py-4">
+                        <div className="grid gap-2">
+                            <Label htmlFor="name" className="text-[10px] font-bold tracking-widest text-primary/70 uppercase">Institution Name</Label>
+                            <Input
+                                id="name"
+                                value={newInstitutionForm.name}
+                                onChange={(e) => setNewInstitutionForm({ ...newInstitutionForm, name: e.target.value })}
+                                placeholder="E.g. City General Hospital"
+                                className="bg-input/50 border-input text-foreground font-mono text-xs"
+                            />
+                        </div>
+                        <div className="grid gap-2">
+                            <Label htmlFor="type" className="text-[10px] font-bold tracking-widest text-primary/70 uppercase">Classification</Label>
+                            <Select
+                                value={newInstitutionForm.type}
+                                onValueChange={(val) => setNewInstitutionForm({ ...newInstitutionForm, type: val })}
+                            >
+                                <SelectTrigger className="bg-input/50 border-input text-foreground font-mono text-xs">
+                                    <SelectValue placeholder="Select type" />
+                                </SelectTrigger>
+                                <SelectContent className="bg-popover border-border/50 text-foreground font-mono text-xs">
+                                    <SelectItem value="Medical College">Medical College</SelectItem>
+                                    <SelectItem value="Hospital">Hospital</SelectItem>
+                                    <SelectItem value="Research Center">Research Center</SelectItem>
+                                    <SelectItem value="Other">Other</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <div className="grid gap-2">
+                            <Label htmlFor="location" className="text-[10px] font-bold tracking-widest text-primary/70 uppercase">Coordinates / Location</Label>
+                            <Input
+                                id="location"
+                                value={newInstitutionForm.location}
+                                onChange={(e) => setNewInstitutionForm({ ...newInstitutionForm, location: e.target.value })}
+                                placeholder="E.g. Sector 5, North"
+                                className="bg-input/50 border-input text-foreground font-mono text-xs"
+                            />
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button
+                            onClick={handleCreateInstitution}
+                            disabled={isSaving}
+                            className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-bold tracking-widest uppercase py-6"
+                        >
+                            {isSaving ? 'UPLOADING INTEL...' : 'COMMIT TO REGISTRY'}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 };

@@ -306,8 +306,10 @@ export const nominationsApi = {
     getAll: async (filters?: { trainingId?: string; participantId?: string; institutionId?: string; status?: NominationStatus }): Promise<Nomination[]> => {
         const params = new URLSearchParams();
         if (filters?.trainingId) params.append('trainingId', filters.trainingId);
+        if (filters?.participantId) params.append('participantId', filters.participantId);
+        if (filters?.institutionId) params.append('institutionId', filters.institutionId);
+        if (filters?.status) params.append('status', filters.status);
 
-        // Other filters might be needed to be handled client-side or backend update
         const response = await api.get(`/nominations?${params.toString()}`);
         return response.data;
     },

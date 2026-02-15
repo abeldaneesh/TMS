@@ -108,30 +108,32 @@ const ScanQR: React.FC = () => {
   };
 
   return (
-    <div className="max-w-2xl mx-auto space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold">Scan QR Code</h1>
-        <p className="text-gray-500 mt-1">Scan the training QR code to mark your attendance</p>
+    <div className="max-w-2xl mx-auto space-y-6 pb-12 sm:pb-0">
+      <div className="text-center sm:text-left">
+        <h1 className="text-3xl font-black uppercase tracking-tight text-foreground">Scan <span className="text-primary">QR Code</span></h1>
+        <p className="text-muted-foreground mt-2 font-mono text-xs uppercase tracking-widest">Mark your presence in the system</p>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <QrCode className="size-5" />
+      <Card className="glass-card border-primary/20 overflow-hidden bg-card/40">
+        <CardHeader className="text-center sm:text-left border-b border-white/5 bg-white/5">
+          <CardTitle className="flex items-center justify-center sm:justify-start gap-2 text-foreground uppercase tracking-widest">
+            <QrCode className="size-5 text-primary" />
             QR Scanner
           </CardTitle>
-          <CardDescription>Position the QR code within the scanning area</CardDescription>
+          <CardDescription className="text-muted-foreground font-mono text-[10px] uppercase">
+            Position the code within the detection field
+          </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-6 pt-6 px-4 sm:px-6">
           {!scanning && !result && (
-            <div className="text-center py-12 space-y-4">
-              <div className="mx-auto w-24 h-24 bg-blue-100 rounded-full flex items-center justify-center">
-                <Camera className="size-12 text-blue-600" />
+            <div className="text-center py-16 space-y-6">
+              <div className="mx-auto w-24 h-24 bg-primary/10 rounded-3xl flex items-center justify-center border border-primary/20 shadow-[0_0_30px_rgba(0,236,255,0.1)] group">
+                <Camera className="size-12 text-primary group-hover:scale-110 transition-transform" />
               </div>
-              <div>
-                <h3 className="text-lg font-semibold mb-2">Ready to scan</h3>
-                <p className="text-sm text-gray-600">
-                  Click the button below to start scanning the QR code
+              <div className="space-y-2">
+                <h3 className="text-xl font-bold text-foreground">SENSOR READY</h3>
+                <p className="text-sm text-muted-foreground font-mono uppercase tracking-tighter max-w-[280px] mx-auto">
+                  Click below to activate the optical imaging system
                 </p>
               </div>
               <Button
@@ -140,9 +142,10 @@ const ScanQR: React.FC = () => {
                   startScanning();
                 }}
                 size="lg"
+                className="w-full sm:w-auto h-14 px-8 bg-primary hover:bg-primary/90 text-primary-foreground font-black uppercase tracking-widest rounded-xl transition-all shadow-[0_0_20px_rgba(0,236,255,0.2)] active:scale-95"
               >
-                <QrCode className="size-5 mr-2" />
-                Start Scanning
+                <QrCode className="size-5 mr-3" />
+                INITIATE SCAN
               </Button>
             </div>
           )}
@@ -157,9 +160,9 @@ const ScanQR: React.FC = () => {
           )}
 
           {result && (
-            <Alert variant={result.success ? 'default' : 'destructive'}>
+            <Alert variant={result.success ? 'default' : 'destructive'} className={`${result.success ? 'bg-green-500/10 border-green-500/20 text-green-400' : 'bg-destructive/10 border-destructive/20 text-destructive'} rounded-xl border`}>
               {result.success ? <CheckCircle className="size-4" /> : <XCircle className="size-4" />}
-              <AlertDescription>{result.message}</AlertDescription>
+              <AlertDescription className="font-mono text-[10px] uppercase tracking-wider">{result.message}</AlertDescription>
             </Alert>
           )}
 
@@ -182,42 +185,46 @@ const ScanQR: React.FC = () => {
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Instructions</CardTitle>
+      <Card className="glass-card border-border bg-card/40">
+        <CardHeader className="bg-white/5 border-b border-white/5">
+          <CardTitle className="text-foreground uppercase tracking-widest text-sm">Operation Manual</CardTitle>
         </CardHeader>
-        <CardContent>
-          <ol className="list-decimal list-inside space-y-2 text-sm text-gray-600">
-            <li>Click "Start Scanning" to activate your device camera</li>
-            <li>Allow camera permissions when prompted</li>
-            <li>Position the QR code within the scanning box</li>
-            <li>Hold steady until the code is scanned</li>
-            <li>Your attendance will be marked automatically</li>
+        <CardContent className="pt-6">
+          <ol className="list-decimal list-inside space-y-3 text-xs text-muted-foreground font-mono uppercase tracking-tighter">
+            <li>Click "INITIATE SCAN" to activate primary sensor</li>
+            <li>Grant security clearance for camera access</li>
+            <li>Align QR certificate within the capture frame</li>
+            <li>Maintain steady handshake until data syncs</li>
+            <li>Attendance log will be updated in real-time</li>
           </ol>
 
-          <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-            <p className="text-sm text-yellow-800">
-              <strong>Note:</strong> You can only mark attendance during the active attendance session.
-              Make sure you are at the correct training venue.
+          <div className="mt-6 p-4 bg-primary/5 border border-primary/20 rounded-xl relative overflow-hidden">
+            <div className="absolute top-0 left-0 w-1 h-full bg-primary" />
+            <p className="text-[10px] text-primary font-bold uppercase tracking-widest">
+              MISSION ADVISORY:
+            </p>
+            <p className="text-[10px] text-muted-foreground mt-1 uppercase leading-relaxed">
+              Data uplink is only active during the scheduled session window.
+              Ensure GPS coordinates match the training objective site.
             </p>
           </div>
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Having trouble scanning?</CardTitle>
+      <Card className="glass-card border-border bg-card/40">
+        <CardHeader className="bg-white/5 border-b border-white/5">
+          <CardTitle className="text-foreground uppercase tracking-widest text-sm">System Diagnostics</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-2">
-          <p className="text-sm text-gray-600">If you're unable to scan the QR code:</p>
-          <ul className="list-disc list-inside text-sm text-gray-600 space-y-1 ml-2">
-            <li>Ensure your camera has permission to access</li>
-            <li>Check that there's adequate lighting</li>
-            <li>Make sure the QR code is clearly visible and not damaged</li>
-            <li>Try cleaning your camera lens</li>
+        <CardContent className="space-y-4 pt-6">
+          <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold">In case of optical failure:</p>
+          <ul className="list-disc list-inside text-xs text-muted-foreground space-y-2 ml-2 font-mono uppercase tracking-tighter">
+            <li>Verify camera permissions in system settings</li>
+            <li>Ensure adequate photon levels (environmental lighting)</li>
+            <li>Inspect physical QR medium for data corruption</li>
+            <li>Recalibrate lens (clean with soft cloth)</li>
           </ul>
-          <Button onClick={handleManualEntry} variant="outline" className="w-full mt-4">
-            Report Issue / Request Manual Entry
+          <Button onClick={handleManualEntry} variant="outline" className="w-full mt-4 h-12 border-primary/20 text-primary hover:bg-primary/10 font-bold uppercase tracking-widest text-[10px] rounded-xl">
+            REPORT SYSTEM ANOMALY
           </Button>
         </CardContent>
       </Card>
