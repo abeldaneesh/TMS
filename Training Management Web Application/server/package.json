@@ -21,9 +21,7 @@
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^9.2.1",
     "multer": "^2.0.2",
-    "uuid": "^13.0.0"
-  },
-  "devDependencies": {
+    "uuid": "^13.0.0",
     "@types/bcryptjs": "^2.4.6",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
