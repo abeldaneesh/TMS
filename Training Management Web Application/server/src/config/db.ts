@@ -6,7 +6,7 @@ dotenv.config();
 
 const connectDB = async () => {
     try {
-        const mongoURI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/training_db';
+        const mongoURI = process.env.MONGODB_URI || process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/training_db';
         console.log(`Connecting to MongoDB at: ${mongoURI}...`);
         await mongoose.connect(mongoURI);
         console.log('MongoDB Connected...');
