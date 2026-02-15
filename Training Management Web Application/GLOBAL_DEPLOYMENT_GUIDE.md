@@ -28,6 +28,7 @@ To make your Android app work globally (outside your local network), you need to
     *   Connect your GitHub repository.
 3.  **Configure**:
     *   Render will detect `render.yaml`.
+    
     *   It will ask for `MONGODB_URI`.
     *   **Paste your Connection String**: `mongodb+srv://abeldaneesh_db_user:TheDarkAvenger%40@abelswolf.ipogkci.mongodb.net/?appName=abelswolf`
     *   *(Note: I replaced the double `@@` with `%40@` assuming your password ends with `@`. If your password is just `TheDarkAvenger`, remove the `%40`.)*
