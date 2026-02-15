@@ -51,11 +51,11 @@ router.post('/profile-picture', authenticateToken, upload.single('profilePicture
         const protocol = req.protocol;
         const host = req.get('host');
         const filePath = `/uploads/profiles/${req.file.filename}`;
-        const fullUrl = `${protocol}://${host}${filePath}`;
+        // const fullUrl = `${protocol}://${host}${filePath}`; // Removed full URL for portability
 
         res.status(200).json({
             message: 'File uploaded successfully',
-            url: fullUrl,
+            url: filePath, // Using relative path as 'url' to maintain frontend compatibility
             path: filePath
         });
     } catch (error: any) {

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
-import api from '../../services/api';
+import api, { BASE_URL } from '../../services/api';
 import {
   LayoutDashboard, Calendar, Users, Building2, DoorOpen,
   FileText, Settings, Bell, Menu, X, LogOut, QrCode,
@@ -192,12 +192,12 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 </div>
                 <div>
                   <h1 className="font-bold text-lg text-foreground tracking-tight">DMO <span className="text-secondary">SYSTEMS</span></h1>
-                  <p className="text-[10px] text-primary font-mono uppercase tracking-[0.2em] opacity-80">Mission Control Center</p>
+                  <p className="text-[10px] text-primary font-mono uppercase tracking-[0.2em] opacity-80 whitespace-nowrap hidden xs:block">Mission Control Center</p>
                 </div>
               </div>
             </div>
 
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 sm:gap-4 flex-shrink-0">
               <Button
                 variant="ghost"
                 size="sm"
@@ -257,11 +257,11 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="flex items-center gap-2 hover:bg-white/5 px-2 py-1 rounded-xl transition-all group">
+                  <Button variant="ghost" className="flex items-center gap-2 hover:bg-white/5 px-2 py-1 rounded-xl transition-all group shrink-0">
                     <div className="relative">
                       <Avatar className="size-8 border border-primary/20 group-hover:border-primary/50 transition-colors">
                         {user.profilePicture ? (
-                          <AvatarImage src={user.profilePicture} alt={user.name} />
+                          <AvatarImage src={user.profilePicture.startsWith('http') ? user.profilePicture : `${BASE_URL}${user.profilePicture}`} alt={user.name} crossOrigin="anonymous" />
                         ) : null}
                         <AvatarFallback className="bg-secondary text-white text-sm font-bold">
                           {getInitials(user.name)}

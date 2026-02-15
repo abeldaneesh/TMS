@@ -158,47 +158,7 @@ const Dashboard: React.FC = () => {
         </p>
       </div>
 
-      {/* User Info & Quick Status */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card className="glass-card p-6 flex flex-col justify-center border-border hover:border-primary/50 transition-colors bg-card/40">
-          <div className="flex items-center gap-4">
-            <div className="p-3 rounded-xl bg-primary/10 text-primary border border-primary/20 shadow-lg glow-primary">
-              <ShieldCheck className="size-6" />
-            </div>
-            <div className="flex-1">
-              <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-widest">Operator</h2>
-              <p className="text-xl font-black text-foreground uppercase tracking-tight">{user?.name || 'UNKNOWN'}</p>
-            </div>
-          </div>
-        </Card>
 
-        <Card className="glass-card p-6 flex flex-col justify-center border-border hover:border-primary/50 transition-colors bg-card/40">
-          <div className="flex items-center gap-4">
-            <div className="p-3 rounded-xl bg-secondary/10 text-secondary border border-secondary/20 shadow-lg shadow-secondary/5">
-              <Activity className="size-6" />
-            </div>
-            <div className="flex-1">
-              <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-widest">Status</h2>
-              <div className="flex items-center gap-2">
-                <div className="size-2 rounded-full bg-emerald-500 animate-pulse" />
-                <p className="text-xl font-black text-foreground uppercase tracking-tight">ONLINE</p>
-              </div>
-            </div>
-          </div>
-        </Card>
-
-        <Card className="glass-card p-6 flex flex-col justify-center border-border hover:border-primary/50 transition-colors bg-card/40">
-          <div className="flex items-center gap-4">
-            <div className="p-3 rounded-xl bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 shadow-lg shadow-emerald-500/5">
-              <Users className="size-6" />
-            </div>
-            <div className="flex-1">
-              <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-widest">Clearance</h2>
-              <p className="text-xl font-black text-foreground uppercase tracking-tight">{user?.role || 'RESTRICTED'}</p>
-            </div>
-          </div>
-        </Card>
-      </div>
 
       {/* Main Content Grid - Operational Controls (Hidden for Participants) */}
       {user?.role !== 'participant' && (
@@ -241,29 +201,7 @@ const Dashboard: React.FC = () => {
                 ))}
             </div>
 
-            {/* Recent Activity Feed */}
-            <Card className="glass-card border-border bg-card/40">
-              <CardHeader className="border-b border-border">
-                <CardTitle className="text-lg font-black text-foreground uppercase tracking-wide flex items-center gap-2">
-                  <HistoryIcon className="size-5 text-primary" />
-                  Recent Uplinks
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="pt-6">
-                <div className="space-y-6">
-                  {[1, 2, 3].map((i) => (
-                    <div key={i} className="flex items-center gap-4 group">
-                      <div className="text-[10px] font-mono text-muted-foreground/50 w-16 text-right">0{i}:42:1{i}</div>
-                      <div className="w-2 h-2 rounded-full bg-primary/20 group-hover:bg-primary group-hover:shadow-[0_0_10px_rgba(0,236,255,0.5)] transition-all" />
-                      <div className="flex-1 p-3 rounded-lg bg-muted/30 border border-border group-hover:border-primary/30 transition-colors">
-                        <p className="text-sm font-bold text-foreground">SYSTEM_CHECK_COMPLETE</p>
-                        <p className="text-xs text-muted-foreground font-mono mt-0.5">Diagnosing core modules...</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
+
           </div>
 
           {/* System Stats Sidebar */}

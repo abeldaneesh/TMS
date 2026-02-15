@@ -2,10 +2,11 @@ import React, { useEffect, useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { nominationsApi, trainingsApi, usersApi, institutionsApi } from '../../services/api';
 import { Nomination, Training, User, Institution } from '../../types';
-import { CheckCircle, XCircle, Clock, Users, Search } from 'lucide-react';
+import { CheckCircle, XCircle, Clock, Users, Search, Check, Loader2 } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Badge } from '../components/ui/badge';
+import { Checkbox } from '../components/ui/checkbox';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import {
   Dialog,
@@ -33,7 +34,7 @@ const Nominations: React.FC = () => {
   const [rejectionReason, setRejectionReason] = useState('');
   const [showNominateDialog, setShowNominateDialog] = useState(false);
   const [selectedTrainingId, setSelectedTrainingId] = useState('');
-  const [selectedParticipantId, setSelectedParticipantId] = useState('');
+  const [selectedParticipantIds, setSelectedParticipantIds] = useState<string[]>([]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -151,28 +152,53 @@ const Nominations: React.FC = () => {
     }
   };
 
+  const toggleParticipantSelection = (participantId: string) => {
+    setSelectedParticipantIds(prev =>
+      prev.includes(participantId)
+        ? prev.filter(id => id !== participantId)
+        : [...prev, participantId]
+    );
+  };
+
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      const allParticipantIds = users
+        .filter(u => u.role === 'participant')
+        .map(u => u.id);
+      setSelectedParticipantIds(allParticipantIds);
+    } else {
+      setSelectedParticipantIds([]);
+    }
+  };
+
   const handleNominate = async () => {
-    if (!user || !selectedTrainingId || !selectedParticipantId) return;
+    if (!user || !selectedTrainingId || selectedParticipantIds.length === 0) return;
 
+    setLoading(true);
     try {
-      const participant = users.find(u => u.id === selectedParticipantId);
-      if (!participant || !participant.institutionId) {
-        toast.error('Participant has no institution assigned');
-        return;
-      }
-
-      await nominationsApi.create({
-        trainingId: selectedTrainingId,
-        participantId: selectedParticipantId,
-        institutionId: participant.institutionId,
-        status: 'nominated',
-        nominatedBy: user.id,
+      const nominationsToCreate = selectedParticipantIds.map(participantId => {
+        const participant = users.find(u => u.id === participantId);
+        if (!participant || !participant.institutionId) {
+          throw new Error(`Participant ${participant?.name || participantId} has no institution assigned`);
+        }
+        return {
+          trainingId: selectedTrainingId,
+          participantId: participantId,
+          institutionId: participant.institutionId,
+          status: 'nominated' as const,
+          nominatedBy: user.id,
+        };
       });
 
-      toast.success('Participant nominated successfully');
+      // Sequential creation for safety with current API
+      for (const nomination of nominationsToCreate) {
+        await nominationsApi.create(nomination);
+      }
+
+      toast.success(`${selectedParticipantIds.length} participants nominated successfully`);
       setShowNominateDialog(false);
       setSelectedTrainingId('');
-      setSelectedParticipantId('');
+      setSelectedParticipantIds([]);
 
       // Refresh nominations
       const updatedNominations = await nominationsApi.getAll(
@@ -183,8 +209,10 @@ const Nominations: React.FC = () => {
       setNominations(updatedNominations);
     } catch (error: any) {
       console.error('Nomination error:', error);
-      const errorMessage = error.response?.data?.message || error.message || 'Error nominating participant';
+      const errorMessage = error.response?.data?.message || error.message || 'Error nominating participants';
       toast.error(errorMessage);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -220,7 +248,7 @@ const Nominations: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-end">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 md:gap-0">
         <div>
           <h1 className="text-3xl font-extrabold tracking-tighter text-foreground flex items-center gap-3">
             <Users className="size-8 text-primary animate-pulse-glow" />
@@ -445,28 +473,51 @@ const Nominations: React.FC = () => {
               </select>
             </div>
             <div>
-              <Label htmlFor="participant">Participant</Label>
-              <select
-                id="participant"
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                value={selectedParticipantId}
-                onChange={(e) => setSelectedParticipantId(e.target.value)}
-              >
-                <option value="">Select a participant</option>
+              <Label htmlFor="participant" className="mb-3 block">Participants ({selectedParticipantIds.length} selected)</Label>
+              <div className="flex items-center space-x-2 mb-4 p-2 bg-muted/50 rounded-lg">
+                <Checkbox
+                  id="select-all"
+                  checked={selectedParticipantIds.length === users.filter(u => u.role === 'participant').length && users.filter(u => u.role === 'participant').length > 0}
+                  onCheckedChange={(checked) => handleSelectAll(checked as boolean)}
+                />
+                <label htmlFor="select-all" className="text-sm font-medium leading-none cursor-pointer">SELECT ALL PERSONNEL</label>
+              </div>
+              <div className="max-h-[300px] overflow-y-auto space-y-2 pr-2 custom-scrollbar">
                 {users.filter(u => u.role === 'participant').map((u) => (
-                  <option key={u.id} value={u.id}>
-                    {u.name} ({u.email})
-                  </option>
+                  <div
+                    key={u.id}
+                    className={`flex items-center space-x-3 p-3 rounded-xl border transition-all cursor-pointer ${selectedParticipantIds.includes(u.id)
+                      ? 'bg-primary/10 border-primary/40'
+                      : 'bg-card/50 border-white/5 hover:bg-white/5'
+                      }`}
+                    onClick={() => toggleParticipantSelection(u.id)}
+                  >
+                    <Checkbox
+                      id={`p-${u.id}`}
+                      checked={selectedParticipantIds.includes(u.id)}
+                      onCheckedChange={() => toggleParticipantSelection(u.id)}
+                      onClick={(e) => e.stopPropagation()}
+                    />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-bold text-foreground truncate">{u.name}</p>
+                      <p className="text-[10px] text-muted-foreground font-mono truncate uppercase">{u.designation} • {u.institutionId ? getInstitutionName(u.institutionId) : 'NO SECTOR'}</p>
+                    </div>
+                  </div>
                 ))}
-              </select>
+              </div>
             </div>
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowNominateDialog(false)}>
-              Cancel
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="ghost" onClick={() => setShowNominateDialog(false)} className="text-muted-foreground">
+              CANCEL
             </Button>
-            <Button onClick={handleNominate} disabled={!selectedTrainingId || !selectedParticipantId}>
-              Nominate
+            <Button
+              onClick={handleNominate}
+              disabled={!selectedTrainingId || selectedParticipantIds.length === 0 || loading}
+              className="bg-primary text-primary-foreground font-bold tracking-widest shadow-[0_0_15px_rgba(0,236,255,0.3)]"
+            >
+              {loading ? <Loader2 className="size-4 animate-spin mr-2" /> : <CheckCircle className="size-4 mr-2" />}
+              CONFIRM DEPLOYMENT
             </Button>
           </DialogFooter>
         </DialogContent>

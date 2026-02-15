@@ -21,6 +21,7 @@ import autoTable from 'jspdf-autotable';
 import Papa from 'papaparse';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
+import { downloadFile } from '../../utils/fileDownloader';
 
 const Reports: React.FC = () => {
   const { user } = useAuth();
@@ -116,9 +117,14 @@ const Reports: React.FC = () => {
         headStyles: { fillColor: [0, 236, 255] },
       });
 
-      // Save PDF
-      doc.save(`Mission_Report_${training.title.replace(/\s+/g, '_')}_${format(new Date(), 'yyyy-MM-dd')}.pdf`);
-      toast.success('Mission Intel PDF downloaded!');
+      // Download PDF
+      const pdfBlob = doc.output('blob');
+      await downloadFile(
+        pdfBlob,
+        `Mission_Report_${training.title.replace(/\s+/g, '_')}_${format(new Date(), 'yyyy-MM-dd')}.pdf`,
+        'application/pdf'
+      );
+      toast.success('Mission Intel PDF processing complete!');
     } catch (error) {
       console.error('Error generating PDF:', error);
       toast.error('Mission Debrief PDF formation failed');
@@ -158,10 +164,11 @@ const Reports: React.FC = () => {
 
       const csv = Papa.unparse(csvData);
       const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-      const link = document.createElement('a');
-      link.href = URL.createObjectURL(blob);
-      link.download = `Mission_Data_${training.title.replace(/\s+/g, '_')}_${format(new Date(), 'yyyy-MM-dd')}.csv`;
-      link.click();
+      await downloadFile(
+        blob,
+        `Mission_Data_${training.title.replace(/\s+/g, '_')}_${format(new Date(), 'yyyy-MM-dd')}.csv`,
+        'text/csv'
+      );
       toast.success('Mission Data CSV exported!');
     } catch (error) {
       console.error('Error generating CSV:', error);
@@ -218,7 +225,12 @@ const Reports: React.FC = () => {
         headStyles: { fillColor: [110, 64, 201] },
       });
 
-      doc.save(`Sector_Report_${institution.name.replace(/\s+/g, '_')}_${format(new Date(), 'yyyy-MM-dd')}.pdf`);
+      const pdfBlob = doc.output('blob');
+      await downloadFile(
+        pdfBlob,
+        `Sector_Report_${institution.name.replace(/\s+/g, '_')}_${format(new Date(), 'yyyy-MM-dd')}.pdf`,
+        'application/pdf'
+      );
       toast.success('Sector Audit PDF formation complete');
     } catch (error) {
       console.error('Error generating PDF:', error);
@@ -299,7 +311,12 @@ const Reports: React.FC = () => {
         headStyles: { fillColor: [110, 64, 201] },
       });
 
-      doc.save(`Global_Summary_${format(new Date(), 'yyyy-MM-dd')}.pdf`);
+      const pdfBlob = doc.output('blob');
+      await downloadFile(
+        pdfBlob,
+        `Global_Summary_${format(new Date(), 'yyyy-MM-dd')}.pdf`,
+        'application/pdf'
+      );
       toast.success('Global Intel Deep Link established');
     } catch (error) {
       console.error('Error generating PDF:', error);

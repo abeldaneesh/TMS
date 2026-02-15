@@ -5,7 +5,8 @@ import {
 } from '../types';
 
 const API_URL = (import.meta as any).env.VITE_API_URL || '/api';
-console.log('Active API URL:', API_URL);
+export const BASE_URL = API_URL.replace(/\/api\/?$/, '');
+console.log('Active API URL:', API_URL, 'Base URL:', BASE_URL);
 
 const api = axios.create({
     baseURL: API_URL,

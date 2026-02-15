@@ -9,6 +9,7 @@ import { Clock, QrCode, StopCircle, PlayCircle, AlertTriangle, Download, CheckCi
 import { toast } from 'sonner';
 import QRCodeLib from 'qrcode';
 import { format } from 'date-fns';
+import { downloadFile } from '../../utils/fileDownloader';
 
 interface AttendanceSessionManagerProps {
     trainingId: string;
@@ -135,13 +136,12 @@ const AttendanceSessionManager: React.FC<AttendanceSessionManagerProps> = ({ tra
     const handleDownloadQR = async () => {
         if (!qrCodeUrl) return;
         try {
-            const link = document.createElement('a');
-            link.href = qrCodeUrl;
-            link.download = `attendance-qr-${trainingId}.png`;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            toast.success('QR Code downloaded successfully');
+            await downloadFile(
+                qrCodeUrl,
+                `attendance-qr-${trainingId}.png`,
+                'image/png'
+            );
+            toast.success('QR Code processed successfully');
         } catch (error) {
             console.error('Download failed', error);
             toast.error('Failed to download QR code');

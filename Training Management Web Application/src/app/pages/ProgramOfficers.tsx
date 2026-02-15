@@ -4,7 +4,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/table';
 import { Badge } from '../components/ui/badge';
 import { User } from '../../types';
-import { usersApi } from '../../services/api';
+import { usersApi, BASE_URL } from '../../services/api';
+import { Avatar, AvatarFallback, AvatarImage } from '../components/ui/avatar';
 
 import { Trash2, AlertTriangle, Users, ShieldCheck } from 'lucide-react';
 import { Button } from '../components/ui/button';
@@ -109,9 +110,14 @@ const ProgramOfficers: React.FC = () => {
                                     <TableRow key={officer.id} className="group border-primary/5">
                                         <TableCell className="py-4">
                                             <div className="flex items-center">
-                                                <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-primary/20 to-secondary/20 flex items-center justify-center text-primary font-bold mr-4 border border-primary/30 shadow-[0_0_15px_rgba(0,236,255,0.1)]">
-                                                    {officer.name.charAt(0)}
-                                                </div>
+                                                <Avatar className="h-10 w-10 rounded-xl border border-primary/30 shadow-[0_0_15px_rgba(0,236,255,0.1)] mr-4">
+                                                    {officer.profilePicture && (
+                                                        <AvatarImage src={officer.profilePicture.startsWith('http') ? officer.profilePicture : `${BASE_URL}${officer.profilePicture}`} alt={officer.name} crossOrigin="anonymous" />
+                                                    )}
+                                                    <AvatarFallback className="bg-gradient-to-br from-primary/20 to-secondary/20 text-primary font-bold">
+                                                        {officer.name.charAt(0)}
+                                                    </AvatarFallback>
+                                                </Avatar>
                                                 <div className="flex flex-col">
                                                     <span className="font-bold text-foreground tracking-wide">{officer.name}</span>
                                                     <span className="text-[10px] text-primary/40 font-mono uppercase tracking-tighter">OFFICER ID: {officer.id.substring(0, 12)}...</span>

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
-import { usersApi } from '../../services/api';
+import { usersApi, BASE_URL } from '../../services/api';
 import { toast } from 'sonner';
 import { User, Lock, Save, Loader2, Camera } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '../components/ui/avatar';
@@ -133,7 +133,7 @@ const Settings: React.FC = () => {
                             <div className="relative group">
                                 <Avatar className="size-20 border-2 border-primary/20">
                                     {profileData.profilePicture && (
-                                        <AvatarImage src={profileData.profilePicture} alt={profileData.name} />
+                                        <AvatarImage src={profileData.profilePicture.startsWith('http') ? profileData.profilePicture : `${BASE_URL}${profileData.profilePicture}`} alt={profileData.name} crossOrigin="anonymous" />
                                     )}
                                     <AvatarFallback className="bg-blue-600 text-white text-xl">
                                         {profileData.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
@@ -166,19 +166,7 @@ const Settings: React.FC = () => {
                         </CardHeader>
                         <CardContent>
                             <form onSubmit={onUpdateProfile} className="space-y-4">
-                                <div className="space-y-2 mb-4">
-                                    <Label htmlFor="profilePicture">Profile Picture URL</Label>
-                                    <div className="flex gap-2">
-                                        <Input
-                                            id="profilePicture"
-                                            name="profilePicture"
-                                            placeholder="https://example.com/photo.jpg"
-                                            value={profileData.profilePicture}
-                                            onChange={handleProfileChange}
-                                        />
-                                    </div>
-                                    <p className="text-xs text-muted-foreground italic">Provide a URL for your profile image.</p>
-                                </div>
+
 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div className="space-y-2">
