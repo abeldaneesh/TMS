@@ -20,7 +20,7 @@ const Participants: React.FC = () => {
         try {
             setLoading(true);
             const data = await usersApi.getAll({ role: 'participant' });
-            setParticipants(data);
+            setParticipants(Array.isArray(data) ? data : []);
             setError(null);
         } catch (error: any) {
             console.error('Failed to fetch participants', error);
@@ -115,12 +115,12 @@ const Participants: React.FC = () => {
                                                         <AvatarImage src={user.profilePicture.startsWith('http') ? user.profilePicture : `${BASE_URL}${user.profilePicture}`} alt={user.name} crossOrigin="anonymous" />
                                                     )}
                                                     <AvatarFallback className="bg-gradient-to-br from-primary/20 to-secondary/20 text-primary font-bold">
-                                                        {user.name.charAt(0)}
+                                                        {user.name && user.name.length > 0 ? user.name.charAt(0) : '?'}
                                                     </AvatarFallback>
                                                 </Avatar>
                                                 <div className="flex flex-col">
-                                                    <span className="font-bold text-foreground tracking-wide">{user.name}</span>
-                                                    <span className="text-[10px] text-primary/40 font-mono uppercase tracking-tighter">UID: {user.id.substring(0, 12)}...</span>
+                                                    <span className="font-bold text-foreground tracking-wide">{user.name || 'Unknown'}</span>
+                                                    <span className="text-[10px] text-primary/40 font-mono uppercase tracking-tighter">UID: {(user.id || 'N/A').substring(0, 12)}...</span>
                                                 </div>
                                             </div>
                                         </TableCell>

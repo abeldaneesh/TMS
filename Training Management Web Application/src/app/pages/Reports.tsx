@@ -20,6 +20,7 @@ import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import Papa from 'papaparse';
 import { format } from 'date-fns';
+import { safeFormatDate } from '../../utils/date';
 import { toast } from 'sonner';
 import { downloadFile } from '../../utils/fileDownloader';
 
@@ -41,8 +42,8 @@ const Reports: React.FC = () => {
           trainingsApi.getAll(user.role === 'program_officer' ? { createdById: user.id } : {}),
           institutionsApi.getAll(),
         ]);
-        setTrainings(trainingsData);
-        setInstitutions(institutionsData);
+        setTrainings(Array.isArray(trainingsData) ? trainingsData : []);
+        setInstitutions(Array.isArray(institutionsData) ? institutionsData : []);
       } catch (error) {
         console.error('Error fetching data:', error);
         toast.error('Failed to load report data');
@@ -78,11 +79,11 @@ const Reports: React.FC = () => {
       doc.text(`Mission Objective: ${training.title}`, 14, 35);
       doc.setFontSize(10);
       doc.text(`Program Sector: ${training.program}`, 14, 42);
-      doc.text(`Deployment Date: ${training.date ? format(new Date(training.date), 'MMM dd, yyyy') : 'N/A'}`, 14, 49);
+      doc.text(`Deployment Date: ${safeFormatDate(training.date)}`, 14, 49);
       doc.text(`Operational Window: ${training.startTime} - ${training.endTime}`, 14, 56);
       doc.text(`Sector Location: ${hall?.name || 'N/A'}`, 14, 63);
       doc.text(`Commanding Officer: ${trainer?.name || 'N/A'}`, 14, 70);
-      doc.text(`Mission Status: ${training.status.toUpperCase()}`, 14, 77);
+      doc.text(`Mission Status: ${(training.status || '').toUpperCase()}`, 14, 77);
 
       // Summary Statistics
       doc.setFontSize(14);
@@ -121,7 +122,7 @@ const Reports: React.FC = () => {
       const pdfBlob = doc.output('blob');
       await downloadFile(
         pdfBlob,
-        `Mission_Report_${training.title.replace(/\s+/g, '_')}_${format(new Date(), 'yyyy-MM-dd')}.pdf`,
+        `Mission_Report_${training.title.replace(/\s+/g, '_')}_${safeFormatDate(new Date(), 'yyyy-MM-dd')}.pdf`,
         'application/pdf'
       );
       toast.success('Mission Intel PDF processing complete!');
@@ -150,7 +151,7 @@ const Reports: React.FC = () => {
         return {
           'Mission Title': training.title,
           'Sector': training.program,
-          'Date': training.date ? format(new Date(training.date), 'yyyy-MM-dd') : 'N/A',
+          'Date': safeFormatDate(training.date, 'yyyy-MM-dd'),
           'Personnel': participant?.name || 'N/A',
           'Specialization': participant?.designation || 'N/A',
           'Organization': institution?.name || 'N/A',
@@ -158,7 +159,7 @@ const Reports: React.FC = () => {
           'Comm Link': participant?.email || 'N/A',
           'Nomination Status': nom.status,
           'Deployment Confirmed': attendanceRecord ? 'Yes' : 'No',
-          'Timestamp': attendanceRecord ? format(new Date(attendanceRecord.timestamp), 'yyyy-MM-dd HH:mm:ss') : 'N/A',
+          'Timestamp': safeFormatDate(attendanceRecord?.timestamp, 'yyyy-MM-dd HH:mm:ss'),
         };
       });
 
@@ -166,7 +167,7 @@ const Reports: React.FC = () => {
       const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
       await downloadFile(
         blob,
-        `Mission_Data_${training.title.replace(/\s+/g, '_')}_${format(new Date(), 'yyyy-MM-dd')}.csv`,
+        `Mission_Data_${training.title.replace(/\s+/g, '_')}_${safeFormatDate(new Date(), 'yyyy-MM-dd')}.csv`,
         'text/csv'
       );
       toast.success('Mission Data CSV exported!');
@@ -195,7 +196,7 @@ const Reports: React.FC = () => {
       doc.setFontSize(10);
       doc.text(`Classification: ${institution.type}`, 14, 42);
       doc.text(`Coordinates: ${institution.location}`, 14, 49);
-      doc.text(`Audit Date: ${format(new Date(), 'MMM dd, yyyy')}`, 14, 56);
+      doc.text(`Audit Date: ${safeFormatDate(new Date())}`, 14, 56);
 
       // Summary Statistics
       doc.setFontSize(14);
@@ -228,7 +229,7 @@ const Reports: React.FC = () => {
       const pdfBlob = doc.output('blob');
       await downloadFile(
         pdfBlob,
-        `Sector_Report_${institution.name.replace(/\s+/g, '_')}_${format(new Date(), 'yyyy-MM-dd')}.pdf`,
+        `Sector_Report_${institution.name.replace(/\s+/g, '_')}_${safeFormatDate(new Date(), 'yyyy-MM-dd')}.pdf`,
         'application/pdf'
       );
       toast.success('Sector Audit PDF formation complete');
@@ -253,8 +254,8 @@ const Reports: React.FC = () => {
       doc.text('Global Mission Summary', 14, 20);
 
       doc.setFontSize(10);
-      doc.text(`Audit Timestamp: ${format(new Date(), 'MMM dd, yyyy HH:mm')}`, 14, 30);
-      doc.text(`Authorized Officer: ${user?.name}`, 14, 37);
+      doc.text(`Audit Timestamp: ${safeFormatDate(new Date(), 'MMM dd, yyyy HH:mm')}`, 14, 30);
+      doc.text(`Authorized Officer: ${user?.name || 'N/A'}`, 14, 37);
 
       // Overall Statistics
       doc.setFontSize(14);
@@ -314,7 +315,7 @@ const Reports: React.FC = () => {
       const pdfBlob = doc.output('blob');
       await downloadFile(
         pdfBlob,
-        `Global_Summary_${format(new Date(), 'yyyy-MM-dd')}.pdf`,
+        `Global_Summary_${safeFormatDate(new Date(), 'yyyy-MM-dd')}.pdf`,
         'application/pdf'
       );
       toast.success('Global Intel Deep Link established');
@@ -434,7 +435,7 @@ const Reports: React.FC = () => {
                   <SelectContent className="bg-popover border-border/50 text-foreground font-mono text-xs">
                     {trainings.map((training) => (
                       <SelectItem key={training.id} value={training.id}>
-                        {training.title.toUpperCase()} — {training.date ? format(new Date(training.date), 'MM.dd.yy') : 'DATE N/A'}
+                        {training.title.toUpperCase()} — {safeFormatDate(training.date, 'MM.dd.yy')}
                       </SelectItem>
                     ))}
                   </SelectContent>

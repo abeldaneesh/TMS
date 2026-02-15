@@ -11,6 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../co
 import { Progress } from '../components/ui/progress';
 import { Badge } from '../components/ui/badge';
 import { format } from 'date-fns';
+import { safeFormatDate } from '../../utils/date';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 
 const Dashboard: React.FC = () => {
@@ -25,16 +26,17 @@ const Dashboard: React.FC = () => {
       if (!user) return;
 
       try {
-        const [statsData, allTrainings] = await Promise.all([
+        const [statsData, allTrainingsData] = await Promise.all([
           analyticsApi.getDashboardStats(user.id, user.role),
           trainingsApi.getAll(user.role === 'program_officer' ? { createdById: user.id } : {}),
         ]);
 
+        const allTrainings = Array.isArray(allTrainingsData) ? allTrainingsData : [];
         setStats(statsData);
 
         // Get upcoming trainings (next 5)
         const upcoming = allTrainings
-          .filter(t => new Date(t.date) > new Date() && t.status !== 'cancelled')
+          .filter(t => t && t.date && new Date(t.date) > new Date() && t.status !== 'cancelled')
           .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
           .slice(0, 5);
 
@@ -398,7 +400,7 @@ const Dashboard: React.FC = () => {
                     <div className="grid grid-cols-2 gap-y-2 gap-x-4 mt-5">
                       <span className="flex items-center gap-2 text-[10px] text-primary/70 font-mono uppercase tracking-tighter">
                         <Calendar className="size-3" />
-                        {format(new Date(training.date), 'MMM dd, yyyy')}
+                        {safeFormatDate(training.date)}
                       </span>
                       <span className="flex items-center gap-2 text-[10px] text-secondary/70 font-mono uppercase tracking-tighter">
                         <Clock className="size-3" />

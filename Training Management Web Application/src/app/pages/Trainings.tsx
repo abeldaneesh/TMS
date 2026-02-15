@@ -12,6 +12,8 @@ import { Input } from '../components/ui/input';
 import { Badge } from '../components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { format } from 'date-fns';
+import { safeFormatDate } from '../../utils/date';
+import { toast } from 'sonner';
 import {
   Select,
   SelectContent,
@@ -57,7 +59,8 @@ const Trainings: React.FC = () => {
         ]);
 
         // Adapt real API data to frontend types (handling missing fields)
-        const adaptedTrainings = trainingsRes.data.map((t: any) => ({
+        const rawTrainings = Array.isArray(trainingsRes.data) ? trainingsRes.data : [];
+        const adaptedTrainings = rawTrainings.map((t: any) => ({
           ...t,
           requiredInstitutions: t.requiredInstitutions || [],
           targetAudience: t.targetAudience || 'General',
@@ -65,8 +68,9 @@ const Trainings: React.FC = () => {
         }));
 
         setTrainings(adaptedTrainings);
-        setHalls(hallsRes.data);
-        setTrainers(usersRes.data.filter((u: any) => u.role === 'program_officer'));
+        setHalls(Array.isArray(hallsRes.data) ? hallsRes.data : []);
+        const rawUsers = Array.isArray(usersRes.data) ? usersRes.data : [];
+        setTrainers(rawUsers.filter((u: any) => u.role === 'program_officer'));
       } catch (error) {
         console.error('Error fetching trainings:', error);
       } finally {
@@ -231,7 +235,7 @@ const Trainings: React.FC = () => {
                         </div>
                         <div className="flex flex-col">
                           <span className="text-[9px] text-primary/40 font-bold">DATE:</span>
-                          <span>{format(new Date(training.date), 'MMM dd, yyyy')}</span>
+                          <span>{safeFormatDate(training.date)}</span>
                         </div>
                       </div>
                       <div className="flex items-center gap-3 text-muted-foreground group-hover:text-foreground transition-colors">
@@ -335,8 +339,9 @@ const Trainings: React.FC = () => {
                                     try {
                                       await api.patch(`/trainings/${training.id}/status`, { status: 'completed' });
                                       setTrainings(trainings.map(t => t.id === training.id ? { ...t, status: 'completed' } : t));
+                                      toast.success('Mission marked as complete');
                                     } catch (e) {
-                                      alert('Status update failed.');
+                                      toast.error('Status update failed');
                                     }
                                   }
                                 }}
@@ -353,8 +358,9 @@ const Trainings: React.FC = () => {
                                     try {
                                       await api.patch(`/trainings/${training.id}/status`, { status: 'cancelled' });
                                       setTrainings(trainings.map(t => t.id === training.id ? { ...t, status: 'cancelled' } : t));
+                                      toast.success('Mission protocol aborted');
                                     } catch (e) {
-                                      alert('Status update failed.');
+                                      toast.error('Status update failed');
                                     }
                                   }
                                 }}

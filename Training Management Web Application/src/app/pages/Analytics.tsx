@@ -11,6 +11,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '../components/ui/select';
+import { safeFormatDate } from '../../utils/date';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
   ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell
@@ -31,11 +32,14 @@ const Analytics: React.FC = () => {
           trainingsApi.getAll(),
           institutionsApi.getAll(),
         ]);
-        setTrainings(trainingsData);
-        setInstitutions(institutionsData);
+        const cleanTrainings = Array.isArray(trainingsData) ? trainingsData : [];
+        const cleanInstitutions = Array.isArray(institutionsData) ? institutionsData : [];
 
-        if (trainingsData.length > 0) {
-          setSelectedTraining(trainingsData[0].id);
+        setTrainings(cleanTrainings);
+        setInstitutions(cleanInstitutions);
+
+        if (cleanTrainings.length > 0) {
+          setSelectedTraining(cleanTrainings[0].id);
         }
       } catch (error) {
         console.error('Error fetching data:', error);
@@ -68,7 +72,8 @@ const Analytics: React.FC = () => {
     );
   }
 
-  const programData = trainings.reduce((acc, training) => {
+  const programData = Array.isArray(trainings) ? trainings.reduce((acc, training) => {
+    if (!training || !training.program) return acc;
     const existing = acc.find(item => item.program === training.program);
     if (existing) {
       existing.count++;
@@ -76,13 +81,13 @@ const Analytics: React.FC = () => {
       acc.push({ program: training.program, count: 1 });
     }
     return acc;
-  }, [] as { program: string; count: number }[]);
+  }, [] as { program: string; count: number }[]) : [];
 
   const statusData = [
-    { status: 'Scheduled', count: trainings.filter(t => t.status === 'scheduled').length, color: '#00ecff' },
-    { status: 'Completed', count: trainings.filter(t => t.status === 'completed').length, color: '#6e40c9' },
-    { status: 'Ongoing', count: trainings.filter(t => t.status === 'ongoing').length, color: '#238636' },
-    { status: 'Cancelled', count: trainings.filter(t => t.status === 'cancelled').length, color: '#f85149' },
+    { status: 'Scheduled', count: (Array.isArray(trainings) ? trainings : []).filter(t => t.status === 'scheduled').length, color: '#00ecff' },
+    { status: 'Completed', count: (Array.isArray(trainings) ? trainings : []).filter(t => t.status === 'completed').length, color: '#6e40c9' },
+    { status: 'Ongoing', count: (Array.isArray(trainings) ? trainings : []).filter(t => t.status === 'ongoing').length, color: '#238636' },
+    { status: 'Cancelled', count: (Array.isArray(trainings) ? trainings : []).filter(t => t.status === 'cancelled').length, color: '#f85149' },
   ];
 
   return (
