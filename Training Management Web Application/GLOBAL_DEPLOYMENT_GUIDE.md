@@ -42,7 +42,7 @@ To make your Android app work globally (outside your local network), you need to
     *   Connect your GitHub repository.
 3.  **Configuration**:
     *   **Name**: `dmo-training-api`
-    *   **Root Directory**: `server`
+    *   **Root Directory**: `Training Management Web Application/server`
     *   **Environment**: `Node`
     *   **Build Command**: `npm install && npm run build`
     *   **Start Command**: `npm start`
