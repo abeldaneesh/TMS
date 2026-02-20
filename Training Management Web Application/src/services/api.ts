@@ -314,6 +314,13 @@ export const nominationsApi = {
         return response.data;
     },
 
+    getBusyParticipants: async (date: string, excludeTrainingId?: string): Promise<string[]> => {
+        const params = new URLSearchParams({ date });
+        if (excludeTrainingId) params.append('excludeTrainingId', excludeTrainingId);
+        const response = await api.get(`/nominations/busy-participants?${params.toString()}`);
+        return response.data;
+    },
+
     getById: async (id: string): Promise<Nomination> => {
         const response = await api.get(`/nominations/${id}`);
         return response.data;

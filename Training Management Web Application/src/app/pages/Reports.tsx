@@ -57,16 +57,22 @@ const Reports: React.FC = () => {
       const training = trainings.find(t => t.id === trainingId);
       if (!training) return;
 
-      const [analytics, nominations, attendanceRecords, allUsers, halls] = await Promise.all([
-        analyticsApi.getTrainingAnalytics(trainingId),
-        nominationsApi.getAll({ trainingId }),
-        attendanceApi.getAll({ trainingId }),
-        usersApi.getAll(),
-        hallsApi.getAll(),
+      const [analyticsRes, nominationsRes, attendanceRes, usersRes, hallsRes] = await Promise.all([
+        analyticsApi.getTrainingAnalytics(trainingId).catch(() => null),
+        nominationsApi.getAll({ trainingId }).catch(() => []),
+        attendanceApi.getAll({ trainingId }).catch(() => []),
+        usersApi.getAll().catch(() => []),
+        hallsApi.getAll().catch(() => []),
       ]);
 
-      const hall = halls.find(h => h.id === training.hallId);
-      const trainer = allUsers.find(u => u.id === training.trainerId);
+      const analytics = analyticsRes || { totalNominated: 0, totalApproved: 0, totalAttended: 0, attendanceRate: 0 };
+      const nominations = Array.isArray(nominationsRes) ? nominationsRes : [];
+      const attendanceRecords = Array.isArray(attendanceRes) ? attendanceRes : [];
+      const allUsers = Array.isArray(usersRes) ? usersRes : [];
+      const halls = Array.isArray(hallsRes) ? hallsRes : [];
+
+      const hall = halls.find(h => h.id === training.hallId || (h as any)._id === training.hallId);
+      const trainer = allUsers.find(u => u.id === training.trainerId || (u as any)._id === training.trainerId);
 
       const doc = new jsPDF();
 
@@ -137,11 +143,15 @@ const Reports: React.FC = () => {
       const training = trainings.find(t => t.id === trainingId);
       if (!training) return;
 
-      const [nominations, attendanceRecords, allUsers] = await Promise.all([
-        nominationsApi.getAll({ trainingId }),
-        attendanceApi.getAll({ trainingId }),
-        usersApi.getAll(),
+      const [nominationsRes, attendanceRes, usersRes] = await Promise.all([
+        nominationsApi.getAll({ trainingId }).catch(() => []),
+        attendanceApi.getAll({ trainingId }).catch(() => []),
+        usersApi.getAll().catch(() => []),
       ]);
+
+      const nominations = Array.isArray(nominationsRes) ? nominationsRes : [];
+      const attendanceRecords = Array.isArray(attendanceRes) ? attendanceRes : [];
+      const allUsers = Array.isArray(usersRes) ? usersRes : [];
 
       const csvData = nominations.map(nom => {
         const participant = allUsers.find(u => u.id === nom.participantId);
@@ -204,9 +214,9 @@ const Reports: React.FC = () => {
       doc.setFontSize(10);
       doc.text(`Total Staff Complement: ${report.totalStaff}`, 14, 77);
       doc.text(`Trained Personnel: ${report.trainedStaff}`, 14, 84);
-      doc.text(`Awaiting Deployment: ${report.untrainedStaff}`, 14, 91);
-      const trainingPercentage = report.totalStaff > 0
-        ? Math.round((report.trainedStaff / report.totalStaff) * 100)
+      doc.text(`Awaiting Deployment: ${report.untrainedStaff || 0}`, 14, 91);
+      const trainingPercentage = (report.totalStaff || 0) > 0
+        ? Math.round(((report.trainedStaff || 0) / report.totalStaff) * 100)
         : 0;
       doc.text(`Sector Preparedness: ${trainingPercentage}%`, 14, 98);
 
@@ -241,11 +251,23 @@ const Reports: React.FC = () => {
 
   const generateDistrictSummaryPDF = async () => {
     try {
-      const [allTrainings, allInstitutions, stats] = await Promise.all([
-        trainingsApi.getAll(),
-        institutionsApi.getAll(),
-        analyticsApi.getDashboardStats(user!.id, user!.role),
+      const [allTrainingsRes, allInstitutionsRes, statsRes] = await Promise.all([
+        trainingsApi.getAll().catch(() => []),
+        institutionsApi.getAll().catch(() => []),
+        analyticsApi.getDashboardStats(user!.id, user!.role).catch(() => null),
       ]);
+
+      const allTrainings = Array.isArray(allTrainingsRes) ? allTrainingsRes : [];
+      const allInstitutions = Array.isArray(allInstitutionsRes) ? allInstitutionsRes : [];
+      const stats = statsRes || {
+        totalTrainings: 0,
+        upcomingTrainings: 0,
+        completedTrainings: 0,
+        totalParticipants: 0,
+        attendanceRate: 0,
+        trainedStaff: 0,
+        untrainedStaff: 0
+      };
 
       const doc = new jsPDF();
 

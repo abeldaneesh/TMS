@@ -113,43 +113,43 @@ const TrainingDetails: React.FC = () => {
     // Simpler: I'll just show the `createdById` name as "Created By" and maybe `trainerId` if it differs.
 
     return (
-        <div className="space-y-6">
-            <Button variant="ghost" onClick={() => navigate('/trainings')} className="gap-2">
-                <ArrowLeft className="size-4" /> Back to Trainings
+        <div className="pb-12 space-y-8 text-foreground">
+            <Button variant="ghost" onClick={() => navigate('/trainings')} className="gap-2 text-muted-foreground hover:text-foreground hover:bg-white/5">
+                <ArrowLeft className="size-4" /> Back to Library
             </Button>
 
-            <div className="flex items-start justify-between">
+            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-3xl font-bold text-gray-900">{training.title}</h1>
-                    <p className="text-xl text-blue-600 font-medium mt-1">{training.program}</p>
+                    <h1 className="text-3xl sm:text-5xl font-bold tracking-tight text-foreground">{training.title}</h1>
+                    <p className="text-xl text-primary font-medium mt-2">{training.program}</p>
                 </div>
-                <Badge className={`text-base px-3 py-1 ${getStatusBadge(training.status)}`}>
-                    {training.status.charAt(0).toUpperCase() + training.status.slice(1)}
+                <Badge className={`text-sm px-4 py-1.5 uppercase tracking-widest ${getStatusBadge(training.status)}`}>
+                    {training.status}
                 </Badge>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 {/* Main Details */}
-                <Card className="md:col-span-2">
+                <Card className="lg:col-span-2 bg-white/5 border-white/10">
                     <CardHeader>
-                        <CardTitle>About this Training</CardTitle>
+                        <CardTitle className="text-xl font-bold">About this Session</CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-6">
                         <div>
-                            <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wider mb-2">Description</h3>
-                            <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">
+                            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">Description</h3>
+                            <p className="text-foreground/90 leading-relaxed whitespace-pre-wrap">
                                 {training.description || 'No description provided.'}
                             </p>
                         </div>
 
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-2 gap-6 pt-6 border-t border-white/10">
                             <div>
-                                <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wider mb-2">Target Audience</h3>
-                                <p className="font-medium">{training.targetAudience || 'General'}</p>
+                                <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Target Audience</h3>
+                                <p className="font-medium text-foreground">{training.targetAudience || 'General'}</p>
                             </div>
                             <div>
-                                <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wider mb-2">Institutions</h3>
-                                <p className="font-medium">{training.requiredInstitutions?.length || 0} Required</p>
+                                <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Institutions</h3>
+                                <p className="font-medium text-foreground">{training.requiredInstitutions?.length || 0} Required</p>
                             </div>
                         </div>
                     </CardContent>
@@ -166,13 +166,13 @@ const TrainingDetails: React.FC = () => {
                     {/* Participant Actions */}
 
                     {user?.role === 'participant' && (
-                        <Card>
+                        <Card className="bg-white/5 border-white/10">
                             <CardHeader>
                                 <CardTitle className="text-lg">Actions</CardTitle>
                             </CardHeader>
                             <CardContent>
                                 <Button
-                                    className="w-full bg-blue-600 hover:bg-blue-700"
+                                    className="w-full"
                                     onClick={() => navigate('/scan-qr')}
                                 >
                                     <QrCode className="size-4 mr-2" /> Scan Attendance QR
@@ -181,87 +181,95 @@ const TrainingDetails: React.FC = () => {
                         </Card>
                     )}
 
-                    <Card>
+                    <Card className="bg-white/5 border-white/10">
                         <CardHeader>
-                            <CardTitle className="text-lg">Logistics</CardTitle>
+                            <CardTitle className="text-lg text-foreground">Logistics</CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-4">
-                            <div className="flex items-start gap-3">
-                                <Calendar className="size-5 text-gray-500 mt-0.5" />
+                            <div className="flex items-start gap-4 p-3 bg-white/5 rounded-xl hover:bg-white/10 transition-colors">
+                                <div className="p-2 bg-secondary/20 rounded-lg text-primary">
+                                    <Calendar className="size-5" />
+                                </div>
                                 <div>
-                                    <p className="text-sm font-medium text-gray-500">Date</p>
-                                    <p className="font-medium">{format(new Date(training.date), 'EEEE, MMMM do, yyyy')}</p>
+                                    <p className="text-xs font-semibold text-muted-foreground uppercase">Date</p>
+                                    <p className="font-medium text-sm mt-0.5">{format(new Date(training.date), 'EEEE, MMMM do, yyyy')}</p>
                                 </div>
                             </div>
 
-                            <div className="flex items-start gap-3">
-                                <Clock className="size-5 text-gray-500 mt-0.5" />
+                            <div className="flex items-start gap-4 p-3 bg-white/5 rounded-xl hover:bg-white/10 transition-colors">
+                                <div className="p-2 bg-secondary/20 rounded-lg text-primary">
+                                    <Clock className="size-5" />
+                                </div>
                                 <div>
-                                    <p className="text-sm font-medium text-gray-500">Time</p>
-                                    <p className="font-medium">{training.startTime} - {training.endTime}</p>
+                                    <p className="text-xs font-semibold text-muted-foreground uppercase">Time</p>
+                                    <p className="font-medium text-sm mt-0.5">{training.startTime} - {training.endTime}</p>
                                 </div>
                             </div>
 
-                            <div className="flex items-start gap-3">
-                                <MapPin className="size-5 text-gray-500 mt-0.5" />
+                            <div className="flex items-start gap-4 p-3 bg-white/5 rounded-xl hover:bg-white/10 transition-colors">
+                                <div className="p-2 bg-secondary/20 rounded-lg text-primary">
+                                    <MapPin className="size-5" />
+                                </div>
                                 <div>
-                                    <p className="text-sm font-medium text-gray-500">Venue</p>
-                                    <p className="font-medium">{hallName}</p>
+                                    <p className="text-xs font-semibold text-muted-foreground uppercase">Venue</p>
+                                    <p className="font-medium text-sm mt-0.5">{hallName}</p>
                                 </div>
                             </div>
 
-                            <div className="flex items-start gap-3">
-                                <Users className="size-5 text-gray-500 mt-0.5" />
+                            <div className="flex items-start gap-4 p-3 bg-white/5 rounded-xl hover:bg-white/10 transition-colors">
+                                <div className="p-2 bg-secondary/20 rounded-lg text-primary">
+                                    <Users className="size-5" />
+                                </div>
                                 <div>
-                                    <p className="text-sm font-medium text-gray-500">Capacity</p>
-                                    <p className="font-medium">{training.capacity} Participants</p>
+                                    <p className="text-xs font-semibold text-muted-foreground uppercase">Capacity</p>
+                                    <p className="font-medium text-sm mt-0.5">{training.capacity} Participants</p>
                                 </div>
                             </div>
                         </CardContent>
                     </Card>
 
-                    <Card>
+                    <Card className="bg-white/5 border-white/10">
                         <CardHeader>
-                            <CardTitle className="text-lg">Actions</CardTitle>
+                            <CardTitle className="text-lg">Manage</CardTitle>
                         </CardHeader>
                         <CardContent className="flex flex-col gap-3">
                             {(user?.role === 'program_officer' || user?.role === 'master_admin') && (
-                                <Button variant="outline" className="w-full justify-start" onClick={() => setAttendanceModalOpen(true)}>
-                                    <Users className="size-4 mr-2" /> View Attendance
+                                <Button variant="outline" className="w-full justify-start border-white/10 hover:bg-white/10" onClick={() => setAttendanceModalOpen(true)}>
+                                    <Users className="size-4 mr-3" /> View Attendance
                                 </Button>
                             )}
 
                             {(user?.role === 'master_admin' || (user?.role === 'program_officer' && training.createdById === user.id)) && (
                                 <>
-                                    <Button variant="outline" className="w-full justify-start" onClick={() => navigate(`/trainings/${id}/edit`)}>
-                                        <Edit className="size-4 mr-2" /> Edit Training
+                                    <Button variant="outline" className="w-full justify-start border-white/10 hover:bg-white/10" onClick={() => navigate(`/trainings/${id}/edit`)}>
+                                        <Edit className="size-4 mr-3" /> Edit Training
                                     </Button>
 
                                     {(training.status === 'scheduled' || training.status === 'ongoing') && (
                                         <>
                                             <Button
                                                 variant="outline"
-                                                className="w-full justify-start text-green-600 hover:text-green-700 hover:bg-green-50"
+                                                className="w-full justify-start border-emerald-500/20 text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10"
                                                 onClick={() => handleStatusUpdate('completed')}
                                             >
-                                                <CheckCircle className="size-4 mr-2" /> Mark Completed
+                                                <CheckCircle className="size-4 mr-3" /> Mark Completed
                                             </Button>
                                             <Button
                                                 variant="outline"
-                                                className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50"
+                                                className="w-full justify-start border-orange-500/20 text-orange-400 hover:text-orange-300 hover:bg-orange-500/10"
                                                 onClick={() => handleStatusUpdate('cancelled')}
                                             >
-                                                <XCircle className="size-4 mr-2" /> Cancel Training
+                                                <XCircle className="size-4 mr-3" /> Cancel Training
                                             </Button>
                                         </>
                                     )}
 
                                     <Button
                                         variant="outline"
-                                        className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50"
+                                        className="w-full justify-start border-destructive/20 text-destructive hover:text-destructive hover:bg-destructive/10"
                                         onClick={handleDelete}
                                     >
-                                        <Trash2 className="size-4 mr-2" /> Delete Training
+                                        <Trash2 className="size-4 mr-3" /> Delete Training
                                     </Button>
                                 </>
                             )}

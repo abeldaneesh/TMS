@@ -22,8 +22,8 @@ const BottomNav: React.FC = () => {
     ];
 
     return (
-        <div className="fixed bottom-0 left-0 right-0 z-50 lg:hidden">
-            <div className="glass border-t border-primary/20 flex justify-around items-center h-16 px-2 bg-black/80 backdrop-blur-xl">
+        <div className="fixed bottom-0 left-0 right-0 z-50 lg:hidden shadow-[0_-4px_10px_rgba(0,0,0,0.05)]">
+            <div className="bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-t border-border flex justify-around items-center h-16 px-2">
                 {navItems.map((item) => (
                     <NavLink
                         key={item.path}
@@ -35,10 +35,10 @@ const BottomNav: React.FC = () => {
                     >
                         {({ isActive }) => (
                             <>
-                                <div className={`p-1 rounded-lg transition-all ${item.path === '/dashboard' ? 'group-hover:animate-pulse' : ''}`}>
+                                <div className={`p-1 rounded-lg transition-all`}>
                                     <item.icon className="size-5" />
                                 </div>
-                                <span className="text-[9px] font-black uppercase tracking-tighter">{item.label}</span>
+                                <span className="text-[10px] font-medium">{item.label}</span>
                                 {/* Active Indicator Bar */}
                                 <div
                                     className={`
@@ -52,7 +52,7 @@ const BottomNav: React.FC = () => {
                 ))}
             </div>
             {/* Handle notch/bottom bar on iOS/Android */}
-            <div className="h-[env(safe-area-inset-bottom)] bg-black/80" />
+            <div className="h-[env(safe-area-inset-bottom)] bg-background" />
         </div>
     );
 };

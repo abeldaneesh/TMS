@@ -133,6 +133,7 @@ export const createTraining = async (req: AuthRequest, res: Response): Promise<v
             hallId,
             capacity,
             trainerId,
+            targetAudience,
             requiredInstitutions,
             status // Extract status
         } = req.body;
@@ -186,6 +187,7 @@ export const createTraining = async (req: AuthRequest, res: Response): Promise<v
             hallId,
             capacity,
             trainerId,
+            targetAudience,
             createdById: req.user!.userId,
             status: status || 'scheduled',
             requiredInstitutions
@@ -198,6 +200,103 @@ export const createTraining = async (req: AuthRequest, res: Response): Promise<v
     } catch (error: any) {
         console.error('Create training error:', error);
         res.status(500).json({ message: 'Error creating training' });
+    }
+};
+
+// Update training details
+export const updateTraining = async (req: AuthRequest, res: Response): Promise<void> => {
+    try {
+        const id = req.params.id;
+        const userId = req.user!.userId;
+        const userRole = req.user!.role;
+        const {
+            title,
+            description,
+            program,
+            date,
+            startTime,
+            endTime,
+            hallId,
+            capacity,
+            targetAudience,
+            requiredInstitutions,
+            status
+        } = req.body;
+
+        const training = await Training.findById(id);
+
+        if (!training) {
+            res.status(404).json({ message: 'Training not found' });
+            return;
+        }
+
+        // Authorization check: Only creator or master_admin can update this training
+        if (training.createdById.toString() !== userId && userRole !== 'master_admin') {
+            res.status(403).json({ message: 'Not authorized to update this training' });
+            return;
+        }
+
+        const trainingDateObj = new Date(date || training.date);
+        const startOfDay = new Date(trainingDateObj);
+        startOfDay.setHours(0, 0, 0, 0);
+        const endOfDay = new Date(trainingDateObj);
+        endOfDay.setHours(23, 59, 59, 999);
+
+        // Check conflicts
+        if (status !== 'draft') {
+            const conflictingTraining = await Training.findOne({
+                _id: { $ne: id },
+                hallId: hallId || training.hallId,
+                date: { $gte: startOfDay, $lte: endOfDay },
+                $and: [
+                    { startTime: { $lt: endTime || training.endTime } },
+                    { endTime: { $gt: startTime || training.startTime } }
+                ],
+                status: { $in: ['scheduled', 'ongoing'] }
+            });
+
+            if (conflictingTraining) {
+                res.status(409).json({ message: 'Hall is already booked for this time slot.' });
+                return;
+            }
+
+            const conflictingBlock = await HallBlock.findOne({
+                hallId: hallId || training.hallId,
+                date: { $gte: startOfDay, $lte: endOfDay },
+                $and: [
+                    { startTime: { $lt: endTime || training.endTime } },
+                    { endTime: { $gt: startTime || training.startTime } }
+                ]
+            });
+
+            if (conflictingBlock) {
+                res.status(403).json({ message: 'This hall slot is blocked by admin and cannot be booked.' });
+                return;
+            }
+        }
+
+        // Update fields
+        if (title !== undefined) training.title = title;
+        if (description !== undefined) training.description = description;
+        if (program !== undefined) training.program = program;
+        if (targetAudience !== undefined) training.targetAudience = targetAudience;
+        if (date !== undefined) training.date = trainingDateObj;
+        if (startTime !== undefined) training.startTime = startTime;
+        if (endTime !== undefined) training.endTime = endTime;
+        if (hallId !== undefined) training.hallId = hallId;
+        if (capacity !== undefined) training.capacity = capacity;
+        if (requiredInstitutions !== undefined) training.requiredInstitutions = requiredInstitutions;
+        if (status !== undefined) training.status = status;
+
+        await training.save();
+
+        res.json({
+            ...training.toObject(),
+            id: training._id
+        });
+    } catch (error: any) {
+        console.error('Update training error:', error);
+        res.status(500).json({ message: 'Error updating training' });
     }
 };
 

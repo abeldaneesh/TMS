@@ -70,7 +70,7 @@ const Register: React.FC = () => {
                 <div className="absolute inset-0 cyber-grid opacity-10 pointer-events-none" />
                 <Card className="w-full max-w-md glass-card text-center border-border shadow-lg relative z-10 bg-card/40">
                     <CardHeader>
-                        <div className="mx-auto bg-primary/10 text-primary p-5 rounded-full w-fit mb-6 border border-primary/20 shadow-lg glow-primary">
+                        <div className="mx-auto bg-primary/10 text-primary p-5 rounded-full w-fit mb-6 border border-primary/20 shadow-lg">
                             <ShieldCheck className="size-12" />
                         </div>
                         <CardTitle className="text-3xl font-black tracking-tight text-foreground uppercase leading-none">Access Requested</CardTitle>
@@ -89,7 +89,7 @@ const Register: React.FC = () => {
                         </p>
                     </CardContent>
                     <CardFooter>
-                        <Button className="w-full h-12 bg-primary hover:bg-primary/90 text-primary-foreground font-black uppercase tracking-widest rounded-xl transition-all" variant="outline" onClick={() => navigate('/login')}>
+                        <Button className="w-full h-12 bg-primary hover:bg-primary/90 text-primary-foreground font-black uppercase tracking-widest rounded-xl transition-all" onClick={() => navigate('/login')}>
                             RETURN TO ENTRY
                         </Button>
                     </CardFooter>

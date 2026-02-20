@@ -4,27 +4,18 @@ import { useAuth } from '../../contexts/AuthContext';
 import api from '../../services/api';
 import { Training, Hall, User } from '../../types';
 import {
-  Calendar, Clock, Users, MapPin, Plus, Search, Filter,
-  Edit, Trash2, Eye
+  Calendar, Clock, Users, MapPin, Plus, Search,
+  Edit, Eye, AppWindowMac, PlayCircle, ClipboardList, CheckCircle2, XCircle
 } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Badge } from '../components/ui/badge';
-import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
-import { format } from 'date-fns';
 import { safeFormatDate } from '../../utils/date';
 import { toast } from 'sonner';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '../components/ui/select';
 
+import FilterChips from '../components/FilterChips';
 import AttendanceListModal from '../components/AttendanceListModal';
 import AssignedParticipantsModal from '../components/AssignedParticipantsModal';
-
 
 const Trainings: React.FC = () => {
   const { user } = useAuth();
@@ -42,7 +33,6 @@ const Trainings: React.FC = () => {
   const [selectedTrainingId, setSelectedTrainingId] = useState<string | null>(null);
   const [selectedTrainingTitle, setSelectedTrainingTitle] = useState('');
 
-
   useEffect(() => {
     const fetchData = async () => {
       if (!user) return;
@@ -58,7 +48,6 @@ const Trainings: React.FC = () => {
           api.get('/users'),
         ]);
 
-        // Adapt real API data to frontend types (handling missing fields)
         const rawTrainings = Array.isArray(trainingsRes.data) ? trainingsRes.data : [];
         const adaptedTrainings = rawTrainings.map((t: any) => ({
           ...t,
@@ -91,11 +80,11 @@ const Trainings: React.FC = () => {
 
   const getStatusBadge = (status: string) => {
     const variants = {
-      draft: 'bg-muted/10 text-muted-foreground border border-muted/20',
-      scheduled: 'bg-primary/10 text-primary border border-primary/30 shadow-[0_0_10px_rgba(0,236,255,0.1)]',
-      ongoing: 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 shadow-[0_0_10px_rgba(52,211,153,0.1)]',
-      completed: 'bg-secondary/10 text-secondary border border-secondary/30 shadow-[0_0_10px_rgba(110,64,201,0.1)]',
-      cancelled: 'bg-destructive/10 text-destructive border border-destructive/20',
+      draft: 'text-muted-foreground',
+      scheduled: 'text-blue-400',
+      ongoing: 'text-emerald-500',
+      completed: 'text-purple-400',
+      cancelled: 'text-destructive',
     };
     return variants[status as keyof typeof variants] || variants.draft;
   };
@@ -122,259 +111,190 @@ const Trainings: React.FC = () => {
     setParticipantsModalOpen(true);
   };
 
-
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[400px]">
-        <div className="relative size-12 mb-4">
-          <div className="absolute inset-0 border-t-2 border-primary rounded-full animate-spin" />
-          <div className="absolute inset-0 border-r-2 border-secondary rounded-full animate-spin [animation-duration:1.5s]" />
-        </div>
-        <p className="text-primary font-mono text-xs tracking-widest animate-pulse">ACCESSING MISSION DATABASE...</p>
+        <div className="text-lg text-primary animate-pulse font-medium">Loading content...</div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-end justify-between">
+    <div className="pb-12 space-y-6 text-foreground">
+      <div className="flex flex-col sm:flex-row items-start sm:items-end justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-extrabold tracking-tighter text-foreground flex items-center gap-3">
-            <Calendar className="size-8 text-primary animate-pulse-glow" />
-            TRAINING MISSIONS
-            <div className="h-1 w-20 bg-gradient-to-r from-primary to-transparent rounded-full ml-4 hidden md:block" />
+          <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-foreground flex items-center gap-3">
+            <AppWindowMac className="size-8 sm:size-10 text-primary" />
+            Explore Library
           </h1>
-          <p className="text-muted-foreground mt-1 font-mono text-xs uppercase tracking-widest opacity-70">
+          <p className="text-muted-foreground mt-2 text-sm">
             {user?.role === 'program_officer'
-              ? 'Operational Deployment & Briefing Management'
-              : 'Central Training Repository & Mission Oversight'}
+              ? 'Manage your operational deployments'
+              : 'Discover and oversee all training missions'}
           </p>
         </div>
         {(user?.role === 'program_officer' || user?.role === 'master_admin') && (
-          <Button onClick={() => navigate('/trainings/create')} className="bg-primary/10 hover:bg-primary text-primary hover:text-primary-foreground border border-primary/20 font-bold tracking-widest text-xs px-6 py-5 rounded-xl transition-all shadow-[0_0_15px_rgba(0,236,255,0.1)]">
-            <Plus className="size-4 mr-2" />
-            INITIATE MISSION
+          <Button onClick={() => navigate('/trainings/create')} className="bg-foreground text-background hover:bg-white/90 font-semibold rounded-full px-6">
+            <Plus className="size-5 mr-2" />
+            New Mission
           </Button>
         )}
       </div>
 
-      {/* Filters */}
-      <Card className="glass neon-border overflow-hidden">
-        <CardContent className="p-4 bg-primary/5">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="relative col-span-2">
-              <Search className="absolute left-3 top-3.5 size-4 text-primary opacity-40" />
-              <Input
-                placeholder="FILTER MISSIONS BY TITLE, SECTOR, OR OBJECTIVE..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 bg-input/50 border-input focus:border-primary/50 text-foreground font-mono text-xs tracking-wider"
-              />
-            </div>
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="bg-input/50 border-input focus:ring-primary/50 text-foreground font-mono text-xs tracking-wider">
-                <SelectValue placeholder="STATUS FILTER" />
-              </SelectTrigger>
-              <SelectContent className="bg-popover border-border/50 text-foreground font-mono text-xs">
-                <SelectItem value="all">ALL DEPLOYMENTS</SelectItem>
-                <SelectItem value="draft">DRAFT PROTOCOL</SelectItem>
-                <SelectItem value="scheduled">SCHEDULED</SelectItem>
-                <SelectItem value="ongoing">ACTIVE MISSION</SelectItem>
-                <SelectItem value="completed">COMPLETED</SelectItem>
-                <SelectItem value="cancelled">ABORTED</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="flex flex-col sm:flex-row gap-4 mb-8">
+        <div className="relative flex-1 max-w-md">
+          <Search className="absolute left-4 top-3.5 size-5 text-muted-foreground" />
+          <Input
+            placeholder="Search trainings, sectors, or programs..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-12 bg-secondary/30 border-transparent focus:border-[#3d3d3d] rounded-full h-12 text-foreground"
+          />
+        </div>
+      </div>
+
+      <FilterChips
+        options={[
+          { value: 'all', label: 'All Deployments' },
+          { value: 'draft', label: 'Drafts' },
+          { value: 'scheduled', label: 'Scheduled' },
+          { value: 'ongoing', label: 'Active' },
+          { value: 'completed', label: 'Completed' },
+          { value: 'cancelled', label: 'Aborted' }
+        ]}
+        selectedValue={statusFilter}
+        onChange={setStatusFilter}
+      />
 
       {/* Trainings List */}
       {filteredTrainings.length === 0 ? (
-        <Card className="glass-card">
-          <CardContent className="p-20 text-center">
-            <div className="bg-primary/10 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 border border-primary/20">
-              <Calendar className="size-10 text-primary/40 animate-pulse" />
-            </div>
-            <h3 className="text-xl font-bold text-foreground tracking-widest mb-2">NO MISSIONS DETECTED</h3>
-            <p className="text-muted-foreground font-mono text-[10px] uppercase tracking-widest mb-6">
-              {searchTerm || statusFilter !== 'all'
-                ? 'ADJUST FREQUENCY FILTERS TO LOCATE HIDDEN OBJECTIVES.'
-                : 'COMMENCE BY DEFINING NEW OPERATIONAL OBJECTIVES.'}
-            </p>
-            {(user?.role === 'program_officer' || user?.role === 'master_admin') && (
-              <Button onClick={() => navigate('/trainings/create')} className="bg-primary/20 hover:bg-primary text-primary hover:text-primary-foreground border border-primary/30 font-bold tracking-widest text-xs px-8 py-5 rounded-xl transition-all">
-                <Plus className="size-4 mr-2" />
-                INITIATE FIRST MISSION
-              </Button>
-            )}
-          </CardContent>
-        </Card>
+        <div className="flex flex-col items-center justify-center py-20 text-center">
+          <div className="bg-secondary/20 size-24 rounded-full flex items-center justify-center mb-6">
+            <Calendar className="size-10 text-muted-foreground opacity-50" />
+          </div>
+          <h3 className="text-2xl font-bold mb-2">No matching results</h3>
+          <p className="text-muted-foreground max-w-md mb-8">
+            {searchTerm || statusFilter !== 'all'
+              ? 'Try adjusting your search terms or filters to find what you are looking for.'
+              : 'There are no items in this library yet.'}
+          </p>
+        </div>
       ) : (
-        <div className="grid grid-cols-1 gap-6">
-          {filteredTrainings.map((training) => (
-            <Card key={training.id} className="glass-card hover:border-primary/40 transition-all group overflow-hidden">
-              <CardContent className="p-0">
-                <div className="flex flex-col md:flex-row items-stretch">
-                  <div className="flex-1 p-6">
-                    <div className="flex items-start justify-between mb-4">
-                      <div>
-                        <h3 className="text-xl font-bold text-foreground tracking-tight group-hover:text-primary transition-colors">{training.title}</h3>
-                        <p className="text-xs text-primary/70 font-mono font-bold tracking-widest mt-1 uppercase">{training.program}</p>
-                      </div>
-                      <Badge className={`${getStatusBadge(training.status)} font-mono text-[10px] tracking-[0.2em] uppercase px-3 py-1 rounded-sm`}>
-                        {training.status}
-                      </Badge>
-                    </div>
+        <div className="flex flex-col">
+          <div className="hidden md:flex items-center px-4 py-2 text-sm text-muted-foreground border-b border-border/50 uppercase tracking-wider font-medium">
+            <div className="w-8 mr-4 text-center">#</div>
+            <div className="flex-1 min-w-0 pr-4">Title</div>
+            <div className="w-48 shrink-0 px-4 text-right">Date & Time</div>
+            <div className="w-32 shrink-0 px-4">Status</div>
+            <div className="w-48 shrink-0"></div>
+          </div>
 
-                    <p className="text-muted-foreground text-sm leading-relaxed mb-6 opacity-80">{training.description}</p>
+          {filteredTrainings.map((training, index) => (
+            <div
+              key={training.id}
+              className="group flex flex-col sm:flex-row sm:items-center py-3 px-2 sm:px-4 hover:bg-white/5 rounded-lg transition-colors border-b border-border/30 cursor-pointer"
+              onClick={() => navigate(`/trainings/${training.id}`)}
+            >
+              <div className="flex items-center flex-1 min-w-0">
+                <div className="text-muted-foreground w-8 mr-4 text-center text-sm font-medium hidden md:block">
+                  {index + 1}
+                </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 text-[11px] font-mono tracking-wider">
-                      <div className="flex items-center gap-3 text-muted-foreground group-hover:text-foreground transition-colors">
-                        <div className="size-8 rounded-lg bg-primary/5 flex items-center justify-center text-primary/50 group-hover:text-primary border border-border group-hover:border-primary/20">
-                          <Calendar className="size-4 flex-shrink-0" />
-                        </div>
-                        <div className="flex flex-col">
-                          <span className="text-[9px] text-primary/40 font-bold">DATE:</span>
-                          <span>{safeFormatDate(training.date)}</span>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-3 text-muted-foreground group-hover:text-foreground transition-colors">
-                        <div className="size-8 rounded-lg bg-primary/5 flex items-center justify-center text-primary/50 group-hover:text-primary border border-border group-hover:border-primary/20">
-                          <Clock className="size-4 flex-shrink-0" />
-                        </div>
-                        <div className="flex flex-col">
-                          <span className="text-[9px] text-primary/40 font-bold">TIMEFRAME:</span>
-                          <span>{training.startTime} - {training.endTime}</span>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-3 text-muted-foreground group-hover:text-foreground transition-colors">
-                        <div className="size-8 rounded-lg bg-primary/5 flex items-center justify-center text-primary/50 group-hover:text-primary border border-border group-hover:border-primary/20">
-                          <MapPin className="size-4 flex-shrink-0" />
-                        </div>
-                        <div className="flex flex-col">
-                          <span className="text-[9px] text-primary/40 font-bold">SECTOR:</span>
-                          <span className="truncate max-w-[120px]">{getHallName(training.hallId)}</span>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-3 text-muted-foreground group-hover:text-foreground transition-colors">
-                        <div className="size-8 rounded-lg bg-muted/50 flex items-center justify-center text-primary/50 group-hover:text-primary border border-border group-hover:border-primary/20">
-                          <Users className="size-4 flex-shrink-0" />
-                        </div>
-                        <div className="flex flex-col">
-                          <span className="text-[9px] text-primary/40 font-bold">CAPACITY:</span>
-                          <span className="stat-value text-base">{training.capacity}</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="mt-6 flex flex-wrap gap-3">
-                      <Badge variant="outline" className="text-[9px] font-mono tracking-widest text-secondary border-secondary/30 bg-secondary/5 px-2 py-1">
-                        OFFICER: {getTrainerName(training.trainerId)}
-                      </Badge>
-                      <Badge variant="outline" className="text-[9px] font-mono tracking-widest text-primary border-primary/30 bg-primary/5 px-2 py-1">
-                        TARGET: {training.targetAudience}
-                      </Badge>
-                      <Badge variant="outline" className="text-[9px] font-mono tracking-widest text-muted-foreground border-muted bg-muted/50 px-2 py-1">
-                        {training.requiredInstitutions.length} SECTOR(S)
-                      </Badge>
-                    </div>
+                <div className="relative size-12 sm:size-14 rounded-md bg-secondary/50 shrink-0 overflow-hidden flex items-center justify-center mr-4">
+                  <Calendar className="size-6 text-muted-foreground opacity-30 group-hover:opacity-0 transition-opacity" />
+                  <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                    <PlayCircle className="size-7 text-white fill-current" />
                   </div>
+                </div>
 
-                  <div className="w-full md:w-56 bg-primary/[0.03] border-l border-white/5 p-6 flex flex-col gap-3">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => navigate(`/trainings/${training.id}`)}
-                      className="w-full justify-start font-bold tracking-widest text-[10px] py-4 bg-primary/5 border-primary/10 hover:border-primary/50 text-foreground"
-                    >
-                      <Eye className="size-3 mr-2 text-primary" />
-                      VIEW INTEL
+                <div className="flex-1 min-w-0 pr-4">
+                  <h3 className="text-base font-semibold text-foreground truncate group-hover:text-primary transition-colors">
+                    {training.title}
+                  </h3>
+                  <p className="text-sm text-muted-foreground truncate mt-0.5">
+                    {training.program} • {getHallName(training.hallId)} • {getTrainerName(training.trainerId)}
+                  </p>
+                </div>
+              </div>
+
+              <div className="hidden md:flex flex-col items-end px-4 w-48 shrink-0">
+                <span className="text-sm font-medium text-foreground/90">{safeFormatDate(training.date)}</span>
+                <span className="text-xs text-muted-foreground">{training.startTime} - {training.endTime}</span>
+              </div>
+
+              <div className="hidden lg:flex items-center w-32 shrink-0 px-4">
+                <span className={`text-xs font-medium uppercase tracking-wider ${getStatusBadge(training.status)}`}>
+                  {training.status}
+                </span>
+              </div>
+
+              {/* Actions */}
+              <div className="flex items-center justify-end sm:w-48 shrink-0 gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity mt-4 sm:mt-0" onClick={e => e.stopPropagation()}>
+                <Button variant="ghost" size="icon" onClick={() => navigate(`/trainings/${training.id}`)} className="text-muted-foreground hover:text-white hover:bg-white/10 rounded-full size-9" title="View Details">
+                  <Eye className="size-4" />
+                </Button>
+
+                {(user?.role === 'program_officer' || user?.role === 'master_admin') && (
+                  <>
+                    <Button variant="ghost" size="icon" onClick={() => handleViewParticipants(training)} className="text-muted-foreground hover:text-white hover:bg-white/10 rounded-full size-9" title="Personnel">
+                      <Users className="size-4" />
+                    </Button>
+                    <Button variant="ghost" size="icon" onClick={() => handleViewAttendance(training)} className="text-muted-foreground hover:text-white hover:bg-white/10 rounded-full size-9" title="Attendance">
+                      <ClipboardList className="size-4" />
                     </Button>
 
-                    {(user?.role === 'program_officer' || user?.role === 'master_admin') && (
+                    {((user?.role === 'program_officer' && training.createdById === user.id) || user?.role === 'master_admin') && (
+                      <Button variant="ghost" size="icon" onClick={() => navigate(`/trainings/${training.id}/edit`)} className="text-muted-foreground hover:text-white hover:bg-white/10 rounded-full size-9" title="Modify">
+                        <Edit className="size-4" />
+                      </Button>
+                    )}
+
+                    {((user?.role === 'program_officer' && training.createdById === user.id) || user?.role === 'master_admin') && (training.status === 'scheduled' || training.status === 'ongoing') && (
                       <>
                         <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleViewParticipants(training)}
-                          className="w-full justify-start font-bold tracking-widest text-[10px] py-4 bg-primary/5 border-primary/10 hover:border-primary/50 text-foreground"
+                          variant="ghost"
+                          size="icon"
+                          onClick={async () => {
+                            if (confirm('Mark completion?')) {
+                              try {
+                                await api.patch(`/trainings/${training.id}/status`, { status: 'completed' });
+                                setTrainings(trainings.map(t => t.id === training.id ? { ...t, status: 'completed' } : t));
+                                toast.success('Completed');
+                              } catch (e) {
+                                toast.error('Failed');
+                              }
+                            }
+                          }}
+                          className="text-muted-foreground hover:text-emerald-400 hover:bg-emerald-500/10 rounded-full size-9"
+                          title="Finish"
                         >
-                          <Users className="size-3 mr-2 text-primary" />
-                          PERSONNEL
+                          <CheckCircle2 className="size-4" />
                         </Button>
                         <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleViewAttendance(training)}
-                          className="w-full justify-start font-bold tracking-widest text-[10px] py-4 bg-primary/5 border-primary/10 hover:border-primary/50 text-foreground"
+                          variant="ghost"
+                          size="icon"
+                          onClick={async () => {
+                            if (confirm('Abort mission?')) {
+                              try {
+                                await api.patch(`/trainings/${training.id}/status`, { status: 'cancelled' });
+                                setTrainings(trainings.map(t => t.id === training.id ? { ...t, status: 'cancelled' } : t));
+                                toast.success('Aborted');
+                              } catch (e) {
+                                toast.error('Failed');
+                              }
+                            }
+                          }}
+                          className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-full size-9"
+                          title="Abort"
                         >
-                          <Users className="size-3 mr-2 text-primary" />
-                          ATTENDANCE
+                          <XCircle className="size-4" />
                         </Button>
                       </>
                     )}
-
-
-                    {((user?.role === 'program_officer' && training.createdById === user.id) ||
-                      user?.role === 'master_admin') && (
-                        <div className="mt-auto pt-4 border-t border-white/5 flex flex-col gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => navigate(`/trainings/${training.id}/edit`)}
-                            className="w-full justify-start font-bold tracking-widest text-[10px] py-3 bg-primary/5 border-primary/10 hover:border-primary/50 text-foreground/70"
-                          >
-                            <Edit className="size-3 mr-2" />
-                            MODIFY
-                          </Button>
-
-                          {(training.status === 'scheduled' || training.status === 'ongoing') && (
-                            <div className="grid grid-cols-2 gap-2">
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className="text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/10 font-bold tracking-widest text-[9px] py-3 h-auto"
-                                onClick={async () => {
-                                  if (confirm('MARK MISSION AS COMPLETE?')) {
-                                    try {
-                                      await api.patch(`/trainings/${training.id}/status`, { status: 'completed' });
-                                      setTrainings(trainings.map(t => t.id === training.id ? { ...t, status: 'completed' } : t));
-                                      toast.success('Mission marked as complete');
-                                    } catch (e) {
-                                      toast.error('Status update failed');
-                                    }
-                                  }
-                                }}
-                              >
-                                FINISH
-                              </Button>
-
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className="text-orange-400 border-orange-500/20 hover:bg-orange-500/10 font-bold tracking-widest text-[9px] py-3 h-auto"
-                                onClick={async () => {
-                                  if (confirm('ABORT MISSION PROTOCOL?')) {
-                                    try {
-                                      await api.patch(`/trainings/${training.id}/status`, { status: 'cancelled' });
-                                      setTrainings(trainings.map(t => t.id === training.id ? { ...t, status: 'cancelled' } : t));
-                                      toast.success('Mission protocol aborted');
-                                    } catch (e) {
-                                      toast.error('Status update failed');
-                                    }
-                                  }
-                                }}
-                              >
-                                ABORT
-                              </Button>
-                            </div>
-                          )}
-                        </div>
-                      )}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+                  </>
+                )}
+              </div>
+            </div>
           ))}
         </div>
       )}

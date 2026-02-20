@@ -21,6 +21,7 @@ export interface ITraining extends Omit<Document, '_id'> {
     hallId: string;
     capacity: number;
     trainerId: string;
+    targetAudience?: string;
     createdById: string;
     status: TrainingStatus;
     requiredInstitutions?: string[];
@@ -45,6 +46,7 @@ const TrainingSchema: Schema = new Schema({
     hallId: { type: String, ref: 'Hall', required: true },
     capacity: { type: Number, required: true },
     trainerId: { type: String, required: true }, // Assuming this refers to a User or external entity? Using String for now.
+    targetAudience: { type: String },
     createdById: { type: String, ref: 'User', required: true },
     status: {
         type: String,

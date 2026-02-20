@@ -49,7 +49,8 @@ const migrate = async () => {
                 isApproved: user.isApproved,
                 designation: user.designation || undefined,
                 phone: user.phone || undefined,
-                department: user.department || undefined
+                department: user.department || undefined,
+                profilePicture: (user as any).profilePicture || undefined
             };
             if (user.institutionId) {
                 userData.institutionId = user.institutionId;

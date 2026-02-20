@@ -1,13 +1,9 @@
-
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/table';
-import { Badge } from '../components/ui/badge';
 import { User } from '../../types';
 import { usersApi, BASE_URL } from '../../services/api';
 import { Avatar, AvatarFallback, AvatarImage } from '../components/ui/avatar';
 
-import { Trash2, AlertTriangle, ShieldCheck, Users } from 'lucide-react';
+import { Trash2, AlertTriangle, Users, MapPin } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { toast } from 'sonner';
 
@@ -50,122 +46,105 @@ const Participants: React.FC = () => {
     };
 
     return (
-        <div className="space-y-6">
-            <div className="flex justify-between items-center">
-                <div>
-                    <h1 className="text-3xl font-extrabold tracking-tighter text-foreground flex items-center gap-3">
-                        <Users className="size-8 text-primary animate-pulse-glow" />
-                        PARTICIPANTS
-                        <div className="h-1 w-20 bg-gradient-to-r from-primary to-transparent rounded-full ml-4 hidden md:block" />
-                    </h1>
-                    <p className="text-muted-foreground mt-1 font-mono text-xs uppercase tracking-widest opacity-70">Healthcare Personnel Registry & Telemetry</p>
-                </div>
+        <div className="space-y-6 text-foreground">
+            <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl font-bold tracking-tight">Participants</h2>
+                <span className="text-sm text-muted-foreground bg-secondary/30 px-3 py-1 rounded-full">{participants.length} active</span>
             </div>
 
-            <Card className="glass-card overflow-hidden">
-                <CardHeader className="pb-4 border-b border-primary/10 bg-primary/5">
-                    <CardTitle className="text-sm font-bold text-primary tracking-[0.2em] flex items-center gap-2">
-                        <ShieldCheck className="size-4" />
-                        VERIFIED MISSION PERSONNEL
-                    </CardTitle>
-                </CardHeader>
-                <CardContent className="pt-6">
-                    {loading ? (
-                        <div className="flex flex-col items-center justify-center py-20">
-                            <div className="relative size-12 mb-4">
-                                <div className="absolute inset-0 border-t-2 border-primary rounded-full animate-spin" />
-                                <div className="absolute inset-0 border-r-2 border-secondary rounded-full animate-spin [animation-duration:1.5s]" />
+            {loading ? (
+                <div className="flex flex-col items-center justify-center py-20">
+                    <div className="text-lg text-primary animate-pulse font-medium">Loading participants...</div>
+                </div>
+            ) : error ? (
+                <div className="p-6 text-destructive bg-destructive/5 rounded-xl border border-destructive/20 flex items-start gap-4">
+                    <AlertTriangle className="size-6 shrink-0" />
+                    <div>
+                        <h3 className="font-bold text-lg leading-none mb-1">Network Error</h3>
+                        <p className="text-sm opacity-90">{error}</p>
+                    </div>
+                </div>
+            ) : participants.length === 0 ? (
+                <div className="text-center py-20 bg-secondary/5 rounded-2xl border border-dashed border-border/50">
+                    <div className="bg-secondary/20 size-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <Users className="size-8 text-muted-foreground" />
+                    </div>
+                    <h3 className="text-xl font-bold text-foreground">No Participants Found</h3>
+                    <p className="text-muted-foreground mt-2 text-sm">There are no participants registered in the system yet.</p>
+                </div>
+            ) : (
+                <div className="flex flex-col">
+                    <div className="hidden md:flex items-center px-4 py-2 text-sm text-muted-foreground border-b border-border/50 uppercase tracking-wider font-medium">
+                        <div className="w-8 mr-4 text-center">#</div>
+                        <div className="flex-1 min-w-0 pr-4">Participant Details</div>
+                        <div className="w-64 shrink-0 px-4">Contact Info</div>
+                        <div className="w-40 shrink-0 px-4">Department</div>
+                        <div className="w-32 shrink-0 px-4">Status</div>
+                        <div className="w-20 shrink-0 text-right"></div>
+                    </div>
+
+                    {participants.map((user, index) => (
+                        <div
+                            key={user.id}
+                            className="group flex flex-col sm:flex-row sm:items-center py-3 px-2 sm:px-4 hover:bg-white/5 rounded-lg transition-colors border-b border-border/30"
+                        >
+                            <div className="flex items-center flex-1 min-w-0">
+                                <div className="text-muted-foreground w-8 mr-4 text-center text-sm font-medium hidden md:block">
+                                    {index + 1}
+                                </div>
+
+                                <Avatar className="h-10 w-10 sm:h-12 sm:w-12 rounded-lg bg-secondary/50 shrink-0 mr-4">
+                                    {user.profilePicture && (
+                                        <AvatarImage src={user.profilePicture.startsWith('http') ? user.profilePicture : `${BASE_URL}${user.profilePicture}`} alt={user.name} />
+                                    )}
+                                    <AvatarFallback className="bg-gradient-to-br from-primary/20 to-secondary/20 text-primary font-bold">
+                                        {user.name && user.name.length > 0 ? user.name.charAt(0) : '?'}
+                                    </AvatarFallback>
+                                </Avatar>
+
+                                <div className="flex-1 min-w-0 pr-4">
+                                    <h3 className="text-base font-semibold text-foreground truncate group-hover:text-primary transition-colors">
+                                        {user.name || 'Unknown'}
+                                    </h3>
+                                    <p className="text-sm text-muted-foreground truncate opacity-0 group-hover:opacity-100 hidden sm:block transition-opacity">
+                                        ID: {(user.id || 'N/A')}
+                                    </p>
+                                </div>
                             </div>
-                            <p className="text-primary font-mono text-xs tracking-widest animate-pulse">ACCESSING ENCRYPTED REGISTRY...</p>
-                        </div>
-                    ) : error ? (
-                        <div className="p-6 text-destructive bg-destructive/5 rounded-2xl border border-destructive/20 flex items-start gap-4">
-                            <AlertTriangle className="size-6 shrink-0" />
-                            <div>
-                                <h3 className="font-bold text-lg leading-none mb-1">SYSTEM LINK FAILURE</h3>
-                                <p className="text-sm opacity-90 font-mono">{error}</p>
+
+                            <div className="hidden md:flex flex-col justify-center px-4 w-64 shrink-0">
+                                <span className="text-sm font-medium text-foreground/90 truncate">{user.email}</span>
+                                <span className="text-xs text-muted-foreground truncate">{user.phone || 'No phone number'}</span>
+                            </div>
+
+                            <div className="hidden md:flex items-center px-4 w-40 shrink-0">
+                                <span className="text-xs text-muted-foreground truncate bg-secondary/30 px-2 py-1 rounded-sm flex items-center gap-1">
+                                    <MapPin className="size-3" />
+                                    {user.department || 'General'}
+                                </span>
+                            </div>
+
+                            <div className="hidden lg:flex items-center w-32 shrink-0 px-4">
+                                <span className={`text-xs font-medium uppercase tracking-wider ${user.isApproved ? 'text-emerald-500' : 'text-orange-400'}`}>
+                                    {user.isApproved ? 'Active' : 'Pending'}
+                                </span>
+                            </div>
+
+                            <div className="flex items-center justify-end w-20 shrink-0 gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity mt-2 sm:mt-0">
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => handleDelete(user.id, user.name)}
+                                    className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-full"
+                                    title="Remove Participant"
+                                >
+                                    <Trash2 className="size-4" />
+                                </Button>
                             </div>
                         </div>
-                    ) : participants.length === 0 ? (
-                        <div className="text-center py-20 bg-primary/5 rounded-3xl border border-dashed border-primary/20">
-                            <div className="bg-primary/10 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 border border-primary/20">
-                                <Users className="size-8 text-primary/40" />
-                            </div>
-                            <h3 className="text-xl font-bold text-foreground">NO PERSONNEL DETECTED</h3>
-                            <p className="text-muted-foreground mt-2 font-mono text-xs uppercase tracking-widest">Awaiting recruitment and approval protocols.</p>
-                        </div>
-                    ) : (
-                        <Table className="neon-table">
-                            <TableHeader>
-                                <TableRow className="hover:bg-transparent border-primary/10">
-                                    <TableHead>PERSONNEL</TableHead>
-                                    <TableHead>COMM-LINK / INFO</TableHead>
-                                    <TableHead>DEPARTMENT</TableHead>
-                                    <TableHead>CLEARANCE</TableHead>
-                                    <TableHead className="text-right">ACTIONS</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {participants.map((user) => (
-                                    <TableRow key={user.id} className="group border-primary/5">
-                                        <TableCell className="py-4">
-                                            <div className="flex items-center">
-                                                <Avatar className="h-10 w-10 rounded-xl border border-primary/30 shadow-[0_0_15px_rgba(0,236,255,0.1)] mr-4">
-                                                    {user.profilePicture && (
-                                                        <AvatarImage src={user.profilePicture.startsWith('http') ? user.profilePicture : `${BASE_URL}${user.profilePicture}`} alt={user.name} crossOrigin="anonymous" />
-                                                    )}
-                                                    <AvatarFallback className="bg-gradient-to-br from-primary/20 to-secondary/20 text-primary font-bold">
-                                                        {user.name && user.name.length > 0 ? user.name.charAt(0) : '?'}
-                                                    </AvatarFallback>
-                                                </Avatar>
-                                                <div className="flex flex-col">
-                                                    <span className="font-bold text-foreground tracking-wide">{user.name || 'Unknown'}</span>
-                                                    <span className="text-[10px] text-primary/40 font-mono uppercase tracking-tighter">UID: {(user.id || 'N/A').substring(0, 12)}...</span>
-                                                </div>
-                                            </div>
-                                        </TableCell>
-                                        <TableCell className="py-4">
-                                            <div className="flex flex-col">
-                                                <span className="text-muted-foreground font-medium text-sm">{user.email}</span>
-                                                <span className="text-muted-foreground text-xs font-mono">{user.phone || 'NO LINK DETECTED'}</span>
-                                            </div>
-                                        </TableCell>
-                                        <TableCell className="py-4">
-                                            <Badge variant="outline" className="text-secondary border-secondary/30 bg-secondary/5 font-mono text-[10px] tracking-widest uppercase px-2">
-                                                {user.department || 'GENERAL'}
-                                            </Badge>
-                                        </TableCell>
-                                        <TableCell className="py-4">
-                                            <div className="flex items-center">
-                                                {user.isApproved ? (
-                                                    <Badge className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 px-3 py-1 font-mono text-[10px] tracking-widest uppercase flex items-center">
-                                                        <div className="size-1.5 rounded-full bg-emerald-400 mr-2 shadow-[0_0_8px_rgba(52,211,153,0.8)]" />
-                                                        ACTIVE
-                                                    </Badge>
-                                                ) : (
-                                                    <Badge variant="secondary" className="bg-orange-500/10 text-orange-400 border border-orange-500/30 px-3 py-1 font-mono text-[10px] tracking-widest uppercase">
-                                                        PENDING
-                                                    </Badge>
-                                                )}
-                                            </div>
-                                        </TableCell>
-                                        <TableCell className="py-4 text-right">
-                                            <Button
-                                                variant="ghost"
-                                                size="sm"
-                                                className="opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg"
-                                                onClick={() => handleDelete(user.id, user.name)}
-                                            >
-                                                <Trash2 className="size-4" />
-                                            </Button>
-                                        </TableCell>
-                                    </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
-                    )}
-                </CardContent>
-            </Card>
+                    ))}
+                </div>
+            )}
         </div>
     );
 };

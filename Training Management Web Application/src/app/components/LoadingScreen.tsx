@@ -14,7 +14,7 @@ const LoadingScreen: React.FC = () => {
                 <div className="absolute inset-0 rounded-2xl bg-primary/20 blur-2xl animate-pulse" />
 
                 {/* Logo Frame */}
-                <div className="relative bg-card/40 backdrop-blur-xl border border-primary/30 p-6 rounded-2xl shadow-2xl glow-primary">
+                <div className="relative bg-card/40 backdrop-blur-xl border border-primary/30 p-6 rounded-2xl shadow-2xl">
                     <div className="bg-primary/10 p-4 rounded-xl border border-primary/20">
                         <div className="relative">
                             <path

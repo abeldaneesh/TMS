@@ -1,6 +1,6 @@
 {
   "appId": "com.training.app",
-  "appName": "Training App",
+  "appName": "DMO TMS",
   "webDir": "dist",
   "bundledWebRuntime": false
 }

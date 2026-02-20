@@ -207,3 +207,60 @@ export const updateNominationStatus = async (req: AuthRequest, res: Response): P
         res.status(500).json({ message: 'Error updating nomination status' });
     }
 };
+
+// Get busy participants for a specific date
+export const getBusyParticipants = async (req: AuthRequest, res: Response): Promise<void> => {
+    try {
+        const { date, excludeTrainingId } = req.query;
+
+        if (!date) {
+            res.status(400).json({ message: 'Date is required to check availability' });
+            return;
+        }
+
+        const queryDate = new Date(String(date));
+
+        // Ensure valid date
+        if (isNaN(queryDate.getTime())) {
+            res.status(400).json({ message: 'Invalid date format' });
+            return;
+        }
+
+        // Set start and end of day for precise querying
+        const startOfDay = new Date(queryDate.setHours(0, 0, 0, 0));
+        const endOfDay = new Date(queryDate.setHours(23, 59, 59, 999));
+
+        // 1. Find all trainings scheduled for this date (excluding the one we are nominating for, if provided)
+        const trainingQuery: any = {
+            date: { $gte: startOfDay, $lte: endOfDay },
+            status: { $ne: 'cancelled' }
+        };
+
+        if (excludeTrainingId) {
+            trainingQuery._id = { $ne: String(excludeTrainingId) };
+        }
+
+        const trainingsOnDate = await Training.find(trainingQuery).select('_id');
+        const trainingIds = trainingsOnDate.map(t => t._id);
+
+        if (trainingIds.length === 0) {
+            // No other trainings on this date, so no one is busy (relatively speaking to this day)
+            res.json([]);
+            return;
+        }
+
+        // 2. Find all active nominations for these trainings
+        const activeNominations = await Nomination.find({
+            trainingId: { $in: trainingIds },
+            status: { $in: ['nominated', 'approved', 'attended'] }
+        }).select('participantId');
+
+        // Extract unique participant IDs
+        const busyParticipantIds = Array.from(new Set(activeNominations.map(nom => String(nom.participantId))));
+
+        res.json(busyParticipantIds);
+    } catch (error) {
+        console.error('Error fetching busy participants:', error);
+        res.status(500).json({ message: 'Error fetching availability data' });
+    }
+};

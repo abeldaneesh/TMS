@@ -250,7 +250,8 @@ const CreateTraining: React.FC = () => {
       }
       navigate('/trainings');
     } catch (error: any) {
-      toast.error(error.message || 'Error saving training');
+      console.error(error);
+      toast.error(error.response?.data?.message || error.message || 'Error saving training');
     } finally {
       setLoading(false);
     }

@@ -84,10 +84,14 @@ export const updateProfile = async (req: Request, res: Response): Promise<void> 
     try {
         const userId = req.params.userId;
         const { name, phone, designation, department, profilePicture } = req.body;
+        const updateData: any = { name, phone, designation, department };
+        if (profilePicture) {
+            updateData.profilePicture = profilePicture;
+        }
 
         const updatedUser = await User.findByIdAndUpdate(
             userId,
-            { name, phone, designation, department, profilePicture },
+            updateData,
             { new: true }
         ).populate('institutionId', 'name').lean();
 

@@ -125,30 +125,35 @@ const Settings: React.FC = () => {
     };
 
     return (
-        <div className="container mx-auto py-6 max-w-4xl">
-            <h1 className="text-3xl font-bold mb-6">Account Settings</h1>
+        <div className="pb-12 space-y-6 text-foreground max-w-4xl mx-auto">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 mb-6">
+                <div>
+                    <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-foreground flex items-center gap-3">
+                        Settings
+                    </h1>
+                    <p className="text-muted-foreground mt-2 text-sm">
+                        Manage your account configuration and security
+                    </p>
+                </div>
+            </div>
 
             <Tabs defaultValue="profile" className="w-full">
-                <TabsList className="grid grid-cols-2 w-full mb-8 bg-muted/20 p-1 h-auto min-h-12 overflow-hidden">
-                    <TabsTrigger value="profile" className="py-3 px-1 sm:px-4 text-sm md:text-lg transition-all">
-                        <User className="mr-1.5 sm:mr-2 size-4 sm:size-5" />
-                        <span className="font-bold">Profile</span>
-                        <span className="hidden lg:inline ml-1 opacity-70">Details</span>
+                <TabsList className="bg-transparent border-b border-border w-full flex justify-start rounded-none h-auto p-0 gap-6 mb-8">
+                    <TabsTrigger value="profile" className="data-[state=active]:bg-transparent data-[state=active]:text-foreground data-[state=active]:border-foreground bg-transparent border-b-2 border-transparent text-muted-foreground rounded-none py-3 px-1 font-semibold text-base transition-colors">
+                        Profile
                     </TabsTrigger>
-                    <TabsTrigger value="security" className="py-3 px-1 sm:px-4 text-sm md:text-lg transition-all">
-                        <Lock className="mr-1.5 sm:mr-2 size-4 sm:size-5" />
-                        <span className="font-bold">Security</span>
-                        <span className="hidden lg:inline ml-1 opacity-70">& Password</span>
+                    <TabsTrigger value="security" className="data-[state=active]:bg-transparent data-[state=active]:text-foreground data-[state=active]:border-foreground bg-transparent border-b-2 border-transparent text-muted-foreground rounded-none py-3 px-1 font-semibold text-base transition-colors">
+                        Security
                     </TabsTrigger>
                 </TabsList>
 
-                <TabsContent value="profile">
-                    <Card>
+                <TabsContent value="profile" className="mt-0 focus-visible:outline-none">
+                    <Card className="bg-white/5 border-white/10">
                         <CardHeader className="flex flex-row items-center gap-4">
                             <div className="relative group">
                                 <Avatar className="size-20 border-2 border-primary/20">
                                     {profileData.profilePicture && (
-                                        <AvatarImage src={profileData.profilePicture.startsWith('http') ? profileData.profilePicture : `${BASE_URL}${profileData.profilePicture}`} alt={profileData.name} crossOrigin="anonymous" />
+                                        <AvatarImage src={profileData.profilePicture.startsWith('http') ? profileData.profilePicture : `${BASE_URL}${profileData.profilePicture}`} alt={profileData.name} />
                                     )}
                                     <AvatarFallback className="bg-blue-600 text-white text-xl">
                                         {profileData.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
@@ -252,8 +257,8 @@ const Settings: React.FC = () => {
                     </Card>
                 </TabsContent>
 
-                <TabsContent value="security">
-                    <Card>
+                <TabsContent value="security" className="mt-0 focus-visible:outline-none">
+                    <Card className="bg-white/5 border-white/10">
                         <CardHeader>
                             <CardTitle>Change Password</CardTitle>
                             <CardDescription>Ensure your account is secure by using a strong password.</CardDescription>

@@ -1,60 +1,46 @@
-
 import React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import ProgramOfficers from './ProgramOfficers';
 import Participants from './Participants';
-import { Users, ShieldCheck } from 'lucide-react';
+import { Users } from 'lucide-react';
 
 const Personnel: React.FC = () => {
     return (
-        <div className="space-y-6">
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div className="pb-12 space-y-6 text-foreground">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
                 <div>
-                    <h1 className="text-3xl font-extrabold tracking-tighter text-foreground flex items-center gap-3">
-                        <Users className="size-8 text-primary animate-pulse-glow" />
-                        MISSION PERSONNEL
-                        <div className="h-1 w-20 bg-gradient-to-r from-primary to-transparent rounded-full ml-4 hidden md:block" />
+                    <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-foreground flex items-center gap-3">
+                        <Users className="size-8 sm:size-10 text-primary" />
+                        Personnel Management
                     </h1>
-                    <p className="text-muted-foreground mt-1 font-mono text-xs uppercase tracking-widest opacity-70">
-                        Global Operative Registry & Command Structure
+                    <p className="text-muted-foreground mt-2 text-sm">
+                        Manage platform users, roles, and access controls
                     </p>
                 </div>
             </div>
 
             <Tabs defaultValue="officers" className="w-full space-y-6">
-                <TabsList className="bg-muted/30 border border-white/5 p-1 rounded-xl w-full md:w-auto grid grid-cols-2 h-auto">
+                <TabsList className="bg-transparent border-b border-border w-full flex justify-start rounded-none h-auto p-0 gap-6">
                     <TabsTrigger
                         value="officers"
-                        className="data-[state=active]:bg-primary/20 data-[state=active]:text-primary data-[state=active]:border-primary/50 border border-transparent py-3"
+                        className="data-[state=active]:bg-transparent data-[state=active]:text-foreground data-[state=active]:border-foreground bg-transparent border-b-2 border-transparent text-muted-foreground rounded-none py-3 px-1 font-semibold text-base transition-colors"
                     >
-                        <ShieldCheck className="size-4 mr-2" />
-                        PROGRAM OFFICERS
+                        Program Officers
                     </TabsTrigger>
                     <TabsTrigger
                         value="participants"
-                        className="data-[state=active]:bg-secondary/20 data-[state=active]:text-secondary data-[state=active]:border-secondary/50 border border-transparent py-3"
+                        className="data-[state=active]:bg-transparent data-[state=active]:text-foreground data-[state=active]:border-foreground bg-transparent border-b-2 border-transparent text-muted-foreground rounded-none py-3 px-1 font-semibold text-base transition-colors"
                     >
-                        <Users className="size-4 mr-2" />
-                        PARTICIPANTS
+                        Participants
                     </TabsTrigger>
                 </TabsList>
 
-                <TabsContent value="officers" className="mt-0 focus-visible:outline-none">
-                    <div className="glass-card p-1 rounded-2xl border-none shadow-none bg-transparent">
-                        {/* We are hiding the header of the imported component via CSS if needed, or just letting it be */}
-                        {/* Since we can't easily pass props to hide existing headers without modifying those files, 
-                            we will just render them. The double header might look a bit odd but it provides context.
-                            For a cleaner look, identifying that we are in a 'tab' context might rely on modifying the children.
-                            Let's just render them for now.
-                        */}
-                        <ProgramOfficers />
-                    </div>
+                <TabsContent value="officers" className="mt-6 focus-visible:outline-none">
+                    <ProgramOfficers />
                 </TabsContent>
 
-                <TabsContent value="participants" className="mt-0 focus-visible:outline-none">
-                    <div className="glass-card p-1 rounded-2xl border-none shadow-none bg-transparent">
-                        <Participants />
-                    </div>
+                <TabsContent value="participants" className="mt-6 focus-visible:outline-none">
+                    <Participants />
                 </TabsContent>
             </Tabs>
         </div>

@@ -61,7 +61,7 @@ const PortalSelection: React.FC = () => {
 
                 {/* Mobile Header */}
                 <div className="flex md:hidden flex-col items-center mb-12 relative z-10">
-                    <div className="bg-primary/10 text-primary p-5 rounded-2xl mb-6 border border-primary/20 shadow-lg glow-primary">
+                    <div className="bg-primary/10 text-primary p-5 rounded-2xl mb-6 border border-primary/20 shadow-lg">
                         <Building2 className="size-12" />
                     </div>
                     <h1 className="text-4xl font-black text-foreground text-center tracking-tighter uppercase">DMO CORE</h1>

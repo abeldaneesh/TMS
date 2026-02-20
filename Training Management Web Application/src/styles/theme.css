@@ -2,111 +2,88 @@
 
 :root {
   --font-size: 16px;
-  /* Space Dark Theme (Default) */
-  --background: #02040a;
-  --foreground: #f0f6fc;
-  --card: #0d1117;
-  --card-foreground: #f0f6fc;
-  --popover: #0d1117;
-  --popover-foreground: #f0f6fc;
-  --primary: #00ecff;
-  --primary-foreground: #02040a;
-  --secondary: #6e40c9;
-  --secondary-foreground: #f0f6fc;
-  --muted: #161b22;
-  --muted-foreground: #8b949e;
-  --accent: #1f6feb;
-  --accent-foreground: #ffffff;
-  --destructive: #f85149;
-  --destructive-foreground: #ffffff;
-  --border: #30363d;
-  --input: #0d1117;
-  --input-background: #0d1117;
-  --switch-background: #30363d;
-  --ring: rgba(0, 236, 255, 0.5);
-  --radius: 1rem;
-
-  /* Charts - Dark */
-  --chart-1: #00ecff;
-  --chart-2: #6e40c9;
-  --chart-3: #238636;
-  --chart-4: #f0883e;
-  --chart-5: #f85149;
-
-  /* Sidebar - Dark */
-  --sidebar: #010409;
-  --sidebar-foreground: #f0f6fc;
-  --sidebar-primary: #00ecff;
-  --sidebar-primary-foreground: #02040a;
-  --sidebar-accent: #1f6feb;
-  --sidebar-accent-foreground: #00ecff;
-  --sidebar-border: #30363d;
-  --sidebar-ring: #00ecff;
-  /* Glass & Utilities - Dark */
-  --glass-bg: rgba(13, 17, 23, 0.7);
-  --glass-border: rgba(0, 236, 255, 0.2);
-  --glass-shadow: 0 0 20px rgba(0, 0, 0, 0.4);
-  --stat-gradient-start: #fff;
-  --stat-gradient-end: #8b949e;
-}
-
-.light {
-  /* Standard Professional Theme */
-  --background: #f8fafc;
-  /* Slate 50 */
-  --foreground: #0f172a;
-  /* Slate 900 */
-  --card: #ffffff;
-  --card-foreground: #0f172a;
-  --popover: #ffffff;
-  --popover-foreground: #0f172a;
-  --primary: #2563eb;
-  /* Blue 600 */
+  /* YouTube Music Style Theme (Pitch Black) */
+  --background: #030303;
+  --foreground: #ffffff;
+  --card: #121212;
+  --card-foreground: #ffffff;
+  --popover: #212121;
+  --popover-foreground: #ffffff;
+  --primary: #ff0000;
+  /* YouTube Red */
   --primary-foreground: #ffffff;
-  --secondary: #475569;
-  /* Slate 600 */
-  --secondary-foreground: #f8fafc;
-  --muted: #f1f5f9;
-  /* Slate 100 */
-  --muted-foreground: #64748b;
-  /* Slate 500 */
-  --accent: #eff6ff;
-  /* Blue 50 */
-  --accent-foreground: #2563eb;
+  --secondary: #ffffff1a;
+  /* Semi-transparent white for secondary surfaces like search bar */
+  --secondary-foreground: #ffffff;
+  --muted: #282828;
+  /* Dark gray for unselected / borders */
+  --muted-foreground: #aaaaaa;
+  /* Light gray text */
+  --accent: #212121;
+  /* Slightly lighter than card */
+  --accent-foreground: #ffffff;
   --destructive: #ef4444;
-  /* Red 500 */
   --destructive-foreground: #ffffff;
-  --border: #e2e8f0;
-  /* Slate 200 */
-  --input: #ffffff;
-  --input-background: #ffffff;
-  --switch-background: #e2e8f0;
-  --ring: rgba(37, 99, 235, 0.5);
+  --border: #282828;
+  --input: #ffffff1a;
+  --input-background: #121212;
+  --switch-background: #3d3d3d;
+  --ring: rgba(255, 0, 0, 0.5);
   --radius: 0.5rem;
 
-  /* Glass & Utilities - Light */
-  --glass-bg: rgba(255, 255, 255, 0.7);
-  --glass-border: rgba(226, 232, 240, 0.8);
-  --glass-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-  --stat-gradient-start: #0f172a;
-  --stat-gradient-end: #64748b;
+  /* Charts - Adjusted for Dark Mode */
+  --chart-1: #ff0000;
+  --chart-2: #ff4d4d;
+  --chart-3: #ff9999;
+  --chart-4: #ffcccc;
+  --chart-5: #ffffff;
 
-  /* Charts - Light */
-  --chart-1: #2563eb;
-  --chart-2: #475569;
-  --chart-3: #059669;
-  --chart-4: #d97706;
-  --chart-5: #dc2626;
-
-  /* Sidebar - Light */
-  --sidebar: #ffffff;
-  --sidebar-foreground: #0f172a;
-  --sidebar-primary: #2563eb;
+  /* Sidebar */
+  --sidebar: #030303;
+  --sidebar-foreground: #ffffff;
+  --sidebar-primary: #ff0000;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #eff6ff;
-  --sidebar-accent-foreground: #2563eb;
-  --sidebar-border: #e2e8f0;
-  --sidebar-ring: #2563eb;
+  --sidebar-accent: #282828;
+  --sidebar-accent-foreground: #ffffff;
+  --sidebar-border: #282828;
+  --sidebar-ring: #ff0000;
+
+  /* Clean Sub-Styles */
+  --glass-bg: rgba(33, 33, 33, 0.8);
+  --glass-border: #3d3d3d;
+  --glass-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5);
+  --stat-gradient-start: #ff0000;
+  --stat-gradient-end: #ff4d4d;
+}
+
+.dark {
+  --background: #030303;
+  --foreground: #ffffff;
+  --card: #121212;
+  --card-foreground: #ffffff;
+  --popover: #212121;
+  --popover-foreground: #ffffff;
+  --primary: #ff0000;
+  --primary-foreground: #ffffff;
+  --secondary: #ffffff1a;
+  --secondary-foreground: #ffffff;
+  --muted: #282828;
+  --muted-foreground: #aaaaaa;
+  --accent: #212121;
+  --accent-foreground: #ffffff;
+  --destructive: #ef4444;
+  --destructive-foreground: #ffffff;
+  --border: #282828;
+  --input: #ffffff1a;
+  --input-background: #121212;
+  --switch-background: #3d3d3d;
+  --ring: rgba(255, 0, 0, 0.5);
+
+  --glass-bg: rgba(33, 33, 33, 0.8);
+  --glass-border: #3d3d3d;
+  --glass-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5);
+  --stat-gradient-start: #ff0000;
+  --stat-gradient-end: #ff4d4d;
 }
 
 @theme inline {
@@ -162,13 +139,8 @@ body {
   background-color: var(--background);
   color: var(--foreground);
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
-  background-image: var(--bg-image, radial-gradient(circle at 50% 50%, #0d1117 0%, #02040a 100%));
-  background-attachment: fixed;
-}
-
-/* Theme-specific background override */
-.light body {
-  --bg-image: none;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 h1,
@@ -179,30 +151,14 @@ h4 {
   color: var(--foreground);
 }
 
-:root h1,
-:root h2,
-:root h3,
-:root h4 {
-  text-shadow: 0 0 20px rgba(0, 236, 255, 0.1);
-}
-
-.light h1,
-.light h2,
-.light h3,
-.light h4 {
-  text-shadow: none;
-}
-
-/* Futuristic Utilities */
+/* Clean Utilities (Replacing Custom Effects) */
 @utility glass {
-  backdrop-filter: blur(12px);
   background-color: var(--glass-bg);
   border: 1px solid var(--glass-border);
-  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+  box-shadow: var(--glass-shadow);
 }
 
 @utility glass-card {
-  backdrop-filter: blur(16px);
   background-color: var(--glass-bg);
   border: 1px solid var(--glass-border);
   box-shadow: var(--glass-shadow);
@@ -210,27 +166,19 @@ h4 {
 }
 
 @utility glass-panel {
-  backdrop-filter: blur(8px);
   background-color: var(--glass-bg);
   border: 1px solid var(--glass-border);
 }
 
-@utility glow-primary {
-  box-shadow: 0 0 15px rgba(0, 236, 255, 0.3);
-}
 
-/* Scoped glow for light mode to be less intense or different color */
-.light .glow-primary {
-  box-shadow: 0 0 15px rgba(37, 99, 235, 0.2);
-}
 
 @utility neon-border {
   border: 1px solid var(--border);
-  transition: all 0.3s ease;
+  border-radius: var(--radius);
+  transition: all 0.2s ease;
 
   &:hover {
     border-color: var(--primary);
-    box-shadow: 0 0 10px var(--ring);
   }
 }
 
@@ -250,8 +198,8 @@ h4 {
   }
 
   & th {
-    color: var(--primary);
-    font-weight: 700;
+    color: var(--muted-foreground);
+    font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.05em;
     font-size: 0.75rem;
@@ -261,35 +209,6 @@ h4 {
 @utility stat-value {
   font-family: inherit;
   font-variant-numeric: tabular-nums;
-  letter-spacing: -0.02em;
-  font-weight: 800;
-  background: linear-gradient(to bottom, var(--stat-gradient-start), var(--stat-gradient-end));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-}
-
-@utility cyber-grid {
-  background-image:
-    linear-gradient(var(--glass-border) 1px, transparent 1px),
-    linear-gradient(90deg, var(--glass-border) 1px, transparent 1px);
-  background-size: 40px 40px;
-  mask-image: radial-gradient(circle at 50% 50%, black 30%, transparent 100%);
-}
-
-@utility animate-pulse-glow {
-  animation: pulse-glow 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-}
-
-@keyframes pulse-glow {
-
-  0%,
-  100% {
-    opacity: 1;
-    filter: drop-shadow(0 0 5px rgba(0, 236, 255, 0.5));
-  }
-
-  50% {
-    opacity: 0.7;
-    filter: drop-shadow(0 0 15px rgba(0, 236, 255, 0.8));
-  }
+  font-weight: 700;
+  color: var(--foreground);
 }
