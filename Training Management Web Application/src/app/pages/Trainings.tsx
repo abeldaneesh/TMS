@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import api from '../../services/api';
 import { Training, Hall, User } from '../../types';
+import { useTranslation } from 'react-i18next';
 import {
   Calendar, Clock, Users, MapPin, Plus, Search,
   Edit, Eye, AppWindowMac, PlayCircle, ClipboardList, CheckCircle2, XCircle
@@ -16,6 +17,7 @@ import { toast } from 'sonner';
 import FilterChips from '../components/FilterChips';
 import AttendanceListModal from '../components/AttendanceListModal';
 import AssignedParticipantsModal from '../components/AssignedParticipantsModal';
+import LoadingScreen from '../components/LoadingScreen';
 
 const Trainings: React.FC = () => {
   const { user } = useAuth();
@@ -24,6 +26,7 @@ const Trainings: React.FC = () => {
   const [halls, setHalls] = useState<Hall[]>([]);
   const [trainers, setTrainers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
+  const { t } = useTranslation();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
 
@@ -112,11 +115,7 @@ const Trainings: React.FC = () => {
   };
 
   if (loading) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[400px]">
-        <div className="text-lg text-primary animate-pulse font-medium">Loading content...</div>
-      </div>
-    );
+    return <LoadingScreen />;
   }
 
   return (
@@ -125,18 +124,18 @@ const Trainings: React.FC = () => {
         <div>
           <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-foreground flex items-center gap-3">
             <AppWindowMac className="size-8 sm:size-10 text-primary" />
-            Explore Library
+            {t('trainings.exploreLibrary', 'Explore Library')}
           </h1>
           <p className="text-muted-foreground mt-2 text-sm">
             {user?.role === 'program_officer'
-              ? 'Manage your operational deployments'
-              : 'Discover and oversee all training missions'}
+              ? t('trainings.descOfficer', 'Manage your operational deployments')
+              : t('trainings.descAdmin', 'Discover and oversee all training missions')}
           </p>
         </div>
         {(user?.role === 'program_officer' || user?.role === 'master_admin') && (
           <Button onClick={() => navigate('/trainings/create')} className="bg-foreground text-background hover:bg-white/90 font-semibold rounded-full px-6">
             <Plus className="size-5 mr-2" />
-            New Mission
+            {t('trainings.newMission', 'New Mission')}
           </Button>
         )}
       </div>
@@ -145,7 +144,7 @@ const Trainings: React.FC = () => {
         <div className="relative flex-1 max-w-md">
           <Search className="absolute left-4 top-3.5 size-5 text-muted-foreground" />
           <Input
-            placeholder="Search trainings, sectors, or programs..."
+            placeholder={t('trainings.searchPlaceholder', 'Search trainings, sectors, or programs...')}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="pl-12 bg-secondary/30 border-transparent focus:border-[#3d3d3d] rounded-full h-12 text-foreground"
@@ -155,12 +154,12 @@ const Trainings: React.FC = () => {
 
       <FilterChips
         options={[
-          { value: 'all', label: 'All Deployments' },
-          { value: 'draft', label: 'Drafts' },
-          { value: 'scheduled', label: 'Scheduled' },
-          { value: 'ongoing', label: 'Active' },
-          { value: 'completed', label: 'Completed' },
-          { value: 'cancelled', label: 'Aborted' }
+          { value: 'all', label: t('trainings.filters.all', 'All Deployments') },
+          { value: 'draft', label: t('trainings.filters.draft', 'Drafts') },
+          { value: 'scheduled', label: t('trainings.filters.scheduled', 'Scheduled') },
+          { value: 'ongoing', label: t('trainings.filters.ongoing', 'Active') },
+          { value: 'completed', label: t('trainings.filters.completed', 'Completed') },
+          { value: 'cancelled', label: t('trainings.filters.cancelled', 'Aborted') }
         ]}
         selectedValue={statusFilter}
         onChange={setStatusFilter}
@@ -172,20 +171,20 @@ const Trainings: React.FC = () => {
           <div className="bg-secondary/20 size-24 rounded-full flex items-center justify-center mb-6">
             <Calendar className="size-10 text-muted-foreground opacity-50" />
           </div>
-          <h3 className="text-2xl font-bold mb-2">No matching results</h3>
+          <h3 className="text-2xl font-bold mb-2">{t('trainings.noResults', 'No matching results')}</h3>
           <p className="text-muted-foreground max-w-md mb-8">
             {searchTerm || statusFilter !== 'all'
-              ? 'Try adjusting your search terms or filters to find what you are looking for.'
-              : 'There are no items in this library yet.'}
+              ? t('trainings.adjustSearch', 'Try adjusting your search terms or filters to find what you are looking for.')
+              : t('trainings.emptyLibrary', 'There are no items in this library yet.')}
           </p>
         </div>
       ) : (
         <div className="flex flex-col">
           <div className="hidden md:flex items-center px-4 py-2 text-sm text-muted-foreground border-b border-border/50 uppercase tracking-wider font-medium">
             <div className="w-8 mr-4 text-center">#</div>
-            <div className="flex-1 min-w-0 pr-4">Title</div>
-            <div className="w-48 shrink-0 px-4 text-right">Date & Time</div>
-            <div className="w-32 shrink-0 px-4">Status</div>
+            <div className="flex-1 min-w-0 pr-4">{t('trainings.table.title', 'Title')}</div>
+            <div className="w-48 shrink-0 px-4 text-right">{t('trainings.table.dateTime', 'Date & Time')}</div>
+            <div className="w-32 shrink-0 px-4">{t('trainings.table.status', 'Status')}</div>
             <div className="w-48 shrink-0"></div>
           </div>
 
@@ -230,21 +229,21 @@ const Trainings: React.FC = () => {
 
               {/* Actions */}
               <div className="flex items-center justify-end sm:w-48 shrink-0 gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity mt-4 sm:mt-0" onClick={e => e.stopPropagation()}>
-                <Button variant="ghost" size="icon" onClick={() => navigate(`/trainings/${training.id}`)} className="text-muted-foreground hover:text-white hover:bg-white/10 rounded-full size-9" title="View Details">
+                <Button variant="ghost" size="icon" onClick={() => navigate(`/trainings/${training.id}`)} className="text-muted-foreground hover:text-white hover:bg-white/10 rounded-full size-9" title={t('trainings.actions.details', 'View Details')}>
                   <Eye className="size-4" />
                 </Button>
 
                 {(user?.role === 'program_officer' || user?.role === 'master_admin') && (
                   <>
-                    <Button variant="ghost" size="icon" onClick={() => handleViewParticipants(training)} className="text-muted-foreground hover:text-white hover:bg-white/10 rounded-full size-9" title="Personnel">
+                    <Button variant="ghost" size="icon" onClick={() => handleViewParticipants(training)} className="text-muted-foreground hover:text-white hover:bg-white/10 rounded-full size-9" title={t('trainings.actions.personnel', 'Personnel')}>
                       <Users className="size-4" />
                     </Button>
-                    <Button variant="ghost" size="icon" onClick={() => handleViewAttendance(training)} className="text-muted-foreground hover:text-white hover:bg-white/10 rounded-full size-9" title="Attendance">
+                    <Button variant="ghost" size="icon" onClick={() => handleViewAttendance(training)} className="text-muted-foreground hover:text-white hover:bg-white/10 rounded-full size-9" title={t('trainings.actions.attendance', 'Attendance')}>
                       <ClipboardList className="size-4" />
                     </Button>
 
                     {((user?.role === 'program_officer' && training.createdById === user.id) || user?.role === 'master_admin') && (
-                      <Button variant="ghost" size="icon" onClick={() => navigate(`/trainings/${training.id}/edit`)} className="text-muted-foreground hover:text-white hover:bg-white/10 rounded-full size-9" title="Modify">
+                      <Button variant="ghost" size="icon" onClick={() => navigate(`/trainings/${training.id}/edit`)} className="text-muted-foreground hover:text-white hover:bg-white/10 rounded-full size-9" title={t('trainings.actions.modify', 'Modify')}>
                         <Edit className="size-4" />
                       </Button>
                     )}
@@ -255,18 +254,18 @@ const Trainings: React.FC = () => {
                           variant="ghost"
                           size="icon"
                           onClick={async () => {
-                            if (confirm('Mark completion?')) {
+                            if (confirm(t('trainings.confirmComplete', 'Mark completion?'))) {
                               try {
                                 await api.patch(`/trainings/${training.id}/status`, { status: 'completed' });
                                 setTrainings(trainings.map(t => t.id === training.id ? { ...t, status: 'completed' } : t));
-                                toast.success('Completed');
+                                toast.success(t('trainings.completedSuccess', 'Completed'));
                               } catch (e) {
                                 toast.error('Failed');
                               }
                             }
                           }}
                           className="text-muted-foreground hover:text-emerald-400 hover:bg-emerald-500/10 rounded-full size-9"
-                          title="Finish"
+                          title={t('trainings.actions.finish', 'Finish')}
                         >
                           <CheckCircle2 className="size-4" />
                         </Button>
@@ -274,18 +273,18 @@ const Trainings: React.FC = () => {
                           variant="ghost"
                           size="icon"
                           onClick={async () => {
-                            if (confirm('Abort mission?')) {
+                            if (confirm(t('trainings.confirmAbort', 'Abort mission?'))) {
                               try {
                                 await api.patch(`/trainings/${training.id}/status`, { status: 'cancelled' });
                                 setTrainings(trainings.map(t => t.id === training.id ? { ...t, status: 'cancelled' } : t));
-                                toast.success('Aborted');
+                                toast.success(t('trainings.abortedSuccess', 'Aborted'));
                               } catch (e) {
                                 toast.error('Failed');
                               }
                             }
                           }}
                           className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-full size-9"
-                          title="Abort"
+                          title={t('trainings.actions.abort', 'Abort')}
                         >
                           <XCircle className="size-4" />
                         </Button>

@@ -6,10 +6,12 @@ import { Badge } from '../components/ui/badge';
 import { toast } from 'sonner';
 import { UserCheck, UserX, Clock, Building2, Mail, User as UserIcon } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
+import { useTranslation } from 'react-i18next';
 import { Navigate } from 'react-router-dom';
 
 const UserApprovals: React.FC = () => {
     const { user: currentUser } = useAuth();
+    const { t } = useTranslation();
     const [pendingUsers, setPendingUsers] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
 
@@ -45,7 +47,7 @@ const UserApprovals: React.FC = () => {
     };
 
     const handleReject = async (userId: string) => {
-        if (!window.confirm('Are you sure you want to reject this registration? This will delete the request.')) return;
+        if (!window.confirm(t('userApprovals.confirmReject', 'Are you sure you want to reject this registration? This will delete the request.'))) return;
         try {
             await usersApi.reject(userId);
             toast.success('User rejected successfully');
@@ -61,10 +63,10 @@ const UserApprovals: React.FC = () => {
                 <div>
                     <h1 className="text-3xl font-extrabold tracking-tighter text-white flex items-center gap-3">
                         <UserCheck className="size-8 text-primary animate-pulse-glow" />
-                        USER APPROVALS
+                        {t('userApprovals.title', 'USER APPROVALS')}
                         <div className="h-1 w-20 bg-gradient-to-r from-primary to-transparent rounded-full ml-4 hidden md:block" />
                     </h1>
-                    <p className="text-muted-foreground mt-1 font-mono text-xs uppercase tracking-widest opacity-70">Security Clearance & Personnel Verification</p>
+                    <p className="text-muted-foreground mt-1 font-mono text-xs uppercase tracking-widest opacity-70">{t('userApprovals.subtitle', 'Security Clearance & Personnel Verification')}</p>
                 </div>
             </div>
 
@@ -72,12 +74,12 @@ const UserApprovals: React.FC = () => {
                 <CardHeader className="pb-4 border-b border-primary/10 bg-primary/5">
                     <CardTitle className="text-sm font-bold text-primary tracking-[0.2em] flex items-center gap-2">
                         <Clock className="size-4" />
-                        PENDING ACCESS REQUESTS
+                        {t('userApprovals.pendingRequestsTitle', 'PENDING ACCESS REQUESTS')}
                     </CardTitle>
                     <CardDescription className="text-muted-foreground font-mono text-[10px] uppercase tracking-wider">
                         {pendingUsers.length === 0
-                            ? "NO ACTIVE REQUESTS IN BUFFER."
-                            : `DETECTED ${pendingUsers.length} PENDING AUTHORIZATION REQUEST(S).`}
+                            ? t('userApprovals.noActiveRequests', 'NO ACTIVE REQUESTS IN BUFFER.')
+                            : t('userApprovals.detectedRequests', { count: pendingUsers.length, defaultValue: `DETECTED {{count}} PENDING AUTHORIZATION REQUEST(S).` })}
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="pt-6">
@@ -87,7 +89,7 @@ const UserApprovals: React.FC = () => {
                                 <div className="absolute inset-0 border-t-2 border-primary rounded-full animate-spin" />
                                 <div className="absolute inset-0 border-r-2 border-secondary rounded-full animate-spin [animation-duration:1.5s]" />
                             </div>
-                            <p className="text-primary font-mono text-xs tracking-widest animate-pulse">SCANNING ENCRYPTED REQUESTS...</p>
+                            <p className="text-primary font-mono text-xs tracking-widest animate-pulse">{t('userApprovals.scanning', 'SCANNING ENCRYPTED REQUESTS...')}</p>
                         </div>
                     ) : (
                         <div className="space-y-4">
@@ -113,15 +115,15 @@ const UserApprovals: React.FC = () => {
                                             </div>
                                             <div className="flex items-center gap-2 group-hover:text-primary/70 transition-colors">
                                                 <Building2 className="size-3.5 text-primary/40" />
-                                                {user.institution?.name || 'CENTRAL COMMAND'}
+                                                {user.institution?.name || t('userApprovals.centralCommand', 'CENTRAL COMMAND')}
                                             </div>
                                             <div className="flex items-center gap-2 group-hover:text-primary/70 transition-colors">
                                                 <Clock className="size-3.5 text-primary/40" />
-                                                INITIATED: {new Date(user.createdAt).toLocaleDateString()}
+                                                {t('userApprovals.initiated', 'INITIATED:')} {new Date(user.createdAt).toLocaleDateString()}
                                             </div>
                                             {user.designation && (
                                                 <div className="flex items-center gap-2 group-hover:text-primary/70 transition-colors">
-                                                    <span className="text-primary/40 font-bold uppercase text-[9px]">RANK:</span>
+                                                    <span className="text-primary/40 font-bold uppercase text-[9px]">{t('userApprovals.rank', 'RANK:')}</span>
                                                     {user.designation}
                                                 </div>
                                             )}
@@ -134,7 +136,7 @@ const UserApprovals: React.FC = () => {
                                             className="bg-primary/20 hover:bg-primary text-primary hover:text-primary-foreground border border-primary/30 flex gap-2 items-center font-bold tracking-widest text-xs px-6 py-5 rounded-xl transition-all shadow-[0_0_15px_rgba(0,236,255,0.1)] hover:shadow-[0_0_20px_rgba(0,236,255,0.3)]"
                                         >
                                             <UserCheck className="size-4" />
-                                            GRANT ACCESS
+                                            {t('userApprovals.grantAccess', 'GRANT ACCESS')}
                                         </Button>
                                         <Button
                                             onClick={() => handleReject(user.id)}
@@ -142,7 +144,7 @@ const UserApprovals: React.FC = () => {
                                             className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 flex gap-2 items-center font-bold tracking-widest text-xs px-4 py-5 rounded-xl transition-all"
                                         >
                                             <UserX className="size-4" />
-                                            REJECT
+                                            {t('userApprovals.reject', 'REJECT')}
                                         </Button>
                                     </div>
                                 </div>
@@ -153,8 +155,8 @@ const UserApprovals: React.FC = () => {
                                     <div className="bg-primary/10 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 border border-primary/20">
                                         <UserCheck className="size-10 text-primary/40" />
                                     </div>
-                                    <h3 className="text-xl font-bold text-white tracking-widest">CLEARANCE COMPLETE</h3>
-                                    <p className="text-muted-foreground mt-2 font-mono text-xs uppercase tracking-widest">No unauthorized entities detected in the perimeter.</p>
+                                    <h3 className="text-xl font-bold text-white tracking-widest">{t('userApprovals.clearanceComplete', 'CLEARANCE COMPLETE')}</h3>
+                                    <p className="text-muted-foreground mt-2 font-mono text-xs uppercase tracking-widest">{t('userApprovals.noEntities', 'No unauthorized entities detected in the perimeter.')}</p>
                                 </div>
                             )}
                         </div>

@@ -16,6 +16,7 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
   ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell
 } from 'recharts';
+import LoadingScreen from '../components/LoadingScreen';
 
 const Analytics: React.FC = () => {
   const { user } = useAuth();
@@ -66,11 +67,7 @@ const Analytics: React.FC = () => {
   }, [selectedTraining]);
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center h-96">
-        <div className="text-lg text-primary animate-pulse font-medium">Loading analytics...</div>
-      </div>
-    );
+    return <LoadingScreen />;
   }
 
   const safeTrainings = Array.isArray(trainings) ? trainings.filter(Boolean) : [];

@@ -8,6 +8,7 @@ import { attendanceApi } from '../../services/api';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
+import LoadingScreen from '../components/LoadingScreen';
 
 const MyAttendance: React.FC = () => {
     const [attendanceHistory, setAttendanceHistory] = useState<any[]>([]);
@@ -37,11 +38,7 @@ const MyAttendance: React.FC = () => {
     };
 
     if (loading) {
-        return (
-            <div className="flex items-center justify-center h-96">
-                <div className="text-lg text-gray-500">Loading attendance history...</div>
-            </div>
-        );
+        return <LoadingScreen />;
     }
 
     return (

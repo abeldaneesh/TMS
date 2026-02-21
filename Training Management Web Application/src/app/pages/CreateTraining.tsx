@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import { useTranslation } from 'react-i18next';
 import { trainingsApi, hallsApi, institutionsApi, hallRequestsApi } from '../../services/api';
 import api from '../../services/api';
 import { Hall, Institution, TrainingStatus } from '../../types';
@@ -27,6 +28,7 @@ const CreateTraining: React.FC = () => {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const isEditMode = !!id;
+  const { t } = useTranslation();
 
   const [halls, setHalls] = useState<Hall[]>([]);
   const [institutions, setInstitutions] = useState<Institution[]>([]);
@@ -341,60 +343,60 @@ const CreateTraining: React.FC = () => {
       <div className="flex items-center gap-4">
         <Button variant="outline" onClick={() => navigate('/trainings')}>
           <ArrowLeft className="size-4 mr-2" />
-          Back
+          {t('createTraining.back', 'Back')}
         </Button>
         <div>
-          <h1 className="text-3xl font-bold">{isEditMode ? 'Edit Training' : 'Create Training'}</h1>
-          <p className="text-gray-500 mt-1">{isEditMode ? 'Update training details' : 'Schedule a new training session'}</p>
+          <h1 className="text-3xl font-bold">{isEditMode ? t('createTraining.titleEdit', 'Edit Training') : t('createTraining.titleCreate', 'Create Training')}</h1>
+          <p className="text-gray-500 mt-1">{isEditMode ? t('createTraining.descEdit', 'Update training details') : t('createTraining.descCreate', 'Schedule a new training session')}</p>
         </div>
       </div>
 
       <Dialog open={showRequestDialog} onOpenChange={setShowRequestDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Request Hall Approval</DialogTitle>
+            <DialogTitle>{t('createTraining.dialog.title', 'Request Hall Approval')}</DialogTitle>
             <DialogDescription>
-              Submit a request to the Admin for this hall booking.
+              {t('createTraining.dialog.desc', 'Submit a request to the Admin for this hall booking.')}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-2">
             <div>
-              <Label>Training Title</Label>
+              <Label>{t('createTraining.fields.title', 'Training Title *')}</Label>
               <Input value={formData.title} disabled className="bg-gray-100" />
             </div>
             <div>
-              <Label>Requested Hall</Label>
+              <Label>{t('createTraining.dialog.requestedHall', 'Requested Hall')}</Label>
               <Input value={halls.find(h => h.id === formData.hallId)?.name || ''} disabled className="bg-gray-100" />
             </div>
             <div>
-              <Label>Time Slot</Label>
+              <Label>{t('createTraining.dialog.timeSlot', 'Time Slot')}</Label>
               <Input value={`${new Date(formData.date).toLocaleDateString()} | ${formData.startTime} - ${formData.endTime}`} disabled className="bg-gray-100" />
             </div>
             <div>
-              <Label>Priority</Label>
+              <Label>{t('createTraining.dialog.priority', 'Priority')}</Label>
               <Select value={requestPriority} onValueChange={(val: any) => setRequestPriority(val)}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="normal">Normal</SelectItem>
-                  <SelectItem value="urgent">Urgent</SelectItem>
+                  <SelectItem value="normal">{t('createTraining.dialog.normal', 'Normal')}</SelectItem>
+                  <SelectItem value="urgent">{t('createTraining.dialog.urgent', 'Urgent')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div>
-              <Label>Remarks (Optional)</Label>
+              <Label>{t('createTraining.dialog.remarks', 'Remarks (Optional)')}</Label>
               <Textarea
                 value={requestRemarks}
                 onChange={(e) => setRequestRemarks(e.target.value)}
-                placeholder="Reason for urgency or special requirements..."
+                placeholder={t('createTraining.dialog.remarksPlaceholder', 'Reason for urgency or special requirements...')}
               />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowRequestDialog(false)}>Cancel</Button>
+            <Button variant="outline" onClick={() => setShowRequestDialog(false)}>{t('createTraining.buttons.cancel', 'Cancel')}</Button>
             <Button onClick={handleRequestHall} disabled={requestLoading}>
-              {requestLoading ? 'Sending...' : 'Send Request'}
+              {requestLoading ? t('createTraining.buttons.sending', 'Sending...') : t('createTraining.buttons.sendRequest', 'Send Request')}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -403,28 +405,28 @@ const CreateTraining: React.FC = () => {
       <form onSubmit={handleSubmit} className="space-y-6">
         <Card>
           <CardHeader>
-            <CardTitle>Basic Information</CardTitle>
-            <CardDescription>Enter the training details</CardDescription>
+            <CardTitle>{t('createTraining.sections.basic.title', 'Basic Information')}</CardTitle>
+            <CardDescription>{t('createTraining.sections.basic.desc', 'Enter the training details')}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
-              <Label htmlFor="title">Training Title *</Label>
+              <Label htmlFor="title">{t('createTraining.fields.title', 'Training Title *')}</Label>
               <Input
                 id="title"
                 value={formData.title}
                 onChange={(e) => handleChange('title', e.target.value)}
-                placeholder="e.g., Emergency Response & First Aid"
+                placeholder={t('createTraining.fields.titlePlaceholder', 'e.g., Emergency Response & First Aid')}
               />
               {errors.title && <p className="text-sm text-red-600 mt-1">{errors.title}</p>}
             </div>
 
             <div>
-              <Label htmlFor="description">Description *</Label>
+              <Label htmlFor="description">{t('createTraining.fields.desc', 'Description *')}</Label>
               <Textarea
                 id="description"
                 value={formData.description}
                 onChange={(e) => handleChange('description', e.target.value)}
-                placeholder="Detailed description of the training program"
+                placeholder={t('createTraining.fields.descPlaceholder', 'Detailed description of the training program')}
                 rows={4}
               />
               {errors.description && <p className="text-sm text-red-600 mt-1">{errors.description}</p>}
@@ -432,10 +434,10 @@ const CreateTraining: React.FC = () => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="program">Program *</Label>
+                <Label htmlFor="program">{t('createTraining.fields.program', 'Program *')}</Label>
                 <Select value={formData.program} onValueChange={(value) => handleChange('program', value)}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Select program" />
+                    <SelectValue placeholder={t('createTraining.fields.programPlaceholder', 'Select program')} />
                   </SelectTrigger>
                   <SelectContent>
                     {programs.map((program) => (
@@ -449,12 +451,12 @@ const CreateTraining: React.FC = () => {
               </div>
 
               <div>
-                <Label htmlFor="targetAudience">Target Audience *</Label>
+                <Label htmlFor="targetAudience">{t('createTraining.fields.targetAudience', 'Target Audience *')}</Label>
                 <Input
                   id="targetAudience"
                   value={formData.targetAudience}
                   onChange={(e) => handleChange('targetAudience', e.target.value)}
-                  placeholder="e.g., Nurses, Doctors, All Staff"
+                  placeholder={t('createTraining.fields.targetAudiencePlaceholder', 'e.g., Nurses, Doctors, All Staff')}
                 />
                 {errors.targetAudience && <p className="text-sm text-red-600 mt-1">{errors.targetAudience}</p>}
               </div>
@@ -464,13 +466,13 @@ const CreateTraining: React.FC = () => {
 
         <Card>
           <CardHeader>
-            <CardTitle>Schedule & Venue</CardTitle>
-            <CardDescription>Set the date, time, and location</CardDescription>
+            <CardTitle>{t('createTraining.sections.schedule.title', 'Schedule & Venue')}</CardTitle>
+            <CardDescription>{t('createTraining.sections.schedule.desc', 'Set the date, time, and location')}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <Label htmlFor="date">Date *</Label>
+                <Label htmlFor="date">{t('createTraining.fields.date', 'Date *')}</Label>
                 <Input
                   id="date"
                   type="date"
@@ -482,7 +484,7 @@ const CreateTraining: React.FC = () => {
               </div>
 
               <div>
-                <Label htmlFor="startTime">Start Time *</Label>
+                <Label htmlFor="startTime">{t('createTraining.fields.startTime', 'Start Time *')}</Label>
                 <Input
                   id="startTime"
                   type="time"
@@ -493,7 +495,7 @@ const CreateTraining: React.FC = () => {
               </div>
 
               <div>
-                <Label htmlFor="endTime">End Time *</Label>
+                <Label htmlFor="endTime">{t('createTraining.fields.endTime', 'End Time *')}</Label>
                 <Input
                   id="endTime"
                   type="time"
@@ -510,11 +512,11 @@ const CreateTraining: React.FC = () => {
                   <AlertCircle className="size-4" />
                   <AlertDescription>
                     {checkingAvailability ? (
-                      'Checking hall availability...'
+                      t('createTraining.hallStatus.checking', 'Checking hall availability...')
                     ) : availableHalls.length > 0 ? (
-                      `${availableHalls.length} hall(s) available for the selected time slot`
+                      `${availableHalls.length} ${t('createTraining.hallStatus.available', 'hall(s) available for the selected time slot')}`
                     ) : (
-                      'No halls available for the selected time slot.'
+                      t('createTraining.hallStatus.none', 'No halls available for the selected time slot.')
                     )}
                   </AlertDescription>
                 </Alert>
@@ -524,14 +526,14 @@ const CreateTraining: React.FC = () => {
                   <div className="p-4 border rounded-md bg-yellow-50 border-yellow-200">
                     <h4 className="font-semibold text-yellow-800 flex items-center gap-2">
                       <AlertCircle className="size-5" />
-                      Hall Not Available
+                      {t('createTraining.hallStatus.notAvailable', 'Hall Not Available')}
                     </h4>
                     <p className="text-sm text-yellow-700 mt-1 mb-3">
                       {unavailableReason
                         ? <span className="font-semibold">{unavailableReason}</span>
-                        : "The selected hall is booked or blocked."}
+                        : t('createTraining.hallStatus.booked', 'The selected hall is booked or blocked.')}
                       <br />
-                      You can submit a request to the Admin for approval.
+                      {t('createTraining.hallStatus.submitRequest', 'You can submit a request to the Admin for approval.')}
                     </p>
                     <Button
                       type="button"
@@ -545,7 +547,7 @@ const CreateTraining: React.FC = () => {
                       }}
                     >
                       <FileQuestion className="size-4 mr-2" />
-                      Request Hall Approval
+                      {t('createTraining.buttons.requestHall', 'Request Hall Approval')}
                     </Button>
                   </div>
                 )}
@@ -554,19 +556,19 @@ const CreateTraining: React.FC = () => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="hallId">Hall *</Label>
+                <Label htmlFor="hallId">{t('createTraining.fields.hall', 'Hall *')}</Label>
                 <Select
                   value={formData.hallId}
                   onValueChange={(value) => handleChange('hallId', value)}
                   disabled={availableHalls.length === 0}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Select hall" />
+                    <SelectValue placeholder={t('createTraining.fields.hallPlaceholder', 'Select hall')} />
                   </SelectTrigger>
                   <SelectContent>
                     {(availableHalls.length > 0 ? availableHalls : halls).map((hall) => (
                       <SelectItem key={hall.id} value={hall.id}>
-                        {hall.name} - Capacity: {hall.capacity} {availableHalls.find(h => h.id === hall.id) ? '(Available)' : '(Unavailable)'}
+                        {hall.name} - Capacity: {hall.capacity} {availableHalls.find(h => h.id === hall.id) ? t('createTraining.hallStatus.availableOption', '(Available)') : t('createTraining.hallStatus.unavailableOption', '(Unavailable)')}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -575,13 +577,13 @@ const CreateTraining: React.FC = () => {
               </div>
 
               <div>
-                <Label htmlFor="capacity">Training Capacity *</Label>
+                <Label htmlFor="capacity">{t('createTraining.fields.capacity', 'Training Capacity *')}</Label>
                 <Input
                   id="capacity"
                   type="number"
                   value={formData.capacity}
                   onChange={(e) => handleChange('capacity', e.target.value)}
-                  placeholder="Maximum participants"
+                  placeholder={t('createTraining.fields.capacityPlaceholder', 'Maximum participants')}
                   min="1"
                 />
                 {errors.capacity && <p className="text-sm text-red-600 mt-1">{errors.capacity}</p>}
@@ -592,8 +594,8 @@ const CreateTraining: React.FC = () => {
 
         <Card>
           <CardHeader>
-            <CardTitle>Required Institutions</CardTitle>
-            <CardDescription>Select institutions to nominate participants from</CardDescription>
+            <CardTitle>{t('createTraining.sections.institutions.title', 'Required Institutions')}</CardTitle>
+            <CardDescription>{t('createTraining.sections.institutions.desc', 'Select institutions to nominate participants from')}</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
@@ -622,10 +624,10 @@ const CreateTraining: React.FC = () => {
         <div className="flex gap-4">
           <Button type="submit" disabled={loading} className="flex items-center gap-2">
             <Save className="size-4" />
-            {loading ? 'Saving...' : (isEditMode ? 'Update Training' : 'Create Training')}
+            {loading ? t('createTraining.buttons.saving', 'Saving...') : (isEditMode ? t('createTraining.buttons.update', 'Update Training') : t('createTraining.buttons.create', 'Create Training'))}
           </Button>
           <Button type="button" variant="outline" onClick={() => navigate('/trainings')}>
-            Cancel
+            {t('createTraining.buttons.cancel', 'Cancel')}
           </Button>
         </div>
       </form>
@@ -633,49 +635,49 @@ const CreateTraining: React.FC = () => {
       <Dialog open={showRequestDialog} onOpenChange={setShowRequestDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Request Hall Approval</DialogTitle>
+            <DialogTitle>{t('createTraining.dialog.title', 'Request Hall Approval')}</DialogTitle>
             <DialogDescription>
-              Submit a request to the Admin for this hall booking.
+              {t('createTraining.dialog.desc', 'Submit a request to the Admin for this hall booking.')}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-2">
             <div>
-              <Label>Training Title</Label>
+              <Label>{t('createTraining.fields.title', 'Training Title *')}</Label>
               <Input value={formData.title} disabled className="bg-gray-100" />
             </div>
             <div>
-              <Label>Requested Hall</Label>
+              <Label>{t('createTraining.dialog.requestedHall', 'Requested Hall')}</Label>
               <Input value={halls.find(h => h.id === formData.hallId)?.name || ''} disabled className="bg-gray-100" />
             </div>
             <div>
-              <Label>Time Slot</Label>
+              <Label>{t('createTraining.dialog.timeSlot', 'Time Slot')}</Label>
               <Input value={`${new Date(formData.date).toLocaleDateString()} | ${formData.startTime} - ${formData.endTime}`} disabled className="bg-gray-100" />
             </div>
             <div>
-              <Label>Priority</Label>
+              <Label>{t('createTraining.dialog.priority', 'Priority')}</Label>
               <Select value={requestPriority} onValueChange={(val: any) => setRequestPriority(val)}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="normal">Normal</SelectItem>
-                  <SelectItem value="urgent">Urgent</SelectItem>
+                  <SelectItem value="normal">{t('createTraining.dialog.normal', 'Normal')}</SelectItem>
+                  <SelectItem value="urgent">{t('createTraining.dialog.urgent', 'Urgent')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div>
-              <Label>Remarks (Optional)</Label>
+              <Label>{t('createTraining.dialog.remarks', 'Remarks (Optional)')}</Label>
               <Textarea
                 value={requestRemarks}
                 onChange={(e) => setRequestRemarks(e.target.value)}
-                placeholder="Reason for urgency or special requirements..."
+                placeholder={t('createTraining.dialog.remarksPlaceholder', 'Reason for urgency or special requirements...')}
               />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowRequestDialog(false)}>Cancel</Button>
+            <Button variant="outline" onClick={() => setShowRequestDialog(false)}>{t('createTraining.buttons.cancel', 'Cancel')}</Button>
             <Button onClick={handleRequestHall} disabled={requestLoading}>
-              {requestLoading ? 'Sending...' : 'Send Request'}
+              {requestLoading ? t('createTraining.buttons.sending', 'Sending...') : t('createTraining.buttons.sendRequest', 'Send Request')}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -6,8 +6,11 @@ import { Avatar, AvatarFallback, AvatarImage } from '../components/ui/avatar';
 import { Trash2, AlertTriangle, Users, MapPin } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { toast } from 'sonner';
+import { useTranslation } from 'react-i18next';
+import LoadingScreen from '../components/LoadingScreen';
 
 const ProgramOfficers: React.FC = () => {
+    const { t } = useTranslation();
     const [officers, setOfficers] = useState<User[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -31,36 +34,34 @@ const ProgramOfficers: React.FC = () => {
     }, []);
 
     const handleDelete = async (id: string, name: string) => {
-        if (!window.confirm(`Are you sure you want to remove Program Officer "${name}"?`)) {
+        if (!window.confirm(t('personnel.alerts.removeOfficerConfirm', { name, defaultValue: `Are you sure you want to remove Program Officer "${name}"?` }))) {
             return;
         }
 
         try {
             await usersApi.delete(id);
-            toast.success('Program Officer removed successfully');
+            toast.success(t('personnel.alerts.removeSuccess', 'Program Officer removed successfully'));
             fetchOfficers(); // Refresh list
         } catch (error: any) {
             console.error('Failed to delete user', error);
-            toast.error(error.response?.data?.message || 'Failed to remove user');
+            toast.error(error.response?.data?.message || t('personnel.alerts.removeFail', 'Failed to remove user'));
         }
     };
 
     return (
         <div className="space-y-6 text-foreground">
             <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-bold tracking-tight">Program Officers</h2>
-                <span className="text-sm text-muted-foreground bg-secondary/30 px-3 py-1 rounded-full">{officers.length} active</span>
+                <h2 className="text-xl font-bold tracking-tight">{t('personnel.officers.title', 'Program Officers')}</h2>
+                <span className="text-sm text-muted-foreground bg-secondary/30 px-3 py-1 rounded-full">{t('personnel.officers.active', { count: officers.length, defaultValue: `${officers.length} active` })}</span>
             </div>
 
             {loading ? (
-                <div className="flex flex-col items-center justify-center py-20">
-                    <div className="text-lg text-primary animate-pulse font-medium">Loading personnel...</div>
-                </div>
+                <LoadingScreen />
             ) : error ? (
                 <div className="p-6 text-destructive bg-destructive/5 rounded-xl border border-destructive/20 flex items-start gap-4">
                     <AlertTriangle className="size-6 shrink-0" />
                     <div>
-                        <h3 className="font-bold text-lg leading-none mb-1">Network Error</h3>
+                        <h3 className="font-bold text-lg leading-none mb-1">{t('personnel.officers.networkError', 'Network Error')}</h3>
                         <p className="text-sm opacity-90">{error}</p>
                     </div>
                 </div>
@@ -69,17 +70,17 @@ const ProgramOfficers: React.FC = () => {
                     <div className="bg-secondary/20 size-16 rounded-full flex items-center justify-center mx-auto mb-4">
                         <Users className="size-8 text-muted-foreground" />
                     </div>
-                    <h3 className="text-xl font-bold text-foreground">No Officers Found</h3>
-                    <p className="text-muted-foreground mt-2 text-sm">There are no program officers assigned to this sector.</p>
+                    <h3 className="text-xl font-bold text-foreground">{t('personnel.officers.noOfficers', 'No Officers Found')}</h3>
+                    <p className="text-muted-foreground mt-2 text-sm">{t('personnel.officers.noOfficersDesc', 'There are no program officers assigned to this sector.')}</p>
                 </div>
             ) : (
                 <div className="flex flex-col">
                     <div className="hidden md:flex items-center px-4 py-2 text-sm text-muted-foreground border-b border-border/50 uppercase tracking-wider font-medium">
                         <div className="w-8 mr-4 text-center">#</div>
-                        <div className="flex-1 min-w-0 pr-4">Officer Details</div>
-                        <div className="w-64 shrink-0 px-4">Contact Info</div>
-                        <div className="w-40 shrink-0 px-4">Department</div>
-                        <div className="w-32 shrink-0 px-4">Status</div>
+                        <div className="flex-1 min-w-0 pr-4">{t('personnel.officers.table.details', 'Officer Details')}</div>
+                        <div className="w-64 shrink-0 px-4">{t('personnel.officers.table.contact', 'Contact Info')}</div>
+                        <div className="w-40 shrink-0 px-4">{t('personnel.officers.table.department', 'Department')}</div>
+                        <div className="w-32 shrink-0 px-4">{t('personnel.officers.table.status', 'Status')}</div>
                         <div className="w-20 shrink-0 text-right"></div>
                     </div>
 
@@ -106,20 +107,20 @@ const ProgramOfficers: React.FC = () => {
                                     <h3 className="text-base font-semibold text-foreground truncate group-hover:text-primary transition-colors flex items-center gap-2">
                                         {officer.name}
                                         <span className={`sm:hidden text-[9px] font-bold uppercase tracking-widest px-1.5 py-0.5 rounded-full ${officer.isApproved ? 'bg-emerald-500/10 text-emerald-500' : 'bg-orange-500/10 text-orange-500'}`}>
-                                            {officer.isApproved ? 'Verified' : 'Pending'}
+                                            {officer.isApproved ? t('personnel.officers.status.verified', 'Verified') : t('personnel.officers.status.pending', 'Pending')}
                                         </span>
                                     </h3>
                                     <p className="text-sm text-muted-foreground truncate opacity-0 group-hover:opacity-100 hidden sm:block transition-opacity">
-                                        ID: {officer.id}
+                                        {t('personnel.officers.misc.id', 'ID:')} {officer.id}
                                     </p>
 
                                     {/* Mobile Dense Contact Info */}
                                     <div className="flex flex-col mt-1 sm:hidden">
                                         <span className="text-xs text-muted-foreground truncate">{officer.email}</span>
-                                        <span className="text-[11px] text-muted-foreground truncate opacity-80">{officer.phone || 'No phone'}</span>
+                                        <span className="text-[11px] text-muted-foreground truncate opacity-80">{officer.phone || t('personnel.officers.misc.noPhone', 'No phone')}</span>
                                         <span className="text-[10px] text-muted-foreground truncate bg-secondary/50 px-1.5 py-0.5 rounded-sm inline-flex w-fit items-center gap-1 mt-1.5">
                                             <MapPin className="size-2.5" />
-                                            {officer.department || 'General'}
+                                            {officer.department || t('personnel.officers.misc.general', 'General')}
                                         </span>
                                     </div>
                                 </div>
@@ -127,19 +128,19 @@ const ProgramOfficers: React.FC = () => {
 
                             <div className="hidden md:flex flex-col justify-center px-4 w-64 shrink-0">
                                 <span className="text-sm font-medium text-foreground/90 truncate">{officer.email}</span>
-                                <span className="text-xs text-muted-foreground truncate">{officer.phone || 'No phone number'}</span>
+                                <span className="text-xs text-muted-foreground truncate">{officer.phone || t('personnel.officers.misc.noPhoneNumber', 'No phone number')}</span>
                             </div>
 
                             <div className="hidden md:flex items-center px-4 w-40 shrink-0">
                                 <span className="text-xs text-muted-foreground truncate bg-secondary/30 px-2 py-1 rounded-sm flex items-center gap-1">
                                     <MapPin className="size-3" />
-                                    {officer.department || 'General'}
+                                    {officer.department || t('personnel.officers.misc.general', 'General')}
                                 </span>
                             </div>
 
                             <div className="hidden lg:flex items-center w-32 shrink-0 px-4">
                                 <span className={`text-xs font-medium uppercase tracking-wider ${officer.isApproved ? 'text-emerald-500' : 'text-orange-400'}`}>
-                                    {officer.isApproved ? 'Verified' : 'Pending'}
+                                    {officer.isApproved ? t('personnel.officers.status.verified', 'Verified') : t('personnel.officers.status.pending', 'Pending')}
                                 </span>
                             </div>
 

@@ -5,6 +5,7 @@ import { analyticsApi, trainingsApi, BASE_URL } from '../../services/api';
 import { DashboardStats, Training } from '../../types';
 import { safeFormatDate } from '../../utils/date';
 import { useTranslation } from 'react-i18next';
+import LoadingScreen from '../components/LoadingScreen';
 
 import FilterChips from '../components/FilterChips';
 import HorizontalScrollList from '../components/HorizontalScrollList';
@@ -42,11 +43,7 @@ const Dashboard: React.FC = () => {
   }, [user]);
 
   if (loading || !stats) {
-    return (
-      <div className="flex items-center justify-center h-96">
-        <div className="text-lg text-primary animate-pulse font-medium">{t('common.loading', 'Loading content...')}</div>
-      </div>
-    );
+    return <LoadingScreen />;
   }
 
   // Derived data based on filter

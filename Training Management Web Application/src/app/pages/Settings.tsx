@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
+import { useTranslation } from 'react-i18next';
 import { usersApi, BASE_URL } from '../../services/api';
 import { toast } from 'sonner';
 import { User, Lock, Save, Loader2, Camera } from 'lucide-react';
@@ -12,6 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs'
 
 const Settings: React.FC = () => {
     const { user, updateUser } = useAuth();
+    const { t } = useTranslation();
     const [loading, setLoading] = useState(false);
     const [uploading, setUploading] = useState(false);
     const fileInputRef = React.useRef<HTMLInputElement>(null);
@@ -129,10 +131,10 @@ const Settings: React.FC = () => {
             <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 mb-6">
                 <div>
                     <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-foreground flex items-center gap-3">
-                        Settings
+                        {t('settings.title', 'Settings')}
                     </h1>
                     <p className="text-muted-foreground mt-2 text-sm">
-                        Manage your account configuration and security
+                        {t('settings.subtitle', 'Manage your account configuration and security')}
                     </p>
                 </div>
             </div>
@@ -140,10 +142,10 @@ const Settings: React.FC = () => {
             <Tabs defaultValue="profile" className="w-full">
                 <TabsList className="bg-transparent border-b border-border w-full flex justify-start rounded-none h-auto p-0 gap-6 mb-8">
                     <TabsTrigger value="profile" className="data-[state=active]:bg-transparent data-[state=active]:text-foreground data-[state=active]:border-foreground bg-transparent border-b-2 border-transparent text-muted-foreground rounded-none py-3 px-1 font-semibold text-base transition-colors">
-                        Profile
+                        {t('settings.tabs.profile', 'Profile')}
                     </TabsTrigger>
                     <TabsTrigger value="security" className="data-[state=active]:bg-transparent data-[state=active]:text-foreground data-[state=active]:border-foreground bg-transparent border-b-2 border-transparent text-muted-foreground rounded-none py-3 px-1 font-semibold text-base transition-colors">
-                        Security
+                        {t('settings.tabs.security', 'Security')}
                     </TabsTrigger>
                 </TabsList>
 
@@ -180,8 +182,8 @@ const Settings: React.FC = () => {
                                 </div>
                             </div>
                             <div>
-                                <CardTitle>Personal Information</CardTitle>
-                                <CardDescription>Update your personal details and profile picture URL.</CardDescription>
+                                <CardTitle>{t('settings.profile.title', 'Personal Information')}</CardTitle>
+                                <CardDescription>{t('settings.profile.desc', 'Update your personal details and profile picture URL.')}</CardDescription>
                             </div>
                         </CardHeader>
                         <CardContent>
@@ -190,7 +192,7 @@ const Settings: React.FC = () => {
 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div className="space-y-2">
-                                        <Label htmlFor="name">Full Name</Label>
+                                        <Label htmlFor="name">{t('settings.profile.fullName', 'Full Name')}</Label>
                                         <Input
                                             id="name"
                                             name="name"
@@ -200,7 +202,7 @@ const Settings: React.FC = () => {
                                         />
                                     </div>
                                     <div className="space-y-2">
-                                        <Label htmlFor="email">Email</Label>
+                                        <Label htmlFor="email">{t('settings.profile.email', 'Email')}</Label>
                                         <Input
                                             id="email"
                                             value={user?.email || ''}
@@ -209,7 +211,7 @@ const Settings: React.FC = () => {
                                         />
                                     </div>
                                     <div className="space-y-2">
-                                        <Label htmlFor="phone">Phone Number</Label>
+                                        <Label htmlFor="phone">{t('settings.profile.phone', 'Phone Number')}</Label>
                                         <Input
                                             id="phone"
                                             name="phone"
@@ -218,7 +220,7 @@ const Settings: React.FC = () => {
                                         />
                                     </div>
                                     <div className="space-y-2">
-                                        <Label htmlFor="designation">Designation</Label>
+                                        <Label htmlFor="designation">{t('settings.profile.designation', 'Designation')}</Label>
                                         <Input
                                             id="designation"
                                             name="designation"
@@ -227,7 +229,7 @@ const Settings: React.FC = () => {
                                         />
                                     </div>
                                     <div className="space-y-2">
-                                        <Label htmlFor="department">Department</Label>
+                                        <Label htmlFor="department">{t('settings.profile.department', 'Department')}</Label>
                                         <Input
                                             id="department"
                                             name="department"
@@ -236,7 +238,7 @@ const Settings: React.FC = () => {
                                         />
                                     </div>
                                     <div className="space-y-2">
-                                        <Label htmlFor="role">Role</Label>
+                                        <Label htmlFor="role">{t('settings.profile.role', 'Role')}</Label>
                                         <Input
                                             id="role"
                                             value={user?.role?.replace('_', ' ') || ''}
@@ -249,7 +251,7 @@ const Settings: React.FC = () => {
                                 <div className="pt-4 flex justify-end">
                                     <Button type="submit" disabled={loading}>
                                         {loading ? <Loader2 className="mr-2 size-4 animate-spin" /> : <Save className="mr-2 size-4" />}
-                                        Save Changes
+                                        {t('settings.profile.save', 'Save Changes')}
                                     </Button>
                                 </div>
                             </form>
@@ -260,13 +262,13 @@ const Settings: React.FC = () => {
                 <TabsContent value="security" className="mt-0 focus-visible:outline-none">
                     <Card className="bg-white/5 border-white/10">
                         <CardHeader>
-                            <CardTitle>Change Password</CardTitle>
-                            <CardDescription>Ensure your account is secure by using a strong password.</CardDescription>
+                            <CardTitle>{t('settings.security.title', 'Change Password')}</CardTitle>
+                            <CardDescription>{t('settings.security.desc', 'Ensure your account is secure by using a strong password.')}</CardDescription>
                         </CardHeader>
                         <CardContent>
                             <form onSubmit={onChangePassword} className="space-y-4 max-w-md">
                                 <div className="space-y-2">
-                                    <Label htmlFor="currentPassword">Current Password</Label>
+                                    <Label htmlFor="currentPassword">{t('settings.security.currentPassword', 'Current Password')}</Label>
                                     <Input
                                         id="currentPassword"
                                         name="currentPassword"
@@ -277,7 +279,7 @@ const Settings: React.FC = () => {
                                     />
                                 </div>
                                 <div className="space-y-2">
-                                    <Label htmlFor="newPassword">New Password</Label>
+                                    <Label htmlFor="newPassword">{t('settings.security.newPassword', 'New Password')}</Label>
                                     <Input
                                         id="newPassword"
                                         name="newPassword"
@@ -288,7 +290,7 @@ const Settings: React.FC = () => {
                                     />
                                 </div>
                                 <div className="space-y-2">
-                                    <Label htmlFor="confirmPassword">Confirm New Password</Label>
+                                    <Label htmlFor="confirmPassword">{t('settings.security.confirmPassword', 'Confirm New Password')}</Label>
                                     <Input
                                         id="confirmPassword"
                                         name="confirmPassword"
@@ -302,7 +304,7 @@ const Settings: React.FC = () => {
                                 <div className="pt-4">
                                     <Button type="submit" disabled={loading} variant="destructive">
                                         {loading ? <Loader2 className="mr-2 size-4 animate-spin" /> : <Lock className="mr-2 size-4" />}
-                                        Update Password
+                                        {t('settings.security.update', 'Update Password')}
                                     </Button>
                                 </div>
                             </form>

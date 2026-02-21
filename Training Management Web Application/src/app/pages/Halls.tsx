@@ -11,8 +11,10 @@ import { Hall, HallBlock } from '../../types';
 import { hallsApi, hallBlocksApi } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
 import { toast } from 'sonner';
+import { useTranslation } from 'react-i18next';
 
 const Halls: React.FC = () => {
+    const { t } = useTranslation();
     const { user } = useAuth();
     const isMasterAdmin = user?.role === 'master_admin';
 
@@ -26,7 +28,7 @@ const Halls: React.FC = () => {
             setHalls(data);
         } catch (error) {
             console.error('Failed to fetch halls', error);
-            toast.error('Failed to load sectors');
+            toast.error(t('halls.alerts.loadFail', 'Failed to load sectors'));
         } finally {
             setLoading(false);
         }
@@ -65,7 +67,7 @@ const Halls: React.FC = () => {
 
     const handleCreateHall = async () => {
         if (!newHallForm.name || !newHallForm.location) {
-            toast.error('Sector name and location are required');
+            toast.error(t('halls.alerts.nameLocationRequired', 'Sector name and location are required'));
             return;
         }
 
@@ -76,36 +78,36 @@ const Halls: React.FC = () => {
                 location: newHallForm.location,
                 capacity: newHallForm.capacity
             });
-            toast.success('Sector registered successfully');
+            toast.success(t('halls.alerts.createSuccess', 'Sector registered successfully'));
             setShowCreateDialog(false);
             setNewHallForm({ name: '', location: '', capacity: 50 });
             fetchHalls();
         } catch (error: any) {
-            toast.error(error.response?.data?.message || 'Failed to create sector');
+            toast.error(error.response?.data?.message || t('halls.alerts.createFail', 'Failed to create sector'));
         } finally {
             setIsSaving(false);
         }
     };
 
     const handleDeleteHall = async (id: string, name: string) => {
-        if (!window.confirm(`Are you sure you want to terminate sector ${name}? This cannot be undone.`)) return;
+        if (!window.confirm(t('halls.alerts.deleteConfirm', { name, defaultValue: `Are you sure you want to terminate sector ${name}? This cannot be undone.` }))) return;
 
         try {
             await hallsApi.delete(id);
-            toast.success('Sector terminated from registry');
+            toast.success(t('halls.alerts.deleteSuccess', 'Sector terminated from registry'));
             fetchHalls();
         } catch (error: any) {
-            toast.error(error.response?.data?.message || 'Failed to delete sector');
+            toast.error(error.response?.data?.message || t('halls.alerts.deleteFail', 'Failed to delete sector'));
         }
     };
 
     const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
     const reasons = [
-        'Hall Booked',
-        'Maintenance / Repair',
-        'Cleaning / Sanitization',
-        'Inspection / Audit',
-        'Other'
+        t('halls.reasons.booked', 'Hall Booked'),
+        t('halls.reasons.maintenance', 'Maintenance / Repair'),
+        t('halls.reasons.cleaning', 'Cleaning / Sanitization'),
+        t('halls.reasons.inspection', 'Inspection / Audit'),
+        t('halls.reasons.other', 'Other')
     ];
 
     const fetchAvailabilityAndBlocks = async (hallId: string) => {
@@ -118,7 +120,7 @@ const Halls: React.FC = () => {
             setBlocks(blocksData);
         } catch (error) {
             console.error('Failed to fetch data', error);
-            toast.error('Failed to fetch availability details');
+            toast.error(t('halls.alerts.fetchAvailFail', 'Failed to fetch availability details'));
         }
     };
 
@@ -148,24 +150,24 @@ const Halls: React.FC = () => {
                     payload.dayOfWeek = newSlot.dayOfWeek;
                 } else {
                     if (!specificDate) {
-                        toast.error('Please select a date');
+                        toast.error(t('halls.alerts.selectDate', 'Please select a date'));
                         return;
                     }
                     payload.specificDate = specificDate;
                 }
 
                 await hallsApi.addAvailability(selectedHall.id, payload);
-                toast.success('Availability slot added');
+                toast.success(t('halls.alerts.slotAdded', 'Availability slot added'));
             }
             // Logic for Blocking a specific date
             else if (slotType === 'date' && actionType === 'block') {
                 if (!specificDate) {
-                    toast.error('Please select a date');
+                    toast.error(t('halls.alerts.selectDate', 'Please select a date'));
                     return;
                 }
-                const finalReason = reason === 'Other' ? customReason : reason;
+                const finalReason = reason === t('halls.reasons.other', 'Other') ? customReason : reason;
                 if (!finalReason) {
-                    toast.error('Please specify a reason');
+                    toast.error(t('halls.alerts.specifyReason', 'Please specify a reason'));
                     return;
                 }
 
@@ -176,14 +178,14 @@ const Halls: React.FC = () => {
                     endTime: newSlot.endTime,
                     reason: finalReason
                 });
-                toast.success('Hall blocked successfully');
+                toast.success(t('halls.alerts.hallBlocked', 'Hall blocked successfully'));
             }
 
             // Refresh list
             fetchAvailabilityAndBlocks(selectedHall.id);
         } catch (error: any) {
             console.error(error);
-            toast.error(error.response?.data?.message || error.message || 'Failed to update availability');
+            toast.error(error.response?.data?.message || error.message || t('halls.alerts.updateFail', 'Failed to update availability'));
         }
     };
 
@@ -195,11 +197,11 @@ const Halls: React.FC = () => {
             } else {
                 await hallBlocksApi.delete(id);
             }
-            toast.success('Removed successfully');
+            toast.success(t('halls.alerts.removeSuccess', 'Removed successfully'));
             fetchAvailabilityAndBlocks(selectedHall.id);
         } catch (error: any) {
             console.error(error);
-            toast.error(error.response?.data?.message || 'Failed to remove');
+            toast.error(error.response?.data?.message || t('halls.alerts.removeFail', 'Failed to remove'));
         }
     };
 
@@ -209,10 +211,10 @@ const Halls: React.FC = () => {
                 <div>
                     <h1 className="text-2xl md:text-3xl font-extrabold tracking-tighter text-foreground flex items-center gap-3">
                         <MapPin className="size-6 md:size-8 text-primary animate-pulse-glow" />
-                        DEPLOYMENT HALLS
+                        {t('halls.title', 'DEPLOYMENT HALLS')}
                         <div className="h-1 w-20 bg-gradient-to-r from-primary to-transparent rounded-full ml-4 hidden md:block" />
                     </h1>
-                    <p className="text-muted-foreground mt-1 font-mono text-[10px] md:text-xs uppercase tracking-widest opacity-70">Physical Training Sectors & Capacity Oversight</p>
+                    <p className="text-muted-foreground mt-1 font-mono text-[10px] md:text-xs uppercase tracking-widest opacity-70">{t('halls.subtitle', 'Physical Training Sectors & Capacity Oversight')}</p>
                 </div>
                 {isMasterAdmin && (
                     <Button
@@ -220,7 +222,7 @@ const Halls: React.FC = () => {
                         className="w-full md:w-auto bg-primary hover:bg-primary/90 text-primary-foreground font-bold tracking-widest uppercase rounded-xl border border-primary/20 shadow-[0_0_20px_rgba(0,236,255,0.2)]"
                     >
                         <Plus className="size-4 mr-2" />
-                        REGISTER NEW SECTOR
+                        {t('halls.registerNew', 'REGISTER NEW SECTOR')}
                     </Button>
                 )}
             </div>
@@ -229,7 +231,7 @@ const Halls: React.FC = () => {
                 <CardHeader className="pb-4 border-b border-primary/10 bg-primary/5">
                     <CardTitle className="text-sm font-bold text-primary tracking-[0.2em] flex items-center gap-2 uppercase">
                         <ShieldCheck className="size-4" />
-                        ACTIVE SECTORS
+                        {t('halls.activeSectors', 'ACTIVE SECTORS')}
                     </CardTitle>
                 </CardHeader>
                 <CardContent className="pt-6">
@@ -239,22 +241,22 @@ const Halls: React.FC = () => {
                                 <div className="absolute inset-0 border-t-2 border-primary rounded-full animate-spin" />
                                 <div className="absolute inset-0 border-r-2 border-secondary rounded-full animate-spin [animation-duration:1.5s]" />
                             </div>
-                            <p className="text-primary font-mono text-xs tracking-widest animate-pulse">MAP SCAN IN PROGRESS...</p>
+                            <p className="text-primary font-mono text-xs tracking-widest animate-pulse">{t('halls.loading', 'MAP SCAN IN PROGRESS...')}</p>
                         </div>
                     ) : halls.length === 0 ? (
                         <div className="text-center py-20 bg-primary/5 rounded-3xl border border-dashed border-primary/20">
                             <Activity className="size-12 mx-auto mb-4 text-primary/20 animate-pulse" />
-                            <h3 className="text-xl font-bold text-foreground tracking-widest uppercase">No Sectors Detected</h3>
-                            <p className="text-muted-foreground mt-2 font-mono text-[10px] uppercase tracking-widest">Global sector grid is currently void.</p>
+                            <h3 className="text-xl font-bold text-foreground tracking-widest uppercase">{t('halls.noSectors', 'No Sectors Detected')}</h3>
+                            <p className="text-muted-foreground mt-2 font-mono text-[10px] uppercase tracking-widest">{t('halls.noSectorsDesc', 'Global sector grid is currently void.')}</p>
                         </div>
                     ) : (
                         <Table className="neon-table">
                             <TableHeader>
                                 <TableRow className="hover:bg-transparent border-primary/10">
-                                    <TableHead>SECTOR NAME</TableHead>
-                                    <TableHead>COORDINATES / LOCATION</TableHead>
-                                    <TableHead>CAPACITY</TableHead>
-                                    <TableHead className="text-right">ACTIONS</TableHead>
+                                    <TableHead>{t('halls.table.name', 'SECTOR NAME')}</TableHead>
+                                    <TableHead>{t('halls.table.location', 'COORDINATES / LOCATION')}</TableHead>
+                                    <TableHead>{t('halls.table.capacity', 'CAPACITY')}</TableHead>
+                                    <TableHead className="text-right">{t('halls.table.actions', 'ACTIONS')}</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -433,7 +435,7 @@ const Halls: React.FC = () => {
                                     </div>
                                     {reason === 'Other' && (
                                         <Input
-                                            placeholder="SPECIFY INTEL..."
+                                            placeholder={t('halls.form.specifyIntel', 'SPECIFY INTEL...')}
                                             value={customReason}
                                             onChange={(e) => setCustomReason(e.target.value)}
                                             className="bg-input/50 border-input text-foreground font-mono text-xs"
@@ -443,7 +445,7 @@ const Halls: React.FC = () => {
                             ) : (
                                 <div className="flex flex-col items-center justify-center p-4 border border-primary/20 rounded-xl bg-primary/5 border-dashed">
                                     <CheckCircle2 className="size-8 text-primary/20 mb-2" />
-                                    <p className="text-[9px] text-primary/40 text-center font-mono leading-tight">DEFINE NEW OPERATIONAL WINDOWS FOR THIS SECTOR.</p>
+                                    <p className="text-[9px] text-primary/40 text-center font-mono leading-tight">{t('halls.form.defineNew', 'DEFINE NEW OPERATIONAL WINDOWS FOR THIS SECTOR.')}</p>
                                 </div>
                             )}
                         </div>
@@ -453,9 +455,9 @@ const Halls: React.FC = () => {
                             onClick={handleAddSlot}
                         >
                             {slotType === 'date' && actionType === 'block' ? (
-                                <><AlertCircle className="size-4 mr-2" /> ABORT SECTOR OPERATION</>
+                                <><AlertCircle className="size-4 mr-2" /> {t('halls.buttons.abortSector', 'ABORT SECTOR OPERATION')}</>
                             ) : (
-                                <><Plus className="size-4 mr-2" /> COMMIT DEPLOYMENT SLOT</>
+                                <><Plus className="size-4 mr-2" /> {t('halls.buttons.commitDeployment', 'COMMIT DEPLOYMENT SLOT')}</>
                             )}
                         </Button>
                     </div>
@@ -466,11 +468,11 @@ const Halls: React.FC = () => {
                             <div className="border border-border/50 rounded-2xl overflow-hidden bg-muted/20">
                                 <div className="bg-primary/10 p-3 font-bold text-[10px] tracking-[0.2em] uppercase text-primary flex items-center gap-2">
                                     <Clock className="size-3" />
-                                    Recurring Operational Protocol
+                                    {t('halls.availability.recurringTitle', 'Recurring Operational Protocol')}
                                 </div>
                                 <div className="divide-y divide-border/20">
                                     {availability.filter(s => !s.specificDate).length === 0 ? (
-                                        <div className="p-8 text-center text-xs text-muted-foreground font-mono italic opacity-50">Zero recurring windows defined.</div>
+                                        <div className="p-8 text-center text-xs text-muted-foreground font-mono italic opacity-50">{t('halls.availability.noRecurring', 'Zero recurring windows defined.')}</div>
                                     ) : (
                                         availability.filter(s => !s.specificDate).map((slot) => (
                                             <div key={slot._id || slot.id} className="grid grid-cols-3 p-4 text-xs items-center group hover:bg-muted/50 transition-colors">
@@ -493,18 +495,18 @@ const Halls: React.FC = () => {
                             <div className="border border-border/50 rounded-2xl overflow-hidden bg-muted/20">
                                 <div className="bg-primary/10 p-3 font-bold text-[10px] tracking-[0.2em] uppercase text-primary flex items-center gap-2">
                                     <Calendar className="size-3" />
-                                    Deployment Intel Log
+                                    {t('halls.availability.dateTitle', 'Deployment Intel Log')}
                                 </div>
                                 <div className="divide-y divide-border/20">
                                     {availability.filter(s => s.specificDate).length === 0 && blocks.length === 0 ? (
-                                        <div className="p-8 text-center text-xs text-muted-foreground font-mono italic opacity-50">No mission logs for specific dates.</div>
+                                        <div className="p-8 text-center text-xs text-muted-foreground font-mono italic opacity-50">{t('halls.availability.noDate', 'No mission logs for specific dates.')}</div>
                                     ) : (
                                         <>
                                             {/* Open Slots */}
                                             {availability.filter(s => s.specificDate).map((slot) => (
                                                 <div key={slot._id || slot.id} className="grid grid-cols-[1fr_1fr_auto] gap-2 p-4 text-xs items-center bg-emerald-500/[0.03] group hover:bg-emerald-500/[0.07]">
                                                     <div className="flex items-center gap-3">
-                                                        <span className="font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded text-[9px] tracking-widest uppercase">OPEN</span>
+                                                        <span className="font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded text-[9px] tracking-widest uppercase">{t('halls.availability.open', 'OPEN')}</span>
                                                         <span className="text-foreground font-mono">{new Date(slot.specificDate).toLocaleDateString()}</span>
                                                     </div>
                                                     <div className="font-mono text-emerald-400/80">{slot.startTime} — {slot.endTime}</div>
@@ -520,7 +522,7 @@ const Halls: React.FC = () => {
                                                 <div key={block.id} className="grid grid-cols-[1fr_1fr_auto] gap-2 p-4 text-xs items-center bg-destructive/[0.03] group hover:bg-destructive/[0.07]">
                                                     <div className="flex flex-col">
                                                         <div className="flex items-center gap-3 mb-1">
-                                                            <span className="font-bold text-destructive bg-destructive/10 px-2 py-0.5 rounded text-[9px] tracking-widest uppercase">BLOCKED</span>
+                                                            <span className="font-bold text-destructive bg-destructive/10 px-2 py-0.5 rounded text-[9px] tracking-widest uppercase">{t('halls.availability.blocked', 'BLOCKED')}</span>
                                                             <span className="text-foreground font-mono">{new Date(block.date).toLocaleDateString()}</span>
                                                         </div>
                                                         <div className="text-[9px] text-destructive/60 font-mono uppercase tracking-tighter truncate max-w-[200px]">{block.reason}</div>
@@ -548,35 +550,35 @@ const Halls: React.FC = () => {
                     <DialogHeader>
                         <DialogTitle className="text-xl font-bold tracking-tight flex items-center gap-2">
                             <Plus className="size-5 text-primary" />
-                            REGISTER NEW SECTOR
+                            {t('halls.dialog.title', 'REGISTER NEW SECTOR')}
                         </DialogTitle>
                         <p className="text-muted-foreground font-mono text-[10px] uppercase tracking-widest mt-1">
-                            Establish a new geographical training zone.
+                            {t('halls.dialog.desc', 'Establish a new geographical training zone.')}
                         </p>
                     </DialogHeader>
                     <div className="grid gap-4 py-4">
                         <div className="grid gap-2">
-                            <Label htmlFor="name" className="text-[10px] font-bold tracking-widest text-primary/70 uppercase">Sector Name</Label>
+                            <Label htmlFor="name" className="text-[10px] font-bold tracking-widest text-primary/70 uppercase">{t('halls.dialog.name', 'Sector Name')}</Label>
                             <Input
                                 id="name"
                                 value={newHallForm.name}
                                 onChange={(e) => setNewHallForm({ ...newHallForm, name: e.target.value })}
-                                placeholder="E.g. Alpha Wing Conference Hall"
+                                placeholder={t('halls.dialog.namePlaceholder', 'E.g. Alpha Wing Conference Hall')}
                                 className="bg-input/50 border-input text-foreground font-mono text-xs"
                             />
                         </div>
                         <div className="grid gap-2">
-                            <Label htmlFor="location" className="text-[10px] font-bold tracking-widest text-primary/70 uppercase">Coordinates / Location</Label>
+                            <Label htmlFor="location" className="text-[10px] font-bold tracking-widest text-primary/70 uppercase">{t('halls.dialog.location', 'Coordinates / Location')}</Label>
                             <Input
                                 id="location"
                                 value={newHallForm.location}
                                 onChange={(e) => setNewHallForm({ ...newHallForm, location: e.target.value })}
-                                placeholder="E.g. Level 3, Section B"
+                                placeholder={t('halls.dialog.locationPlaceholder', 'E.g. Level 3, Section B')}
                                 className="bg-input/50 border-input text-foreground font-mono text-xs"
                             />
                         </div>
                         <div className="grid gap-2">
-                            <Label htmlFor="capacity" className="text-[10px] font-bold tracking-widest text-primary/70 uppercase">Maximum Capacity</Label>
+                            <Label htmlFor="capacity" className="text-[10px] font-bold tracking-widest text-primary/70 uppercase">{t('halls.dialog.capacity', 'Maximum Capacity')}</Label>
                             <Input
                                 id="capacity"
                                 type="number"
@@ -592,7 +594,7 @@ const Halls: React.FC = () => {
                             disabled={isSaving}
                             className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-bold tracking-widest uppercase py-6"
                         >
-                            {isSaving ? 'SYCHRONIZING...' : 'COMMIT TO GRID'}
+                            {isSaving ? t('halls.dialog.saving', 'SYCHRONIZING...') : t('halls.dialog.submit', 'COMMIT TO GRID')}
                         </Button>
                     </DialogFooter>
                 </DialogContent>

@@ -14,6 +14,7 @@ import { toast } from 'sonner';
 import AttendanceListModal from '../components/AttendanceListModal';
 import AttendanceSessionManager from '../components/AttendanceSessionManager';
 import { QrCode } from 'lucide-react';
+import LoadingScreen from '../components/LoadingScreen';
 
 const TrainingDetails: React.FC = () => {
     const { id } = useParams<{ id: string }>();
@@ -82,11 +83,7 @@ const TrainingDetails: React.FC = () => {
     };
 
     if (loading) {
-        return (
-            <div className="flex items-center justify-center h-96">
-                <div className="text-lg text-gray-500">Loading details...</div>
-            </div>
-        );
+        return <LoadingScreen />;
     }
 
     if (!training) return null;

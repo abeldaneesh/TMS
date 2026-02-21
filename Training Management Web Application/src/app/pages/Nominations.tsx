@@ -20,6 +20,7 @@ import { Textarea } from '../components/ui/textarea';
 import { Label } from '../components/ui/label';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
+import LoadingScreen from '../components/LoadingScreen';
 
 const safeFormatDate = (date: any, formatStr: string = 'MMM dd, yyyy') => {
   if (!date) return 'N/A';
@@ -239,12 +240,7 @@ const Nominations: React.FC = () => {
   };
 
   if (loading) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[400px]">
-        <Loader2 className="size-8 text-primary animate-spin mb-4" />
-        <p className="text-primary font-medium text-sm animate-pulse">Loading nominations...</p>
-      </div>
-    );
+    return <LoadingScreen />;
   }
 
   if (!user) {

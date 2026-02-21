@@ -55,114 +55,103 @@ const Login: React.FC<LoginProps> = ({ roleTitle = 'Sign In', allowedRoles }) =>
   };
 
   return (
-    <div className="min-h-screen flex flex-col md:flex-row bg-background transition-colors duration-300">
-      {/* Left Column: Background Image (Desktop only) */}
+    <div className="min-h-screen flex flex-col md:flex-row bg-background">
+      {/* Left Column */}
       <div className="hidden md:flex md:w-1/2 relative overflow-hidden">
         <img
           src="https://images.unsplash.com/photo-1562774053-701939374585?q=80&w=1986&auto=format&fit=crop"
           alt="Institutional Campus"
           className="absolute inset-0 w-full h-full object-cover"
         />
-        <div className="absolute inset-0 bg-primary/20 backdrop-blur-[2px]" />
+        <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" />
         <div className="relative z-10 flex flex-col items-center justify-center w-full p-12 text-white">
-          <div className="bg-primary/20 backdrop-blur-md p-8 rounded-3xl mb-8 border border-primary/30 shadow-lg">
-            <Building2 className="size-20 text-white" />
+          <div className="bg-white/10 backdrop-blur-md p-6 rounded-2xl mb-8 border border-white/20 shadow-2xl">
+            <Building2 className="size-16 text-white" />
           </div>
-          <h1 className="text-6xl font-black tracking-tighter text-center uppercase drop-shadow-lg">
-            DMO <span className="text-primary">TMS</span>
+          <h1 className="text-4xl font-semibold tracking-tight text-center text-white">
+            DMO TMS
           </h1>
-          <p className="text-xl font-medium mt-4 tracking-widest uppercase opacity-90 drop-shadow-md">Training Management System</p>
-          <div className="mt-8 h-1 w-32 bg-gradient-to-r from-transparent via-primary to-transparent rounded-full" />
         </div>
       </div>
 
       {/* Right Column: Login Form */}
       <div className="flex-1 flex flex-col items-center justify-center p-8 md:p-12 overflow-y-auto relative bg-background text-foreground">
-
-
         <div className="w-full max-w-md relative z-10">
-          <Button variant="ghost" className="mb-6 -ml-2 text-primary/60 hover:text-primary font-mono text-xs uppercase tracking-widest" onClick={() => navigate('/login')}>
+          <Button variant="ghost" className="mb-6 -ml-2 text-muted-foreground hover:text-foreground" onClick={() => navigate('/login')}>
             <ArrowLeft className="size-4 mr-2" />
-            {t('auth.goBack', 'GO BACK')}
+            {t('auth.goBack', 'Back')}
           </Button>
 
-          <Card className="glass-card overflow-hidden border-border shadow-lg bg-card/40">
-            <CardHeader className="space-y-4 text-center pb-8 border-b border-border bg-muted/20">
-              <div className="flex justify-center">
-                <div className="bg-primary/10 text-primary p-5 rounded-2xl border border-primary/20 shadow-md">
+          <Card className="border shadow-lg bg-card">
+            <CardHeader className="space-y-1 text-center pb-6 pt-8">
+              <div className="flex justify-center mb-2">
+                <div className="bg-primary/10 text-primary p-3 rounded-full">
                   <ShieldCheck className="size-8" />
                 </div>
               </div>
-              <div>
-                <CardTitle className="text-3xl font-black tracking-tight text-foreground uppercase">{roleTitle}</CardTitle>
-                <CardDescription className="text-primary/60 pt-2 font-mono text-[10px] uppercase tracking-widest">
-                  {t('auth.title', 'Please sign in to your account')}
-                </CardDescription>
-              </div>
+              <CardTitle className="text-2xl font-bold tracking-tight">{roleTitle}</CardTitle>
             </CardHeader>
-            <CardContent className="pt-8">
-              <form onSubmit={handleSubmit} className="space-y-6">
+            <CardContent>
+              <form onSubmit={handleSubmit} className="space-y-5">
                 {error && (
-                  <Alert variant="destructive" className="bg-destructive/10 border-destructive/20 text-destructive rounded-xl">
+                  <Alert variant="destructive" className="bg-destructive/10 border-destructive/20 text-destructive">
                     <AlertCircle className="size-4" />
-                    <AlertDescription className="font-mono text-[10px] uppercase">{error}</AlertDescription>
+                    <AlertDescription className="text-sm">{error}</AlertDescription>
                   </Alert>
                 )}
 
-                <div className="space-y-3">
-                  <Label htmlFor="email" className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest ml-1">{t('auth.email', 'Email Address')}</Label>
+                <div className="space-y-2">
+                  <Label htmlFor="email" className="font-medium text-sm">{t('auth.email', 'Email Address')}</Label>
                   <div className="relative group">
-                    <Mail className="absolute left-3 top-3.5 size-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
+                    <Mail className="absolute left-3 top-3 size-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
                     <Input
                       id="email"
                       type="email"
                       placeholder="name@example.com"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      className="pl-10 h-12 bg-input/50 border-input focus:border-primary/50 focus:ring-primary/20 text-foreground placeholder:text-muted-foreground/50 rounded-xl"
+                      className="pl-10 h-11 bg-background"
                       required
                     />
                   </div>
                 </div>
 
-                <div className="space-y-3">
-                  <Label htmlFor="password" title="Password" className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest ml-1">{t('auth.password', 'Password')}</Label>
+                <div className="space-y-2">
+                  <Label htmlFor="password" className="font-medium text-sm">{t('auth.password', 'Password')}</Label>
                   <div className="relative group">
-                    <Lock className="absolute left-3 top-3.5 size-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
+                    <Lock className="absolute left-3 top-3 size-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
                     <Input
                       id="password"
                       type="password"
                       placeholder="••••••••"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      className="pl-10 h-12 bg-input/50 border-input focus:border-primary/50 focus:ring-primary/20 text-foreground placeholder:text-muted-foreground/50 rounded-xl"
+                      className="pl-10 h-11 bg-background"
                       required
                     />
                   </div>
                 </div>
 
-                <Button type="submit" className="w-full h-12 bg-primary hover:bg-primary/90 text-primary-foreground font-black uppercase tracking-widest rounded-xl transition-all shadow-md active:scale-[0.98]" disabled={loading}>
+                <Button type="submit" className="w-full h-11 font-medium mt-2" disabled={loading}>
                   {loading ? t('auth.signingIn', 'Signing in...') : t('auth.signIn', 'Sign In')}
                 </Button>
               </form>
 
               {(!allowedRoles || (!allowedRoles.includes('master_admin') && !allowedRoles.includes('institutional_admin'))) && (
-                <div className="mt-10 pt-6 border-t border-border text-center">
-                  <p className="text-[10px] font-mono text-muted-foreground uppercase tracking-widest">
+                <div className="mt-8 pt-6 border-t border-border text-center">
+                  <p className="text-sm text-muted-foreground">
                     {t('auth.noAccount', "Don't have an account?")}{' '}
                     <Link
                       to={`/register?role=${allowedRoles?.includes('program_officer') ? 'program_officer' : 'participant'}`}
-                      className="text-primary font-black hover:underline transition-colors ml-2"
+                      className="text-primary font-medium hover:underline transition-colors ml-1"
                     >
-                      {t('auth.requestAccess', 'REQUEST ACCESS')}
+                      {t('auth.requestAccess', 'Request Access')}
                     </Link>
                   </p>
                 </div>
               )}
             </CardContent>
           </Card>
-
-
         </div>
       </div>
     </div>
