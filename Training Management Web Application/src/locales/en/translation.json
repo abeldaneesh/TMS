@@ -1,0 +1,115 @@
+{
+    "nav": {
+        "home": "Home",
+        "explore": "Explore (Trainings)",
+        "nominations": "Nominations",
+        "liveSessions": "Live Sessions",
+        "reports": "Reports",
+        "halls": "Halls",
+        "institutions": "Institutions",
+        "personnel": "Personnel",
+        "userApprovals": "User Approvals",
+        "settings": "Settings",
+        "logout": "Logout",
+        "notifications": "Notifications",
+        "createTraining": "Create Training",
+        "hallAvailability": "Hall Availability",
+        "staff": "Staff",
+        "scanQr": "Scan QR",
+        "myLibrary": "My Library",
+        "officers": "Officers",
+        "participants": "Participants",
+        "analytics": "Analytics"
+    },
+    "auth": {
+        "signIn": "Sign In",
+        "signingIn": "Signing in...",
+        "invalidCredentials": "Invalid email or password",
+        "networkError": "Network Error: Cannot connect to server.",
+        "goBack": "GO BACK",
+        "email": "Email Address",
+        "password": "Password",
+        "noAccount": "Don't have an account?",
+        "requestAccess": "REQUEST ACCESS",
+        "tms": "Training Management System",
+        "title": "Please sign in to your account",
+        "register": {
+            "title": "Access Requested",
+            "subtitle": "YOUR OPERATIVE CREDENTIALS HAVE BEEN TRANSMITTED.",
+            "status": "STATUS:",
+            "pending": "PENDING_APPROVAL",
+            "desc": "YOU WILL GAIN SYSTEM CLEARANCE ONCE A COMMAND ADMINISTRATOR VALIDATES YOUR REQUEST.",
+            "return": "RETURN TO ENTRY",
+            "fullName": "Full Identity",
+            "email": "Direct Uplink (Email)",
+            "password": "Access Cipher",
+            "confirmPassword": "Verify Cipher",
+            "sector": "Sector / Station",
+            "designation": "Operational Rank",
+            "phone": "Comm Link (Phone)",
+            "department": "Division",
+            "initiate": "INITIATE REQUEST",
+            "transmitting": "TRANSMITTING...",
+            "existing": "EXISTING OPERATIVE?",
+            "authenticate": "AUTHENTICATE"
+        }
+    },
+    "dashboard": {
+        "filters": {
+            "all": "All Activity",
+            "upcoming": "Upcoming sessions",
+            "completed": "Past training",
+            "action": "Action required"
+        },
+        "systemOverview": "System Overview",
+        "stats": {
+            "totalTrainings": "Total Sessions",
+            "avgAttendance": "Avg Attendance",
+            "trainedStaff": "Trained Staff",
+            "pendingStaff": "Pending Staff"
+        },
+        "actions": {
+            "newTraining": {
+                "title": "New Training",
+                "subtitle": "Schedule a session"
+            },
+            "viewPersonnel": {
+                "title": "View Personnel",
+                "subtitle": "Manage staff"
+            },
+            "analytics": {
+                "title": "Analytics",
+                "subtitle": "System reports"
+            },
+            "settings": {
+                "title": "Settings",
+                "subtitle": "App configuration"
+            }
+        },
+        "sections": {
+            "quickActions": {
+                "title": "Quick Actions",
+                "subtitle": "Manage your tasks"
+            },
+            "ongoing": {
+                "title": "Ongoing Trainings",
+                "subtitle": "Currently active sessions"
+            },
+            "upcoming": {
+                "title": "Upcoming Trainings",
+                "subtitle": "Scheduled sessions"
+            },
+            "past": {
+                "title": "Past Trainings",
+                "subtitle": "Completed sessions"
+            }
+        }
+    },
+    "common": {
+        "loading": "Loading content...",
+        "error": "Error occurred",
+        "language": "Language",
+        "english": "English",
+        "malayalam": "മലയാളം (Malayalam)"
+    }
+}

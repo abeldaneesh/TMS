@@ -2,12 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
+import { useTranslation } from 'react-i18next';
 import api, { BASE_URL } from '../../services/api';
 import BottomNav from './BottomNav';
 import {
   LayoutDashboard, Calendar, Users, Building2, DoorOpen,
   FileText, Settings, Bell, Menu, X, LogOut, QrCode,
-  ClipboardList, BarChart3, Search, BookOpen, AppWindowMac, Cast
+  ClipboardList, BarChart3, Search, BookOpen, AppWindowMac, Cast, UserCheck
 } from 'lucide-react';
 
 import { Button } from './ui/button';
@@ -30,6 +31,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const { user, logout } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
+  const { t, i18n } = useTranslation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [searchFocused, setSearchFocused] = useState(false);
 
@@ -77,50 +79,51 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
   const getNavigationItems = () => {
     const commonItems = [
-      { icon: LayoutDashboard, label: 'Home', path: '/dashboard' },
+      { icon: LayoutDashboard, label: t('nav.home', 'Home'), path: '/dashboard' },
     ];
 
     switch (user.role) {
       case 'master_admin':
         return [
           ...commonItems,
-          { icon: AppWindowMac, label: 'Explore (Trainings)', path: '/trainings' },
-          { icon: Users, label: 'Officers', path: '/officers' },
-          { icon: Users, label: 'Participants', path: '/participants' },
-          { icon: Building2, label: 'Institutions', path: '/institutions' },
-          { icon: DoorOpen, label: 'Halls', path: '/halls' },
-          { icon: ClipboardList, label: 'Library (Noms)', path: '/nominations' },
-          { icon: BarChart3, label: 'Analytics', path: '/analytics' },
-          { icon: FileText, label: 'Reports', path: '/reports' },
+          { icon: UserCheck, label: t('nav.userApprovals', 'Approvals'), path: '/admin/approvals' },
+          { icon: AppWindowMac, label: t('nav.explore', 'Explore (Trainings)'), path: '/trainings' },
+          { icon: Users, label: t('nav.officers', 'Officers'), path: '/officers' },
+          { icon: Users, label: t('nav.participants', 'Participants'), path: '/participants' },
+          { icon: Building2, label: t('nav.institutions', 'Institutions'), path: '/institutions' },
+          { icon: DoorOpen, label: t('nav.halls', 'Halls'), path: '/halls' },
+          { icon: ClipboardList, label: t('nav.nominations', 'Library (Noms)'), path: '/nominations' },
+          { icon: BarChart3, label: t('nav.analytics', 'Analytics'), path: '/analytics' },
+          { icon: FileText, label: t('nav.reports', 'Reports'), path: '/reports' },
         ];
 
       case 'program_officer':
         return [
           ...commonItems,
-          { icon: AppWindowMac, label: 'Explore (Trainings)', path: '/trainings' },
-          { icon: Calendar, label: 'Create Training', path: '/trainings/create' },
-          { icon: DoorOpen, label: 'Hall Availability', path: '/hall-availability' },
-          { icon: ClipboardList, label: 'Library (Noms)', path: '/nominations' },
-          { icon: BarChart3, label: 'Analytics', path: '/analytics' },
-          { icon: FileText, label: 'Reports', path: '/reports' },
+          { icon: AppWindowMac, label: t('nav.explore', 'Explore (Trainings)'), path: '/trainings' },
+          { icon: Calendar, label: t('nav.createTraining', 'Create Training'), path: '/trainings/create' },
+          { icon: DoorOpen, label: t('nav.hallAvailability', 'Hall Availability'), path: '/hall-availability' },
+          { icon: ClipboardList, label: t('nav.nominations', 'Library (Noms)'), path: '/nominations' },
+          { icon: BarChart3, label: t('nav.analytics', 'Analytics'), path: '/analytics' },
+          { icon: FileText, label: t('nav.reports', 'Reports'), path: '/reports' },
         ];
 
       case 'institutional_admin':
         return [
           ...commonItems,
-          { icon: AppWindowMac, label: 'Explore (Trainings)', path: '/trainings' },
-          { icon: Users, label: 'Staff', path: '/staff' },
-          { icon: ClipboardList, label: 'Library (Noms)', path: '/nominations' },
-          { icon: BarChart3, label: 'Analytics', path: '/analytics' },
-          { icon: FileText, label: 'Reports', path: '/reports' },
+          { icon: AppWindowMac, label: t('nav.explore', 'Explore (Trainings)'), path: '/trainings' },
+          { icon: Users, label: t('nav.staff', 'Staff'), path: '/staff' },
+          { icon: ClipboardList, label: t('nav.nominations', 'Library (Noms)'), path: '/nominations' },
+          { icon: BarChart3, label: t('nav.analytics', 'Analytics'), path: '/analytics' },
+          { icon: FileText, label: t('nav.reports', 'Reports'), path: '/reports' },
         ];
 
       case 'participant':
         return [
           ...commonItems,
-          { icon: AppWindowMac, label: 'Explore', path: '/trainings' },
-          { icon: QrCode, label: 'Scan QR', path: '/scan-qr' },
-          { icon: ClipboardList, label: 'My Library', path: '/my-attendance' },
+          { icon: AppWindowMac, label: t('nav.explore', 'Explore'), path: '/trainings' },
+          { icon: QrCode, label: t('nav.scanQr', 'Scan QR'), path: '/scan-qr' },
+          { icon: ClipboardList, label: t('nav.myLibrary', 'My Library'), path: '/my-attendance' },
         ];
 
       default:
@@ -139,10 +142,15 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
   };
 
+  const toggleLanguage = () => {
+    const nextLang = i18n.language.startsWith('ml') ? 'en' : 'ml';
+    i18n.changeLanguage(nextLang);
+  };
+
   return (
     <div className="min-h-screen bg-background relative overflow-hidden flex flex-col">
       {/* Top Navigation */}
-      <nav className="fixed w-full z-40 top-0 bg-background h-16 px-4 flex items-center justify-between">
+      <nav className="fixed w-full z-40 top-0 bg-background h-[calc(4rem+env(safe-area-inset-top))] pt-[env(safe-area-inset-top)] px-4 flex items-center justify-between">
         <div className="flex items-center">
           <Button
             variant="ghost"
@@ -195,7 +203,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-80 max-h-96 overflow-y-auto bg-popover border-border">
               <DropdownMenuLabel className="flex justify-between items-center text-foreground">
-                <span className="font-semibold">Notifications</span>
+                <span className="font-semibold">{t('nav.notifications', 'Notifications')}</span>
                 {unreadCount > 0 && (
                   <Button variant="ghost" size="sm" className="text-[10px] h-6 px-2 text-primary" onClick={handleMarkAllAsRead}>
                     Mark all as read
@@ -254,24 +262,28 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator className="bg-border" />
+              <DropdownMenuItem className="focus:bg-white/10 cursor-pointer" onClick={(e) => { e.preventDefault(); toggleLanguage(); }}>
+                <span className="mr-2 text-lg">🌐</span>
+                {i18n.language.startsWith('ml') ? 'Switch to English' : 'മലയാളത്തിലേക്ക് മാറ്റുക (Malayalam)'}
+              </DropdownMenuItem>
               <DropdownMenuItem className="focus:bg-white/10 cursor-pointer" onClick={() => navigate('/settings')}>
                 <Settings className="mr-2 size-4 text-muted-foreground" />
-                Settings
+                {t('nav.settings', 'Settings')}
               </DropdownMenuItem>
               <DropdownMenuSeparator className="bg-border" />
               <DropdownMenuItem className="text-destructive focus:text-destructive focus:bg-destructive/10 cursor-pointer" onClick={handleLogout}>
                 <LogOut className="mr-2 size-4" />
-                Sign Out
+                {t('nav.logout', 'Sign Out')}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
       </nav>
 
-      <div className="flex flex-1 pt-16 h-full">
+      <div className="flex flex-1 pt-[calc(4rem+env(safe-area-inset-top))] h-full">
         {/* Sidebar */}
         <aside
-          className={`fixed inset-y-0 left-0 z-30 w-64 bg-background transform transition-transform duration-300 ease-out pt-16 overflow-y-auto hide-scroll ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+          className={`fixed inset-y-0 left-0 z-30 w-64 bg-background transform transition-transform duration-300 ease-out pt-[calc(4rem+env(safe-area-inset-top))] overflow-y-auto hide-scroll ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'
             } lg:translate-x-0 lg:w-60 lg:flex lg:flex-col lg:border-r border-transparent`}
           style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
         >

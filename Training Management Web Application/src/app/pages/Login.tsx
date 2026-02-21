@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import { useTranslation } from 'react-i18next';
 import { Building2, Mail, Lock, AlertCircle, ArrowLeft, ShieldCheck, Database, Cpu } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
@@ -20,6 +21,7 @@ const Login: React.FC<LoginProps> = ({ roleTitle = 'Sign In', allowedRoles }) =>
   const [loading, setLoading] = useState(false);
   const { login, logout } = useAuth();
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -38,11 +40,11 @@ const Login: React.FC<LoginProps> = ({ roleTitle = 'Sign In', allowedRoles }) =>
 
       navigate('/dashboard');
     } catch (err: any) {
-      let message = 'Invalid email or password';
+      let message = t('auth.invalidCredentials', 'Invalid email or password');
       if (err.response?.data?.message) {
         message = err.response.data.message;
       } else if (err.message === 'Network Error') {
-        message = 'Network Error: Cannot connect to server. Check IP and Wifi.';
+        message = t('auth.networkError', 'Network Error: Cannot connect to server. Check IP and Wifi.');
       } else if (err.message) {
         message = err.message;
       }
@@ -63,38 +65,38 @@ const Login: React.FC<LoginProps> = ({ roleTitle = 'Sign In', allowedRoles }) =>
         />
         <div className="absolute inset-0 bg-primary/20 backdrop-blur-[2px]" />
         <div className="relative z-10 flex flex-col items-center justify-center w-full p-12 text-white">
-          <div className="bg-primary/20 backdrop-blur-md p-8 rounded-3xl mb-8 border border-primary/30 shadow-[0_0_30px_rgba(0,236,255,0.2)] animate-pulse-glow">
+          <div className="bg-primary/20 backdrop-blur-md p-8 rounded-3xl mb-8 border border-primary/30 shadow-lg">
             <Building2 className="size-20 text-white" />
           </div>
           <h1 className="text-6xl font-black tracking-tighter text-center uppercase drop-shadow-lg">
-            DMO <span className="text-primary">CORE</span>
+            DMO <span className="text-primary">TMS</span>
           </h1>
-          <p className="text-xl font-mono mt-4 tracking-[0.3em] uppercase opacity-90 drop-shadow-md">Security Uplink Phase</p>
+          <p className="text-xl font-medium mt-4 tracking-widest uppercase opacity-90 drop-shadow-md">Training Management System</p>
           <div className="mt-8 h-1 w-32 bg-gradient-to-r from-transparent via-primary to-transparent rounded-full" />
         </div>
       </div>
 
       {/* Right Column: Login Form */}
       <div className="flex-1 flex flex-col items-center justify-center p-8 md:p-12 overflow-y-auto relative bg-background text-foreground">
-        <div className="absolute inset-0 cyber-grid opacity-10 pointer-events-none" />
+
 
         <div className="w-full max-w-md relative z-10">
           <Button variant="ghost" className="mb-6 -ml-2 text-primary/60 hover:text-primary font-mono text-xs uppercase tracking-widest" onClick={() => navigate('/login')}>
             <ArrowLeft className="size-4 mr-2" />
-            BACK TO DEPLOYMENT ZONE
+            {t('auth.goBack', 'GO BACK')}
           </Button>
 
           <Card className="glass-card overflow-hidden border-border shadow-lg bg-card/40">
             <CardHeader className="space-y-4 text-center pb-8 border-b border-border bg-muted/20">
               <div className="flex justify-center">
-                <div className="bg-primary/10 text-primary p-5 rounded-2xl border border-primary/20 shadow-[0_0_20px_rgba(0,236,255,0.1)]">
+                <div className="bg-primary/10 text-primary p-5 rounded-2xl border border-primary/20 shadow-md">
                   <ShieldCheck className="size-8" />
                 </div>
               </div>
               <div>
                 <CardTitle className="text-3xl font-black tracking-tight text-foreground uppercase">{roleTitle}</CardTitle>
                 <CardDescription className="text-primary/60 pt-2 font-mono text-[10px] uppercase tracking-widest">
-                  INITIATING SECURE ENCRYPTED HANDSHAKE
+                  {t('auth.title', 'Please sign in to your account')}
                 </CardDescription>
               </div>
             </CardHeader>
@@ -108,13 +110,13 @@ const Login: React.FC<LoginProps> = ({ roleTitle = 'Sign In', allowedRoles }) =>
                 )}
 
                 <div className="space-y-3">
-                  <Label htmlFor="email" className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest ml-1">Command Identity (Email)</Label>
+                  <Label htmlFor="email" className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest ml-1">{t('auth.email', 'Email Address')}</Label>
                   <div className="relative group">
                     <Mail className="absolute left-3 top-3.5 size-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
                     <Input
                       id="email"
                       type="email"
-                      placeholder="IDENTITY@DMO.GOV"
+                      placeholder="name@example.com"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       className="pl-10 h-12 bg-input/50 border-input focus:border-primary/50 focus:ring-primary/20 text-foreground placeholder:text-muted-foreground/50 rounded-xl"
@@ -124,7 +126,7 @@ const Login: React.FC<LoginProps> = ({ roleTitle = 'Sign In', allowedRoles }) =>
                 </div>
 
                 <div className="space-y-3">
-                  <Label htmlFor="password" title="Password" className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest ml-1">Access Protocol (Password)</Label>
+                  <Label htmlFor="password" title="Password" className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest ml-1">{t('auth.password', 'Password')}</Label>
                   <div className="relative group">
                     <Lock className="absolute left-3 top-3.5 size-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
                     <Input
@@ -140,19 +142,19 @@ const Login: React.FC<LoginProps> = ({ roleTitle = 'Sign In', allowedRoles }) =>
                 </div>
 
                 <Button type="submit" className="w-full h-12 bg-primary hover:bg-primary/90 text-primary-foreground font-black uppercase tracking-widest rounded-xl transition-all shadow-md active:scale-[0.98]" disabled={loading}>
-                  {loading ? 'AUTORIZING...' : 'EXECUTE LOGIN'}
+                  {loading ? t('auth.signingIn', 'Signing in...') : t('auth.signIn', 'Sign In')}
                 </Button>
               </form>
 
               {(!allowedRoles || (!allowedRoles.includes('master_admin') && !allowedRoles.includes('institutional_admin'))) && (
                 <div className="mt-10 pt-6 border-t border-border text-center">
                   <p className="text-[10px] font-mono text-muted-foreground uppercase tracking-widest">
-                    NEW FIELD OPERATIVE?{' '}
+                    {t('auth.noAccount', "Don't have an account?")}{' '}
                     <Link
                       to={`/register?role=${allowedRoles?.includes('program_officer') ? 'program_officer' : 'participant'}`}
                       className="text-primary font-black hover:underline transition-colors ml-2"
                     >
-                      REQUEST ACCESS
+                      {t('auth.requestAccess', 'REQUEST ACCESS')}
                     </Link>
                   </p>
                 </div>
@@ -160,15 +162,7 @@ const Login: React.FC<LoginProps> = ({ roleTitle = 'Sign In', allowedRoles }) =>
             </CardContent>
           </Card>
 
-          <div className="mt-12 flex items-center justify-center gap-6 opacity-30">
-            <div className="flex items-center gap-2 font-mono text-[9px] text-muted-foreground uppercase tracking-widest">
-              <Database className="size-3" /> NODE_0{import.meta.env.VITE_API_URL ? '1' : '0'}
-            </div>
-            <div className="h-4 w-px bg-border" />
-            <div className="flex items-center gap-2 font-mono text-[9px] text-muted-foreground uppercase tracking-widest">
-              <Cpu className="size-3" /> V_4.0_STABLE
-            </div>
-          </div>
+
         </div>
       </div>
     </div>

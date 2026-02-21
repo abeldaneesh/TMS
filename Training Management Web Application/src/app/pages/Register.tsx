@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { Building2, Mail, Lock, User, Phone, Briefcase, ChevronLeft, ShieldCheck } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
@@ -14,6 +15,7 @@ const Register: React.FC = () => {
     const [searchParams] = useSearchParams();
     const roleParam = searchParams.get('role') || 'participant';
     const displayRole = roleParam === 'program_officer' ? 'Program Officer' : 'Field Personnel';
+    const { t } = useTranslation();
 
     const [formData, setFormData] = useState({
         name: '',
@@ -73,24 +75,24 @@ const Register: React.FC = () => {
                         <div className="mx-auto bg-primary/10 text-primary p-5 rounded-full w-fit mb-6 border border-primary/20 shadow-lg">
                             <ShieldCheck className="size-12" />
                         </div>
-                        <CardTitle className="text-3xl font-black tracking-tight text-foreground uppercase leading-none">Access Requested</CardTitle>
+                        <CardTitle className="text-3xl font-black tracking-tight text-foreground uppercase leading-none">{t('auth.register.title', 'Access Requested')}</CardTitle>
                         <CardDescription className="text-primary/70 mt-4 font-mono text-xs uppercase tracking-widest leading-relaxed">
-                            YOUR OPERATIVE CREDENTIALS HAVE BEEN TRANSMITTED.
+                            {t('auth.register.subtitle', 'YOUR OPERATIVE CREDENTIALS HAVE BEEN TRANSMITTED.')}
                         </CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
                         <div className="p-4 bg-muted/50 rounded-xl border border-border">
                             <p className="text-sm text-foreground/80 font-mono uppercase tracking-tight">
-                                STATUS: <span className="text-primary font-bold">PENDING_APPROVAL</span>
+                                {t('auth.register.status', 'STATUS:')} <span className="text-primary font-bold">{t('auth.register.pending', 'PENDING_APPROVAL')}</span>
                             </p>
                         </div>
                         <p className="text-xs text-muted-foreground font-mono uppercase leading-relaxed">
-                            YOU WILL GAIN SYSTEM CLEARANCE ONCE A COMMAND ADMINISTRATOR VALIDATES YOUR REQUEST.
+                            {t('auth.register.desc', 'YOU WILL GAIN SYSTEM CLEARANCE ONCE A COMMAND ADMINISTRATOR VALIDATES YOUR REQUEST.')}
                         </p>
                     </CardContent>
                     <CardFooter>
                         <Button className="w-full h-12 bg-primary hover:bg-primary/90 text-primary-foreground font-black uppercase tracking-widest rounded-xl transition-all" onClick={() => navigate('/login')}>
-                            RETURN TO ENTRY
+                            {t('auth.register.return', 'RETURN TO ENTRY')}
                         </Button>
                     </CardFooter>
                 </Card>
@@ -124,7 +126,7 @@ const Register: React.FC = () => {
                         <div className="grid md:grid-cols-2 gap-x-8 gap-y-6">
                             {/* Name */}
                             <div className="space-y-2">
-                                <Label htmlFor="name" className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest ml-1">Full Identity</Label>
+                                <Label htmlFor="name" className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest ml-1">{t('auth.register.fullName', 'Full Identity')}</Label>
                                 <div className="relative group">
                                     <User className="absolute left-3 top-3.5 size-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
                                     <Input
@@ -140,7 +142,7 @@ const Register: React.FC = () => {
 
                             {/* Email */}
                             <div className="space-y-2">
-                                <Label htmlFor="email" className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest ml-1">Direct Uplink (Email)</Label>
+                                <Label htmlFor="email" className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest ml-1">{t('auth.register.email', 'Direct Uplink (Email)')}</Label>
                                 <div className="relative group">
                                     <Mail className="absolute left-3 top-3.5 size-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
                                     <Input
@@ -157,7 +159,7 @@ const Register: React.FC = () => {
 
                             {/* Password */}
                             <div className="space-y-2">
-                                <Label htmlFor="password" title="Password" className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest ml-1">Access Cipher</Label>
+                                <Label htmlFor="password" title="Password" className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest ml-1">{t('auth.register.password', 'Access Cipher')}</Label>
                                 <div className="relative group">
                                     <Lock className="absolute left-3 top-3.5 size-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
                                     <Input
@@ -174,7 +176,7 @@ const Register: React.FC = () => {
 
                             {/* Confirm Password */}
                             <div className="space-y-2">
-                                <Label htmlFor="confirmPassword" title="Confirm Password" className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest ml-1">Verify Cipher</Label>
+                                <Label htmlFor="confirmPassword" title="Confirm Password" className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest ml-1">{t('auth.register.confirmPassword', 'Verify Cipher')}</Label>
                                 <div className="relative group">
                                     <Lock className="absolute left-3 top-3.5 size-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
                                     <Input
@@ -191,7 +193,7 @@ const Register: React.FC = () => {
 
                             {/* Institution */}
                             <div className="space-y-2">
-                                <Label htmlFor="institutionId" className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest ml-1">Sector / Station</Label>
+                                <Label htmlFor="institutionId" className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest ml-1">{t('auth.register.sector', 'Sector / Station')}</Label>
                                 <Select onValueChange={handleSelectChange} required>
                                     <SelectTrigger className="h-12 bg-input/50 border-input text-foreground rounded-xl focus:ring-primary/20">
                                         <SelectValue placeholder="SELECT STATION" />
@@ -208,7 +210,7 @@ const Register: React.FC = () => {
 
                             {/* Designation */}
                             <div className="space-y-2">
-                                <Label htmlFor="designation" className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest ml-1">Operational Rank</Label>
+                                <Label htmlFor="designation" className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest ml-1">{t('auth.register.designation', 'Operational Rank')}</Label>
                                 <div className="relative group">
                                     <Briefcase className="absolute left-3 top-3.5 size-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
                                     <Input
@@ -223,7 +225,7 @@ const Register: React.FC = () => {
 
                             {/* Phone */}
                             <div className="space-y-2">
-                                <Label htmlFor="phone" className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest ml-1">Comm Link (Phone)</Label>
+                                <Label htmlFor="phone" className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest ml-1">{t('auth.register.phone', 'Comm Link (Phone)')}</Label>
                                 <div className="relative group">
                                     <Phone className="absolute left-3 top-3.5 size-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
                                     <Input
@@ -238,7 +240,7 @@ const Register: React.FC = () => {
 
                             {/* Department */}
                             <div className="space-y-2">
-                                <Label htmlFor="department" className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest ml-1">Division</Label>
+                                <Label htmlFor="department" className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest ml-1">{t('auth.register.department', 'Division')}</Label>
                                 <Input
                                     id="department"
                                     placeholder="EMERGENCY / PEDIATRICS"
@@ -250,15 +252,15 @@ const Register: React.FC = () => {
                         </div>
 
                         <Button type="submit" className="w-full h-12 bg-primary hover:bg-primary/90 text-primary-foreground font-black uppercase tracking-widest rounded-xl transition-all shadow-md" disabled={loading}>
-                            {loading ? 'TRANSMITTING...' : 'INITIATE REQUEST'}
+                            {loading ? t('auth.register.transmitting', 'TRANSMITTING...') : t('auth.register.initiate', 'INITIATE REQUEST')}
                         </Button>
                     </form>
                 </CardContent>
                 <CardFooter className="justify-center border-t border-border p-6 bg-muted/20">
                     <p className="text-[10px] font-mono text-muted-foreground uppercase tracking-widest">
-                        EXISTING OPERATIVE?{' '}
+                        {t('auth.register.existing', 'EXISTING OPERATIVE?')}
                         <Link to="/login" className="text-primary font-black hover:underline ml-2">
-                            AUTHENTICATE
+                            {t('auth.register.authenticate', 'AUTHENTICATE')}
                         </Link>
                     </p>
                 </CardFooter>

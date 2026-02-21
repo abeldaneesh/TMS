@@ -2,25 +2,70 @@
 
 :root {
   --font-size: 16px;
-  /* YouTube Music Style Theme (Pitch Black) */
+  /* Light Theme Default */
+  --background: #ffffff;
+  --foreground: #020817;
+  --card: #ffffff;
+  --card-foreground: #020817;
+  --popover: #ffffff;
+  --popover-foreground: #020817;
+  --primary: #4f46e5;
+  --primary-foreground: #ffffff;
+  --secondary: #f1f5f9;
+  --secondary-foreground: #0f172a;
+  --muted: #f1f5f9;
+  --muted-foreground: #64748b;
+  --accent: #f1f5f9;
+  --accent-foreground: #0f172a;
+  --destructive: #ef4444;
+  --destructive-foreground: #ffffff;
+  --border: #e2e8f0;
+  --input: #e2e8f0;
+  --input-background: #ffffff;
+  --switch-background: #e2e8f0;
+  --ring: rgba(79, 70, 229, 0.5);
+  --radius: 0.5rem;
+
+  /* Charts - Adjusted for Light Mode */
+  --chart-1: #4f46e5;
+  --chart-2: #818cf8;
+  --chart-3: #a5b4fc;
+  --chart-4: #c7d2fe;
+  --chart-5: #e0e7ff;
+
+  /* Sidebar */
+  --sidebar: #f8fafc;
+  --sidebar-foreground: #0f172a;
+  --sidebar-primary: #4f46e5;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #f1f5f9;
+  --sidebar-accent-foreground: #0f172a;
+  --sidebar-border: #e2e8f0;
+  --sidebar-ring: #4f46e5;
+
+  /* Clean Sub-Styles */
+  --glass-bg: rgba(255, 255, 255, 0.8);
+  --glass-border: #e2e8f0;
+  --glass-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+  --stat-gradient-start: #4f46e5;
+  --stat-gradient-end: #818cf8;
+}
+
+.dark {
+  /* Professional Dark Theme */
   --background: #030303;
   --foreground: #ffffff;
   --card: #121212;
   --card-foreground: #ffffff;
   --popover: #212121;
   --popover-foreground: #ffffff;
-  --primary: #ff0000;
-  /* YouTube Red */
+  --primary: #4f46e5;
   --primary-foreground: #ffffff;
   --secondary: #ffffff1a;
-  /* Semi-transparent white for secondary surfaces like search bar */
   --secondary-foreground: #ffffff;
   --muted: #282828;
-  /* Dark gray for unselected / borders */
   --muted-foreground: #aaaaaa;
-  /* Light gray text */
   --accent: #212121;
-  /* Slightly lighter than card */
   --accent-foreground: #ffffff;
   --destructive: #ef4444;
   --destructive-foreground: #ffffff;
@@ -28,62 +73,28 @@
   --input: #ffffff1a;
   --input-background: #121212;
   --switch-background: #3d3d3d;
-  --ring: rgba(255, 0, 0, 0.5);
-  --radius: 0.5rem;
+  --ring: rgba(79, 70, 229, 0.5);
 
-  /* Charts - Adjusted for Dark Mode */
-  --chart-1: #ff0000;
-  --chart-2: #ff4d4d;
-  --chart-3: #ff9999;
-  --chart-4: #ffcccc;
+  --chart-1: #4f46e5;
+  --chart-2: #6366f1;
+  --chart-3: #818cf8;
+  --chart-4: #c7d2fe;
   --chart-5: #ffffff;
 
-  /* Sidebar */
   --sidebar: #030303;
   --sidebar-foreground: #ffffff;
-  --sidebar-primary: #ff0000;
+  --sidebar-primary: #4f46e5;
   --sidebar-primary-foreground: #ffffff;
   --sidebar-accent: #282828;
   --sidebar-accent-foreground: #ffffff;
   --sidebar-border: #282828;
-  --sidebar-ring: #ff0000;
-
-  /* Clean Sub-Styles */
-  --glass-bg: rgba(33, 33, 33, 0.8);
-  --glass-border: #3d3d3d;
-  --glass-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5);
-  --stat-gradient-start: #ff0000;
-  --stat-gradient-end: #ff4d4d;
-}
-
-.dark {
-  --background: #030303;
-  --foreground: #ffffff;
-  --card: #121212;
-  --card-foreground: #ffffff;
-  --popover: #212121;
-  --popover-foreground: #ffffff;
-  --primary: #ff0000;
-  --primary-foreground: #ffffff;
-  --secondary: #ffffff1a;
-  --secondary-foreground: #ffffff;
-  --muted: #282828;
-  --muted-foreground: #aaaaaa;
-  --accent: #212121;
-  --accent-foreground: #ffffff;
-  --destructive: #ef4444;
-  --destructive-foreground: #ffffff;
-  --border: #282828;
-  --input: #ffffff1a;
-  --input-background: #121212;
-  --switch-background: #3d3d3d;
-  --ring: rgba(255, 0, 0, 0.5);
+  --sidebar-ring: #4f46e5;
 
   --glass-bg: rgba(33, 33, 33, 0.8);
   --glass-border: #3d3d3d;
   --glass-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5);
-  --stat-gradient-start: #ff0000;
-  --stat-gradient-end: #ff4d4d;
+  --stat-gradient-start: #4f46e5;
+  --stat-gradient-end: #6366f1;
 }
 
 @theme inline {

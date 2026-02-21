@@ -1,70 +1,107 @@
 import React from 'react';
-import { Loader2 } from 'lucide-react';
 
 const LoadingScreen: React.FC = () => {
     return (
-        <div className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-background overflow-hidden">
-            {/* Background Effects */}
-            <div className="absolute inset-0 cyber-grid opacity-20 pointer-events-none" />
-            <div className="absolute inset-0 bg-radial-gradient from-primary/10 via-transparent to-transparent opacity-40 pointer-events-none" />
+        <div className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-background overflow-hidden relative">
+            {/* Background Layer to match the previous dark mode feel if enabled */}
+            <div className="absolute inset-0 bg-background pointer-events-none" />
 
-            {/* Animated Logo Container */}
-            <div className="relative mb-8">
-                {/* Outer Glow Ring */}
-                <div className="absolute inset-0 rounded-2xl bg-primary/20 blur-2xl animate-pulse" />
+            {/* Loading Symbols Container */}
+            <div className="relative flex items-center justify-center mb-6">
 
-                {/* Logo Frame */}
-                <div className="relative bg-card/40 backdrop-blur-xl border border-primary/30 p-6 rounded-2xl shadow-2xl">
-                    <div className="bg-primary/10 p-4 rounded-xl border border-primary/20">
-                        <div className="relative">
-                            <path
-                                className="text-primary size-12 animate-pulse"
-                                d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"
-                            />
-                            {/* SVG for a custom futuristic logo icon (Building/Tech themed) */}
-                            <svg
-                                className="size-12 text-primary"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                stroke="currentColor"
-                                strokeWidth="2"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                            >
-                                <rect x="3" y="11" width="18" height="10" rx="2" />
-                                <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-                                <path d="M12 15v2" />
-                                <circle cx="12" cy="15" r="4" className="animate-pulse" strokeDasharray="4 4" />
-                            </svg>
-                        </div>
-                    </div>
-                </div>
+                {/* Circle */}
+                <svg className="loading-symbol" viewBox="0 0 32 32">
+                    <circle cx="16" cy="16" r="14" className="stroke" pathLength="100" />
+                    <circle cx="16" cy="26" r="1.5" className="dot delay-0" />
+                </svg>
 
-                {/* Scanning Line Animation */}
-                <div className="absolute -left-10 -right-10 top-1/2 h-0.5 bg-primary/40 blur-sm animate-[scan_2s_ease-in-out_infinite]" />
-            </div>
+                {/* Triangle */}
+                <svg className="loading-symbol triangle-symbol" viewBox="0 0 32 32">
+                    <path d="M 16 3 L 29 27 L 3 27 Z" className="stroke" pathLength="100" />
+                    <circle cx="16" cy="23" r="1.5" className="dot delay-1" />
+                </svg>
 
-            {/* Text & Progress */}
-            <div className="flex flex-col items-center">
-                <h2 className="text-2xl font-black text-foreground tracking-[0.2em] mb-2 uppercase flex items-center gap-2">
-                    DMO <span className="text-primary italic">SYSTEMS</span>
-                </h2>
-                <div className="flex items-center gap-3 text-muted-foreground font-mono text-[10px] uppercase tracking-widest opacity-70">
-                    <Loader2 className="size-3 animate-spin text-primary" />
-                    <span>Initializing Secure Connection...</span>
-                </div>
-            </div>
+                {/* Square */}
+                <svg className="loading-symbol square-symbol" viewBox="0 0 32 32">
+                    <rect x="3" y="3" width="26" height="26" rx="1.5" className="stroke" pathLength="100" />
+                    <circle cx="16" cy="25" r="1.5" className="dot delay-2" />
+                </svg>
 
-            {/* Bottom Version Tag */}
-            <div className="absolute bottom-10 font-mono text-[8px] text-muted-foreground uppercase tracking-[0.4em] opacity-40">
-                PROTCOL_VERSION V4.0.2
             </div>
 
             <style>{`
-                @keyframes scan {
-                    0% { transform: translateY(-30px); opacity: 0; }
-                    50% { opacity: 1; }
-                    100% { transform: translateY(30px); opacity: 0; }
+                .loading-symbol {
+                    width: 32px;
+                    height: 32px;
+                    margin: 0 12px;
+                    overflow: visible;
+                }
+                
+                .loading-symbol .stroke {
+                    stroke: currentColor;
+                    stroke-width: 2.2;
+                    stroke-linecap: round;
+                    stroke-linejoin: round;
+                    fill: none;
+                    stroke-dasharray: 100 100;
+                    stroke-dashoffset: 100;
+                    color: hsl(var(--foreground));
+                    opacity: 0.8;
+                }
+
+                .loading-symbol.triangle-symbol .stroke {
+                    animation: draw-triangle 2.2s cubic-bezier(0.4, 0.0, 0.2, 1) infinite;
+                }
+                
+                .loading-symbol:not(.triangle-symbol) .stroke {
+                    animation: draw 2.2s cubic-bezier(0.4, 0.0, 0.2, 1) infinite;
+                }
+
+                .loading-symbol .dot {
+                    fill: hsl(var(--primary));
+                    animation: bounce 2.2s cubic-bezier(0.4, 0.0, 0.2, 1) infinite;
+                    transform-origin: center;
+                }
+
+                .triangle-symbol .stroke { animation-delay: 0.15s; }
+                .triangle-symbol .dot { animation-delay: 0.15s; }
+                
+                .square-symbol .stroke { animation-delay: 0.3s; }
+                .square-symbol .dot { animation-delay: 0.3s; }
+
+                @keyframes draw {
+                    0% {
+                        stroke-dashoffset: 100;
+                    }
+                    35%, 65% {
+                        stroke-dashoffset: 0;
+                    }
+                    100% {
+                        stroke-dashoffset: -100;
+                    }
+                }
+
+                @keyframes draw-triangle {
+                    0% {
+                        stroke-dashoffset: 100;
+                    }
+                    35%, 65% {
+                        stroke-dashoffset: 0;
+                    }
+                    100% {
+                        stroke-dashoffset: -100;
+                    }
+                }
+
+                @keyframes bounce {
+                    0%, 20%, 80%, 100% {
+                        transform: translateY(0);
+                        opacity: 1;
+                    }
+                    50% {
+                        transform: translateY(-8px);
+                        opacity: 0.5;
+                    }
                 }
             `}</style>
         </div>

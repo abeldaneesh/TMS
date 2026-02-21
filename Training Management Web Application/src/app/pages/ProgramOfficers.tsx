@@ -86,7 +86,7 @@ const ProgramOfficers: React.FC = () => {
                     {officers.map((officer, index) => (
                         <div
                             key={officer.id}
-                            className="group flex flex-col sm:flex-row sm:items-center py-3 px-2 sm:px-4 hover:bg-white/5 rounded-lg transition-colors border-b border-border/30"
+                            className="group relative flex flex-col sm:flex-row sm:items-center py-3 px-2 sm:px-4 hover:bg-white/5 rounded-lg transition-colors border-b border-border/30"
                         >
                             <div className="flex items-center flex-1 min-w-0">
                                 <div className="text-muted-foreground w-8 mr-4 text-center text-sm font-medium hidden md:block">
@@ -103,12 +103,25 @@ const ProgramOfficers: React.FC = () => {
                                 </Avatar>
 
                                 <div className="flex-1 min-w-0 pr-4">
-                                    <h3 className="text-base font-semibold text-foreground truncate group-hover:text-primary transition-colors">
+                                    <h3 className="text-base font-semibold text-foreground truncate group-hover:text-primary transition-colors flex items-center gap-2">
                                         {officer.name}
+                                        <span className={`sm:hidden text-[9px] font-bold uppercase tracking-widest px-1.5 py-0.5 rounded-full ${officer.isApproved ? 'bg-emerald-500/10 text-emerald-500' : 'bg-orange-500/10 text-orange-500'}`}>
+                                            {officer.isApproved ? 'Verified' : 'Pending'}
+                                        </span>
                                     </h3>
                                     <p className="text-sm text-muted-foreground truncate opacity-0 group-hover:opacity-100 hidden sm:block transition-opacity">
                                         ID: {officer.id}
                                     </p>
+
+                                    {/* Mobile Dense Contact Info */}
+                                    <div className="flex flex-col mt-1 sm:hidden">
+                                        <span className="text-xs text-muted-foreground truncate">{officer.email}</span>
+                                        <span className="text-[11px] text-muted-foreground truncate opacity-80">{officer.phone || 'No phone'}</span>
+                                        <span className="text-[10px] text-muted-foreground truncate bg-secondary/50 px-1.5 py-0.5 rounded-sm inline-flex w-fit items-center gap-1 mt-1.5">
+                                            <MapPin className="size-2.5" />
+                                            {officer.department || 'General'}
+                                        </span>
+                                    </div>
                                 </div>
                             </div>
 
@@ -130,12 +143,12 @@ const ProgramOfficers: React.FC = () => {
                                 </span>
                             </div>
 
-                            <div className="flex items-center justify-end w-20 shrink-0 gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity mt-2 sm:mt-0">
+                            <div className="flex items-center justify-end w-20 shrink-0 gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity absolute right-4 top-4 sm:static sm:right-auto sm:top-auto">
                                 <Button
                                     variant="ghost"
                                     size="icon"
                                     onClick={() => handleDelete(officer.id, officer.name)}
-                                    className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-full"
+                                    className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-full size-8 sm:size-10"
                                     title="Remove Officer"
                                 >
                                     <Trash2 className="size-4" />

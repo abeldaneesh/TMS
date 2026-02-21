@@ -1,42 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
 
-  <!DOCTYPE html>
-  <html lang="en">
-    <head>
-      <meta charset="UTF-8" />
-      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-      <title>Training Management Web Application</title>
-      <style>
-        body { background-color: #02040a; margin: 0; padding: 0; }
-        #initial-loader {
-          position: fixed;
-          inset: 0;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          background-color: #02040a;
-          z-index: 9999;
-        }
-        .pulse-logo {
-          width: 60px;
-          height: 60px;
-          background: #00ecff;
-          border-radius: 12px;
-          box-shadow: 0 0 20px rgba(0, 236, 255, 0.4);
-          animation: pulse 1.5s ease-in-out infinite;
-        }
-        @keyframes pulse {
-          0%, 100% { transform: scale(0.8); opacity: 0.5; box-shadow: 0 0 10px rgba(0, 236, 255, 0.2); }
-          50% { transform: scale(1); opacity: 1; box-shadow: 0 0 30px rgba(0, 236, 255, 0.6); }
-        }
-      </style>
-    </head>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport"
+    content="viewport-fit=cover, width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Training Management Web Application</title>
+  <style>
+    body {
+      background-color: #ffffff;
+      margin: 0;
+      padding: 0;
+    }
 
-    <body>
-      <div id="initial-loader">
-        <div class="pulse-logo"></div>
-      </div>
-      <div id="root"></div>
-      <script type="module" src="/src/main.tsx"></script>
-    </body>
-  </html>
-  
+    #initial-loader {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background-color: #ffffff;
+      z-index: 9999;
+    }
+
+    .pulse-logo {
+      width: 60px;
+      height: 60px;
+      background: #00ecff;
+      border-radius: 12px;
+      box-shadow: 0 0 20px rgba(0, 236, 255, 0.4);
+      animation: pulse 1.5s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+
+      0%,
+      100% {
+        transform: scale(0.8);
+        opacity: 0.5;
+        box-shadow: 0 0 10px rgba(0, 236, 255, 0.2);
+      }
+
+      50% {
+        transform: scale(1);
+        opacity: 1;
+        box-shadow: 0 0 30px rgba(0, 236, 255, 0.6);
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div id="initial-loader">
+    <div class="pulse-logo"></div>
+  </div>
+  <div id="root"></div>
+  <script type="module" src="/src/main.tsx"></script>
+</body>
+
+</html>

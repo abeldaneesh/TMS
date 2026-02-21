@@ -4,6 +4,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { analyticsApi, trainingsApi, BASE_URL } from '../../services/api';
 import { DashboardStats, Training } from '../../types';
 import { safeFormatDate } from '../../utils/date';
+import { useTranslation } from 'react-i18next';
 
 import FilterChips from '../components/FilterChips';
 import HorizontalScrollList from '../components/HorizontalScrollList';
@@ -12,6 +13,7 @@ import MediaCard from '../components/MediaCard';
 const Dashboard: React.FC = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [allTrainings, setAllTrainings] = useState<Training[]>([]);
   const [loading, setLoading] = useState(true);
@@ -42,7 +44,7 @@ const Dashboard: React.FC = () => {
   if (loading || !stats) {
     return (
       <div className="flex items-center justify-center h-96">
-        <div className="text-lg text-primary animate-pulse font-medium">Loading content...</div>
+        <div className="text-lg text-primary animate-pulse font-medium">{t('common.loading', 'Loading content...')}</div>
       </div>
     );
   }
@@ -60,37 +62,37 @@ const Dashboard: React.FC = () => {
     .filter(t => t && t.status === 'ongoing');
 
   const filters = [
-    { value: 'all', label: 'All Activity' },
-    { value: 'upcoming', label: 'Upcoming sessions' },
-    { value: 'completed', label: 'Past training' },
-    { value: 'action', label: 'Action required' },
+    { value: 'all', label: t('dashboard.filters.all', 'All Activity') },
+    { value: 'upcoming', label: t('dashboard.filters.upcoming', 'Upcoming sessions') },
+    { value: 'completed', label: t('dashboard.filters.completed', 'Past training') },
+    { value: 'action', label: t('dashboard.filters.action', 'Action required') },
   ];
 
   const quickActions = [
     {
-      title: 'New Training',
-      subtitle: 'Schedule a session',
+      title: t('dashboard.actions.newTraining.title', 'New Training'),
+      subtitle: t('dashboard.actions.newTraining.subtitle', 'Schedule a session'),
       iconUrl: 'https://images.unsplash.com/photo-1542744173-8e7e53415bb0?auto=format&fit=crop&q=80&w=200&h=200',
       path: '/trainings/create',
       roles: ['master_admin', 'program_officer'],
     },
     {
-      title: 'View Personnel',
-      subtitle: 'Manage staff',
+      title: t('dashboard.actions.viewPersonnel.title', 'View Personnel'),
+      subtitle: t('dashboard.actions.viewPersonnel.subtitle', 'Manage staff'),
       iconUrl: 'https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&q=80&w=200&h=200',
       path: '/personnel',
       roles: ['master_admin'],
     },
     {
-      title: 'Analytics',
-      subtitle: 'System reports',
+      title: t('dashboard.actions.analytics.title', 'Analytics'),
+      subtitle: t('dashboard.actions.analytics.subtitle', 'System reports'),
       iconUrl: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&q=80&w=200&h=200',
       path: '/analytics',
       roles: ['master_admin', 'program_officer'],
     },
     {
-      title: 'Settings',
-      subtitle: 'App configuration',
+      title: t('dashboard.actions.settings.title', 'Settings'),
+      subtitle: t('dashboard.actions.settings.subtitle', 'App configuration'),
       iconUrl: 'https://images.unsplash.com/photo-1496247749665-49cf5b1022e9?auto=format&fit=crop&q=80&w=200&h=200',
       path: '/settings',
       roles: ['master_admin', 'program_officer'],
@@ -115,8 +117,8 @@ const Dashboard: React.FC = () => {
         {/* Listen Again -> Quick Actions */}
         {user?.role !== 'participant' && (activeFilter === 'all' || activeFilter === 'action') && (
           <HorizontalScrollList
-            title="Quick Actions"
-            subtitle="Manage your tasks"
+            title={t('dashboard.sections.quickActions.title', 'Quick Actions')}
+            subtitle={t('dashboard.sections.quickActions.subtitle', 'Manage your tasks')}
             avatarUrl={getProfileAvatarUrl()}
           >
             {quickActions
@@ -137,8 +139,8 @@ const Dashboard: React.FC = () => {
         {/* Start Radio -> Ongoing Trainings */}
         {activeOrOngoing.length > 0 && (activeFilter === 'all' || activeFilter === 'action') && (
           <HorizontalScrollList
-            title="Ongoing Trainings"
-            subtitle="Currently active sessions"
+            title={t('dashboard.sections.ongoing.title', 'Ongoing Trainings')}
+            subtitle={t('dashboard.sections.ongoing.subtitle', 'Currently active sessions')}
           >
             {activeOrOngoing.map(training => (
               <MediaCard
@@ -157,8 +159,8 @@ const Dashboard: React.FC = () => {
         {/* Fresh Finds -> Upcoming Trainings */}
         {upcomingTrainings.length > 0 && (activeFilter === 'all' || activeFilter === 'upcoming') && (
           <HorizontalScrollList
-            title="Upcoming Trainings"
-            subtitle="Scheduled sessions"
+            title={t('dashboard.sections.upcoming.title', 'Upcoming Trainings')}
+            subtitle={t('dashboard.sections.upcoming.subtitle', 'Scheduled sessions')}
           >
             {upcomingTrainings.map(training => (
               <MediaCard
@@ -175,8 +177,8 @@ const Dashboard: React.FC = () => {
         {/* Recommended -> Completed Trainings / Past */}
         {completedTrainings.length > 0 && (activeFilter === 'all' || activeFilter === 'completed') && (
           <HorizontalScrollList
-            title="Past Trainings"
-            subtitle="Completed sessions"
+            title={t('dashboard.sections.past.title', 'Past Trainings')}
+            subtitle={t('dashboard.sections.past.subtitle', 'Completed sessions')}
           >
             {completedTrainings.map(training => (
               <MediaCard
@@ -193,23 +195,23 @@ const Dashboard: React.FC = () => {
         {/* System Overview Details */}
         {user?.role === 'master_admin' && (activeFilter === 'all') && (
           <div className="mt-12">
-            <h2 className="text-2xl font-bold mb-6">System Overview</h2>
+            <h2 className="text-2xl font-bold mb-6">{t('dashboard.systemOverview', 'System Overview')}</h2>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div className="bg-secondary/20 p-6 rounded-lg text-center hover:bg-secondary/40 transition-colors">
                 <p className="text-4xl font-bold mb-2 text-foreground">{stats.totalTrainings}</p>
-                <p className="text-sm text-muted-foreground font-medium uppercase tracking-wider">Total Sessions</p>
+                <p className="text-sm text-muted-foreground font-medium uppercase tracking-wider">{t('dashboard.stats.totalTrainings', 'Total Sessions')}</p>
               </div>
               <div className="bg-secondary/20 p-6 rounded-lg text-center hover:bg-secondary/40 transition-colors">
                 <p className="text-4xl font-bold mb-2 text-foreground">{stats.attendanceRate}%</p>
-                <p className="text-sm text-muted-foreground font-medium uppercase tracking-wider">Avg Attendance</p>
+                <p className="text-sm text-muted-foreground font-medium uppercase tracking-wider">{t('dashboard.stats.avgAttendance', 'Avg Attendance')}</p>
               </div>
               <div className="bg-secondary/20 p-6 rounded-lg text-center hover:bg-secondary/40 transition-colors">
                 <p className="text-4xl font-bold mb-2 text-foreground">{stats.trainedStaff}</p>
-                <p className="text-sm text-muted-foreground font-medium uppercase tracking-wider">Trained Staff</p>
+                <p className="text-sm text-muted-foreground font-medium uppercase tracking-wider">{t('dashboard.stats.trainedStaff', 'Trained Staff')}</p>
               </div>
               <div className="bg-secondary/20 p-6 rounded-lg text-center hover:bg-secondary/40 transition-colors">
                 <p className="text-4xl font-bold mb-2 text-foreground">{stats.untrainedStaff}</p>
-                <p className="text-sm text-muted-foreground font-medium uppercase tracking-wider">Pending Staff</p>
+                <p className="text-sm text-muted-foreground font-medium uppercase tracking-wider">{t('dashboard.stats.pendingStaff', 'Pending Staff')}</p>
               </div>
             </div>
           </div>
