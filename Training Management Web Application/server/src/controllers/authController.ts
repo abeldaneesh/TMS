@@ -13,8 +13,8 @@ export const register = async (req: Request, res: Response): Promise<void> => {
         const { email, password, name, role, institutionId, designation, department } = req.body;
 
         // Validation
-        if (!email || !email.toLowerCase().endsWith('@gmail.com')) {
-            res.status(400).json({ message: 'Only Google (@gmail.com) email addresses are allowed.' });
+        if (!email) {
+            res.status(400).json({ message: 'Email address is required.' });
             return;
         }
 
@@ -74,8 +74,8 @@ export const sendEmailOtp = async (req: Request, res: Response): Promise<void> =
     try {
         const { email } = req.body;
 
-        if (!email || !email.toLowerCase().endsWith('@gmail.com')) {
-            res.status(400).json({ message: 'Only Google (@gmail.com) email addresses are allowed.' });
+        if (!email) {
+            res.status(400).json({ message: 'Email address is required.' });
             return;
         }
 

@@ -61,8 +61,8 @@ const Register: React.FC = () => {
             return;
         }
 
-        if (!formData.email.toLowerCase().endsWith('@gmail.com')) {
-            toast.error('Only Google (@gmail.com) email addresses are allowed.');
+        if (!formData.email) {
+            toast.error('Email address is required.');
             return;
         }
 
@@ -90,8 +90,8 @@ const Register: React.FC = () => {
     };
 
     const handleSendOtp = async () => {
-        if (!formData.email.toLowerCase().endsWith('@gmail.com')) {
-            toast.error('Only Google (@gmail.com) email addresses are allowed.');
+        if (!formData.email) {
+            toast.error('Email address is required.');
             return;
         }
         setSendingOtp(true);

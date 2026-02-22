@@ -36,8 +36,12 @@ export const sendOTP = async (email: string, otp: string, name: string) => {
         const info = await transporter.sendMail(mailOptions);
         console.log(`[EmailService] OTP sent to ${email} - MsgID: ${info.messageId}`);
         return true;
-    } catch (error) {
+    } catch (error: any) {
         console.error('Error sending OTP email:', error);
+        console.error('Check your EMAIL_USER and EMAIL_PASS environment variables.');
+        if (error.code === 'EAUTH') {
+            console.error('Authentication failed. Please verify your Gmail App Password.');
+        }
         return false;
     }
 };

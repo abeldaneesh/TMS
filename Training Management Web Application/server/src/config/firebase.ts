@@ -15,8 +15,8 @@ try {
             credential: admin.credential.cert({
                 projectId,
                 clientEmail,
-                // Replace literal \n with actual newlines
-                privateKey: privateKey.replace(/\\n/g, '\n'),
+                // Replace literal \n with actual newlines and trim any quotes/spaces
+                privateKey: privateKey.replace(/\\n/g, '\n').replace(/^"|"$/g, '').trim(),
             }),
         });
         console.log('Firebase Admin SDK initialized successfully');
