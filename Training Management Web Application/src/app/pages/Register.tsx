@@ -11,7 +11,7 @@ import { Label } from '../components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '../components/ui/card';
 import { Alert, AlertDescription } from '../components/ui/alert';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
-import { usersApi } from '../../services/api';
+import { authApi, usersApi } from '../../services/api';
 import { toast } from 'sonner';
 
 const Register: React.FC = () => {
@@ -33,6 +33,8 @@ const Register: React.FC = () => {
     });
     const [loading, setLoading] = useState(false);
     const [success, setSuccess] = useState(false);
+    const [showOtp, setShowOtp] = useState(false);
+    const [otp, setOtp] = useState('');
     const navigate = useNavigate();
 
     // Redirect if admin role is manually entered in URL
@@ -57,14 +59,44 @@ const Register: React.FC = () => {
             return;
         }
 
+        if (!formData.email.toLowerCase().endsWith('@gmail.com')) {
+            toast.error('Only Google (@gmail.com) email addresses are allowed.');
+            return;
+        }
+
+        if (formData.password.length < 8) {
+            toast.error('Password must be at least 8 characters long.');
+            return;
+        }
+
         setLoading(true);
         try {
             const { confirmPassword, ...registerData } = formData;
-            await usersApi.create({ ...registerData, role: roleParam });
-            setSuccess(true);
-            toast.success('Registration request submitted');
+            const res = await authApi.register({ ...registerData, role: roleParam });
+            if (res.requireVerification) {
+                setShowOtp(true);
+                toast.success(res.message);
+            } else {
+                setSuccess(true);
+                toast.success('Registration request submitted');
+            }
         } catch (err: any) {
             toast.error(err.response?.data?.message || 'Registration failed');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleVerifyOtp = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setLoading(true);
+        try {
+            await authApi.verifyEmail({ email: formData.email, otp });
+            setShowOtp(false);
+            setSuccess(true);
+            toast.success('Email verified! Your account is now pending admin approval.');
+        } catch (err: any) {
+            toast.error(err.response?.data?.message || 'Invalid OTP');
         } finally {
             setLoading(false);
         }
@@ -111,6 +143,54 @@ const Register: React.FC = () => {
                         <Button className="w-full h-11" onClick={() => navigate('/login')}>
                             {t('auth.register.return', 'Back to Login')}
                         </Button>
+                    </CardFooter>
+                </Card>
+            </motion.div>
+        );
+    }
+
+    if (showOtp) {
+        return (
+            <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4 }}
+                className="min-h-screen bg-background flex items-center justify-center p-4 relative"
+            >
+                <Card className="w-full max-w-md border bg-card text-center shadow-lg relative z-10 overflow-hidden">
+                    <div className="relative z-10 flex flex-col items-center justify-center w-full p-10 bg-primary/5 rounded-t-xl">
+                        <div className="bg-primary/10 p-6 rounded-2xl mb-6">
+                            <Mail className="size-16 text-primary" />
+                        </div>
+                        <h1 className="text-2xl font-bold tracking-tight text-center text-foreground">Verify Your Email</h1>
+                        <CardDescription className="mt-2 text-sm text-muted-foreground text-center">
+                            We sent a 6-digit code to <span className="font-bold text-foreground">{formData.email}</span>
+                        </CardDescription>
+                    </div>
+                    <CardContent className="space-y-6 pt-6 mb-2">
+                        <form onSubmit={handleVerifyOtp} className="space-y-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="otp" className="text-sm font-medium">Verification Code (OTP)</Label>
+                                <Input
+                                    id="otp"
+                                    type="text"
+                                    placeholder="Enter 6-digit code"
+                                    value={otp}
+                                    onChange={(e) => setOtp(e.target.value)}
+                                    maxLength={6}
+                                    className="h-14 bg-background text-center text-2xl tracking-widest font-mono font-bold"
+                                    required
+                                />
+                            </div>
+                            <Button type="submit" className="w-full h-11" disabled={loading || otp.length < 6}>
+                                {loading ? 'Verifying...' : 'Verify Email'}
+                            </Button>
+                        </form>
+                    </CardContent>
+                    <CardFooter className="pb-8 px-6 text-sm text-muted-foreground justify-center">
+                        <button type="button" onClick={() => setShowOtp(false)} className="hover:text-primary underline">
+                            Change Email Address
+                        </button>
                     </CardFooter>
                 </Card>
             </motion.div>

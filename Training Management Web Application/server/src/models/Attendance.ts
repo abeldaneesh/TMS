@@ -20,4 +20,6 @@ const AttendanceSchema: Schema = new Schema({
     qrData: { type: String }
 });
 
+AttendanceSchema.index({ trainingId: 1, participantId: 1 }, { unique: true });
+
 export default mongoose.model<IAttendance>('Attendance', AttendanceSchema);

@@ -164,9 +164,13 @@ export const markAttendance = async (req: AuthRequest, res: Response): Promise<v
             ...attendance.toObject(),
             id: attendance._id
         });
-    } catch (error) {
+    } catch (error: any) {
         console.error('Attendance error:', error);
-        res.status(500).json({ message: 'Error marking attendance' });
+        if (error.code === 11000) {
+            res.status(400).json({ message: 'Attendance already marked' });
+        } else {
+            res.status(500).json({ message: 'Error marking attendance' });
+        }
     }
 };
 

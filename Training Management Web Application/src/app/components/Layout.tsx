@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { LocalNotifications } from '@capacitor/local-notifications';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -43,12 +44,58 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
   const [notifications, setNotifications] = useState<any[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
+  const prevUnreadCountRef = useRef(0);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  useEffect(() => {
+    audioRef.current = new Audio('/notification.mp3');
+
+    // Request native notification permissions on mount
+    const requestPermissions = async () => {
+      try {
+        await LocalNotifications.requestPermissions();
+      } catch (e) {
+        console.log('LocalNotifications permission request failed (likely not on device)', e);
+      }
+    };
+    requestPermissions();
+  }, []);
 
   const fetchNotifications = async () => {
     try {
       const { data } = await api.get('/notifications');
       setNotifications(data);
-      setUnreadCount(data.filter((n: any) => !n.read).length);
+      const currentUnread = data.filter((n: any) => !n.read).length;
+      setUnreadCount(currentUnread);
+
+      // Play sound and show native notification if unread count increased
+      if (currentUnread > prevUnreadCountRef.current) {
+        if (audioRef.current) {
+          audioRef.current.play().catch(e => console.log('Audio play prevented', e));
+        }
+
+        // Trigger native push notification
+        try {
+          // Find the newest unread notification to show its actual message
+          const newest = data.find((n: any) => !n.read);
+          await LocalNotifications.schedule({
+            notifications: [
+              {
+                title: newest?.title || 'New Notification',
+                body: newest?.message || 'You have a new message in the Training System.',
+                id: new Date().getTime(),
+                schedule: { at: new Date(Date.now() + 100) }, // Schedule immediately
+                sound: undefined, // Let the OS handle its default notification sound
+                actionTypeId: '',
+                extra: null
+              }
+            ]
+          });
+        } catch (e) {
+          console.log('Native notification failed', e);
+        }
+      }
+      prevUnreadCountRef.current = currentUnread;
     } catch (error) {
       console.error('Failed to fetch notifications', error);
     }
@@ -56,7 +103,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
   useEffect(() => {
     fetchNotifications();
-    const interval = setInterval(fetchNotifications, 60000);
+    const interval = setInterval(fetchNotifications, 15000); // Poll every 15s instead of 60s
     return () => clearInterval(interval);
   }, []);
 

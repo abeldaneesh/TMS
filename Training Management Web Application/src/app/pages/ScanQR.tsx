@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { attendanceApi } from '../../services/api';
 import { QrCode, CheckCircle, XCircle, Camera } from 'lucide-react';
@@ -13,6 +13,7 @@ const ScanQR: React.FC = () => {
   const [scanning, setScanning] = useState(false);
   const [scanner, setScanner] = useState<Html5QrcodeScanner | null>(null);
   const [result, setResult] = useState<{ success: boolean; message: string } | null>(null);
+  const isProcessingRef = useRef(false);
 
   // Initialize / cleanup scanner based on scanning state
   useEffect(() => {
@@ -60,6 +61,9 @@ const ScanQR: React.FC = () => {
   };
 
   const onScanSuccess = async (decodedText: string) => {
+    if (isProcessingRef.current) return;
+    isProcessingRef.current = true;
+
     try {
       // The backend now handles all validation (token, expiry, session status, date)
       let trainingIdToUse = '';
@@ -87,6 +91,7 @@ const ScanQR: React.FC = () => {
       });
       toast.success('Attendance marked successfully!');
       stopScanning();
+      stopScanning();
     } catch (error: any) {
       const errorMsg = error.response?.data?.message || error.message || 'Invalid QR code';
       setResult({
@@ -95,6 +100,11 @@ const ScanQR: React.FC = () => {
       });
       toast.error(errorMsg);
       stopScanning();
+    } finally {
+      // Keep it true slightly longer to ensure the scanner actually stops
+      setTimeout(() => {
+        isProcessingRef.current = false;
+      }, 1500);
     }
   };
 

@@ -54,9 +54,11 @@ export const authApi = {
         return response.data.user;
     },
 
-    register: async (userData: any): Promise<User> => {
-        const response = await api.post('/auth/register', userData);
-        return response.data.user;
+    register(userData: any): Promise<{ message: string; requireVerification?: boolean }> {
+        return api.post('/auth/register', userData).then(res => res.data);
+    },
+    verifyEmail(data: { email: string; otp: string }): Promise<any> {
+        return api.post('/auth/verify-email', data).then(res => res.data);
     },
 
     getCurrentUser: async (): Promise<User> => {
