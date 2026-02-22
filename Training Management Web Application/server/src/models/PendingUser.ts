@@ -8,6 +8,8 @@ export interface IPendingUser extends Document {
     institutionId?: string;
     role: string;
     otp: string;
+    phone: string;
+    mobileOtp: string;
     createdAt: Date;
 }
 
@@ -19,6 +21,8 @@ const PendingUserSchema: Schema = new Schema({
     institutionId: { type: Schema.Types.ObjectId, ref: 'Institution' },
     role: { type: String, required: true },
     otp: { type: String, required: true },
+    phone: { type: String, required: true },
+    mobileOtp: { type: String, required: true },
     createdAt: { type: Date, default: Date.now, expires: 600 } // Document expires after 10 minutes
 });
 

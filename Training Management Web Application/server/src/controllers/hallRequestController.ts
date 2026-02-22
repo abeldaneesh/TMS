@@ -3,6 +3,7 @@ import HallBookingRequest from '../models/HallBookingRequest';
 import Training, { TrainingStatus } from '../models/Training';
 import HallBlock from '../models/HallBlock';
 import { AuthRequest } from '../middleware/authMiddleware';
+import { createAndSendNotification } from '../utils/notificationUtils';
 
 export const createRequest = async (req: AuthRequest, res: Response): Promise<void> => {
     try {
@@ -121,13 +122,11 @@ export const updateRequestStatus = async (req: AuthRequest, res: Response): Prom
 
             // Notify User
             try {
-                const Notification = require('../models/Notification').default;
-                await Notification.create({
+                await createAndSendNotification({
                     userId: training.createdById, // Notify the creator
                     title: 'Hall Request Approved',
                     message: `Your request for hall "${(request.hallId as any).name}" for training "${training.title}" has been approved.`,
                     type: 'success',
-                    read: false
                 });
             } catch (err) {
                 console.error("Error sending notification", err);
@@ -140,13 +139,11 @@ export const updateRequestStatus = async (req: AuthRequest, res: Response): Prom
             // Notify User
             try {
                 const training = request.trainingId as any;
-                const Notification = require('../models/Notification').default;
-                await Notification.create({
+                await createAndSendNotification({
                     userId: training.createdById,
                     title: 'Hall Request Rejected',
                     message: `Your request for hall "${(request.hallId as any).name}" for training "${training.title}" has been rejected.`,
                     type: 'error',
-                    read: false
                 });
             } catch (err) {
                 console.error("Error sending notification", err);

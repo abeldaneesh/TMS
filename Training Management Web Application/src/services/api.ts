@@ -57,7 +57,7 @@ export const authApi = {
     register(userData: any): Promise<{ message: string; requireVerification?: boolean }> {
         return api.post('/auth/register', userData).then(res => res.data);
     },
-    verifyEmail(data: { email: string; otp: string }): Promise<any> {
+    verifyEmail(data: { email: string; otp: string; mobileOtp: string }): Promise<any> {
         return api.post('/auth/verify-email', data).then(res => res.data);
     },
 

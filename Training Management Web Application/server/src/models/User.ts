@@ -19,6 +19,7 @@ export interface IUser extends Omit<Document, '_id'> {
     phone?: string;
     department?: string;
     profilePicture?: string;
+    fcmToken?: string;
     createdAt: Date;
     isApproved: boolean;
 }
@@ -40,6 +41,7 @@ const UserSchema: Schema = new Schema({
     phone: { type: String },
     department: { type: String },
     profilePicture: { type: String },
+    fcmToken: { type: String },
     createdAt: { type: Date, default: Date.now },
     isApproved: { type: Boolean, default: false }
 });

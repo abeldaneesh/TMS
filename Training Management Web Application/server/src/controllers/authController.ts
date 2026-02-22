@@ -23,6 +23,11 @@ export const register = async (req: Request, res: Response): Promise<void> => {
             return;
         }
 
+        if (!phone || !/^[0-9]{10}$/.test(phone)) {
+            res.status(400).json({ message: 'A valid 10-digit mobile number is required.' });
+            return;
+        }
+
         // Check if user exists
         const existingUser = await User.findOne({ email });
 
@@ -31,8 +36,9 @@ export const register = async (req: Request, res: Response): Promise<void> => {
             return;
         }
 
-        // Generate 6-digit OTP
-        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        // Generate 6-digit OTPs
+        const otp = Math.floor(100000 + Math.random() * 900000).toString(); // Email OTP
+        const mobileOtp = Math.floor(100000 + Math.random() * 900000).toString(); // Mobile OTP
 
         // Hash password
         const hashedPassword = await bcrypt.hash(password, 10);
@@ -48,8 +54,15 @@ export const register = async (req: Request, res: Response): Promise<void> => {
             role: role || 'participant',
             institutionId,
             designation,
-            otp
+            otp,
+            phone,
+            mobileOtp
         });
+
+        // MOCK SMS LOGGING
+        console.log('\n=============================================');
+        console.log(`[SMS MOCK] Sending OTP ${mobileOtp} to ${phone}`);
+        console.log('=============================================\n');
 
         // Send OTP via Email
         const emailSent = await sendOTP(email, otp, name);
@@ -71,7 +84,7 @@ export const register = async (req: Request, res: Response): Promise<void> => {
 
 export const verifyEmail = async (req: Request, res: Response): Promise<void> => {
     try {
-        const { email, otp } = req.body;
+        const { email, otp, mobileOtp } = req.body;
 
         const pendingUser = await PendingUser.findOne({ email });
 
@@ -81,7 +94,12 @@ export const verifyEmail = async (req: Request, res: Response): Promise<void> =>
         }
 
         if (pendingUser.otp !== otp) {
-            res.status(400).json({ message: 'Invalid OTP.' });
+            res.status(400).json({ message: 'Invalid Email OTP.' });
+            return;
+        }
+
+        if (pendingUser.mobileOtp !== mobileOtp) {
+            res.status(400).json({ message: 'Invalid Mobile OTP.' });
             return;
         }
 
@@ -93,6 +111,7 @@ export const verifyEmail = async (req: Request, res: Response): Promise<void> =>
             role: pendingUser.role,
             institutionId: pendingUser.institutionId,
             designation: pendingUser.designation,
+            phone: pendingUser.phone,  // Save the verified phone number
             isApproved: false, // Explicitly set to false indicating manual approval is still required
         });
 
@@ -184,5 +203,24 @@ export const getMe = async (req: AuthRequest, res: Response): Promise<void> => {
     } catch (error) {
         console.error('Error fetching user:', error);
         res.status(500).json({ message: 'Error fetching user' });
+    }
+};
+
+export const updateDeviceToken = async (req: AuthRequest, res: Response): Promise<void> => {
+    try {
+        const userId = req.user!.userId;
+        const { token } = req.body;
+
+        if (!token) {
+            res.status(400).json({ message: 'Token is required' });
+            return;
+        }
+
+        await User.findByIdAndUpdate(userId, { fcmToken: token });
+
+        res.status(200).json({ message: 'Device token registered successfully' });
+    } catch (error) {
+        console.error('Error updating device token:', error);
+        res.status(500).json({ message: 'Error updating device token' });
     }
 };

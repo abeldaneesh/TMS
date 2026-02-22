@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { LocalNotifications } from '@capacitor/local-notifications';
+import { PushNotifications, Token, PushNotificationSchema, ActionPerformed } from '@capacitor/push-notifications';
+import { Capacitor } from '@capacitor/core';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -50,15 +51,67 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   useEffect(() => {
     audioRef.current = new Audio('/notification.mp3');
 
-    // Request native notification permissions on mount
-    const requestPermissions = async () => {
+    // Request native Push Notification permissions and register (Only on actual devices)
+    const registerPush = async () => {
+      if (!Capacitor.isNativePlatform()) return;
+
       try {
-        await LocalNotifications.requestPermissions();
+        let permStatus = await PushNotifications.checkPermissions();
+
+        if (permStatus.receive === 'prompt') {
+          permStatus = await PushNotifications.requestPermissions();
+        }
+
+        if (permStatus.receive === 'granted') {
+          await PushNotifications.register();
+        }
+
+        // Listen for new FCM token
+        PushNotifications.addListener('registration', (token: Token) => {
+          console.log('Push registration success, token: ' + token.value);
+          // Send token to backend
+          api.post('/auth/device-token', { token: token.value }).catch(e => console.error('Token save failed', e));
+        });
+
+        PushNotifications.addListener('registrationError', (error: any) => {
+          console.error('Error on push registration: ', error);
+        });
+
+        // Listen for incoming pushes while the app is OPEN
+        PushNotifications.addListener('pushNotificationReceived', (notification: PushNotificationSchema) => {
+          console.log('Push received: ', notification);
+          // Play the sound manually since we're in the foreground
+          if (audioRef.current) {
+            audioRef.current.play().catch(e => console.log('Audio prevented', e));
+          }
+          fetchNotifications(); // Update UI badges
+        });
+
+        // Listen for when a user TAPS the push notification from Android system menu
+        PushNotifications.addListener('pushNotificationActionPerformed', (notification: ActionPerformed) => {
+          console.log('Push action performed: ', notification);
+        });
+
+        // Create the default channel (Required for Android 8+)
+        await PushNotifications.createChannel({
+          id: 'dmo_alerts',
+          name: 'DMO Alerts',
+          description: 'Important notifications from the system',
+          importance: 5,
+          visibility: 1,
+        });
       } catch (e) {
-        console.log('LocalNotifications permission request failed (likely not on device)', e);
+        console.log('Push setup failed (likely not on device)', e);
       }
     };
-    requestPermissions();
+    registerPush();
+
+    return () => {
+      // Cleanup listeners on unmount
+      if (Capacitor.isNativePlatform()) {
+        PushNotifications.removeAllListeners();
+      }
+    }
   }, []);
 
   const fetchNotifications = async () => {
@@ -68,31 +121,11 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       const currentUnread = data.filter((n: any) => !n.read).length;
       setUnreadCount(currentUnread);
 
-      // Play sound and show native notification if unread count increased
-      if (currentUnread > prevUnreadCountRef.current) {
+      // Only play the fallback web sound if unread count increased while in foreground on the web
+      // (The Push Notification listener handles actual pushes on mobile)
+      if (currentUnread > prevUnreadCountRef.current && !Capacitor.isNativePlatform()) {
         if (audioRef.current) {
           audioRef.current.play().catch(e => console.log('Audio play prevented', e));
-        }
-
-        // Trigger native push notification
-        try {
-          // Find the newest unread notification to show its actual message
-          const newest = data.find((n: any) => !n.read);
-          await LocalNotifications.schedule({
-            notifications: [
-              {
-                title: newest?.title || 'New Notification',
-                body: newest?.message || 'You have a new message in the Training System.',
-                id: new Date().getTime(),
-                schedule: { at: new Date(Date.now() + 100) }, // Schedule immediately
-                sound: undefined, // Let the OS handle its default notification sound
-                actionTypeId: '',
-                extra: null
-              }
-            ]
-          });
-        } catch (e) {
-          console.log('Native notification failed', e);
         }
       }
       prevUnreadCountRef.current = currentUnread;

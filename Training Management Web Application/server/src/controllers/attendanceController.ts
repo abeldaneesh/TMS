@@ -4,6 +4,7 @@ import Training from '../models/Training';
 import Nomination from '../models/Nomination';
 import User from '../models/User';
 import Notification from '../models/Notification';
+import { createAndSendNotification } from '../utils/notificationUtils';
 import { AuthRequest } from '../middleware/authMiddleware';
 
 // Mark attendance
@@ -140,12 +141,11 @@ export const markAttendance = async (req: AuthRequest, res: Response): Promise<v
             // Create notifications
             await Promise.all(Array.from(recipients).map(async (userId) => {
                 try {
-                    const n = await Notification.create({
+                    const n = await createAndSendNotification({
                         userId,
                         title: 'Attendance Marked',
                         message: notificationMessage,
                         type: 'info',
-                        read: false
                     });
                     console.log(`[DEBUG] Notification created for ${userId}: ${n._id}`);
                     return n;

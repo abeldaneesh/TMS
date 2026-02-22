@@ -35,6 +35,7 @@ const Register: React.FC = () => {
     const [success, setSuccess] = useState(false);
     const [showOtp, setShowOtp] = useState(false);
     const [otp, setOtp] = useState('');
+    const [mobileOtp, setMobileOtp] = useState('');
     const navigate = useNavigate();
 
     // Redirect if admin role is manually entered in URL
@@ -69,6 +70,11 @@ const Register: React.FC = () => {
             return;
         }
 
+        if (!formData.phone || !/^[0-9]{10}$/.test(formData.phone)) {
+            toast.error('A valid 10-digit mobile number is required.');
+            return;
+        }
+
         setLoading(true);
         try {
             const { confirmPassword, ...registerData } = formData;
@@ -91,7 +97,7 @@ const Register: React.FC = () => {
         e.preventDefault();
         setLoading(true);
         try {
-            await authApi.verifyEmail({ email: formData.email, otp });
+            await authApi.verifyEmail({ email: formData.email, otp, mobileOtp });
             setShowOtp(false);
             setSuccess(true);
             toast.success('Email verified! Your account is now pending admin approval.');
@@ -182,8 +188,23 @@ const Register: React.FC = () => {
                                     required
                                 />
                             </div>
-                            <Button type="submit" className="w-full h-11" disabled={loading || otp.length < 6}>
-                                {loading ? 'Verifying...' : 'Verify Email'}
+
+                            <div className="space-y-2 mt-4">
+                                <Label htmlFor="mobileOtp" className="text-sm font-medium">Mobile Verification Code</Label>
+                                <Input
+                                    id="mobileOtp"
+                                    type="text"
+                                    placeholder="Enter 6-digit SMS code"
+                                    value={mobileOtp}
+                                    onChange={(e) => setMobileOtp(e.target.value)}
+                                    maxLength={6}
+                                    className="h-14 bg-background text-center text-2xl tracking-widest font-mono font-bold"
+                                    required
+                                />
+                            </div>
+
+                            <Button type="submit" className="w-full h-11 mt-6" disabled={loading || otp.length < 6 || mobileOtp.length < 6}>
+                                {loading ? 'Verifying...' : 'Verify Accounts'}
                             </Button>
                         </form>
                     </CardContent>
@@ -248,6 +269,24 @@ const Register: React.FC = () => {
                                         placeholder="name@example.com"
                                         value={formData.email}
                                         onChange={handleChange}
+                                        className="pl-10 h-11 bg-background"
+                                        required
+                                    />
+                                </div>
+                            </div>
+
+                            {/* Phone Number */}
+                            <div className="space-y-2">
+                                <Label htmlFor="phone" className="text-sm font-medium">Mobile Number</Label>
+                                <div className="relative group">
+                                    <Phone className="absolute left-3 top-3 size-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
+                                    <Input
+                                        id="phone"
+                                        type="tel"
+                                        placeholder="10-digit number"
+                                        value={formData.phone}
+                                        onChange={handleChange}
+                                        maxLength={10}
                                         className="pl-10 h-11 bg-background"
                                         required
                                     />

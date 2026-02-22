@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "933192113759",
+    "project_id": "dmo-tms",
+    "storage_bucket": "dmo-tms.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:933192113759:android:c5f24f3eaeac71af5f05ea",
+        "android_client_info": {
+          "package_name": "com.training.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBwYk3IilFpu4N4L8DC140OSyJ5rsX6BXU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
