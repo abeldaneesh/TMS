@@ -10,7 +10,7 @@ const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
 
 export const register = async (req: Request, res: Response): Promise<void> => {
     try {
-        const { email, password, name, role, institutionId, designation, phone, department } = req.body;
+        const { email, password, name, role, institutionId, designation, department } = req.body;
 
         // Validation
         if (!email || !email.toLowerCase().endsWith('@gmail.com')) {
@@ -23,8 +23,8 @@ export const register = async (req: Request, res: Response): Promise<void> => {
             return;
         }
 
-        if (!phone || !/^[0-9]{10}$/.test(phone)) {
-            res.status(400).json({ message: 'A valid 10-digit mobile number is required.' });
+        if (!password || password.length < 8) {
+            res.status(400).json({ message: 'Password must be at least 8 characters long.' });
             return;
         }
 
@@ -36,45 +36,33 @@ export const register = async (req: Request, res: Response): Promise<void> => {
             return;
         }
 
-        // Generate 6-digit OTPs
-        const otp = Math.floor(100000 + Math.random() * 900000).toString(); // Email OTP
-        const mobileOtp = Math.floor(100000 + Math.random() * 900000).toString(); // Mobile OTP
+        // Check if user has already verified their email in the separate inline step
+        const verifiedPendingUser = await PendingUser.findOne({ email, isVerified: true });
+
+        if (!verifiedPendingUser) {
+            res.status(400).json({ message: 'You must verify your email before registering.' });
+            return;
+        }
 
         // Hash password
         const hashedPassword = await bcrypt.hash(password, 10);
 
-        // Remove old pending user if exists
-        await PendingUser.deleteMany({ email });
-
-        // Save to Pending storage
-        await PendingUser.create({
+        // Create the actual user
+        const user = await User.create({
             email,
-            passwordHash: hashedPassword,
+            password: hashedPassword,
             name,
             role: role || 'participant',
             institutionId,
             designation,
-            otp,
-            phone,
-            mobileOtp
+            isApproved: false, // Explicitly set to false indicating manual approval is still required
         });
 
-        // MOCK SMS LOGGING
-        console.log('\n=============================================');
-        console.log(`[SMS MOCK] Sending OTP ${mobileOtp} to ${phone}`);
-        console.log('=============================================\n');
+        // Delete the pending record
+        await PendingUser.deleteMany({ email });
 
-        // Send OTP via Email
-        const emailSent = await sendOTP(email, otp, name);
-
-        if (!emailSent) {
-            res.status(500).json({ message: 'Failed to send verification email. Please check server email configs.' });
-            return;
-        }
-
-        res.status(200).json({
-            message: 'An OTP has been sent to your email. Please verify to complete registration.',
-            requireVerification: true
+        res.status(201).json({
+            message: 'Registration complete! Your account is pending admin approval.',
         });
     } catch (error) {
         console.error('Registration error:', error);
@@ -82,45 +70,72 @@ export const register = async (req: Request, res: Response): Promise<void> => {
     }
 };
 
-export const verifyEmail = async (req: Request, res: Response): Promise<void> => {
+export const sendEmailOtp = async (req: Request, res: Response): Promise<void> => {
     try {
-        const { email, otp, mobileOtp } = req.body;
+        const { email } = req.body;
+
+        if (!email || !email.toLowerCase().endsWith('@gmail.com')) {
+            res.status(400).json({ message: 'Only Google (@gmail.com) email addresses are allowed.' });
+            return;
+        }
+
+        // Check if user exists
+        const existingUser = await User.findOne({ email });
+
+        if (existingUser) {
+            res.status(400).json({ message: 'User already exists' });
+            return;
+        }
+
+        // Generate 6-digit OTP
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+
+        // Remove old pending user if exists
+        await PendingUser.deleteMany({ email });
+
+        // Save to Pending storage (only email and OTP)
+        await PendingUser.create({
+            email,
+            otp,
+            isVerified: false
+        });
+
+        // Send OTP via Email
+        const emailSent = await sendOTP(email, otp, 'User');
+
+        if (!emailSent) {
+            res.status(500).json({ message: 'Failed to send verification email. Please check server email configs.' });
+            return;
+        }
+
+        res.status(200).json({ message: 'Verification code sent to your email.' });
+    } catch (error) {
+        console.error('Error sending OTP:', error);
+        res.status(500).json({ message: 'Error sending verification code' });
+    }
+};
+
+export const verifyEmailOtp = async (req: Request, res: Response): Promise<void> => {
+    try {
+        const { email, otp } = req.body;
 
         const pendingUser = await PendingUser.findOne({ email });
 
         if (!pendingUser) {
-            res.status(400).json({ message: 'Registration session expired or email not found. Please register again.' });
+            res.status(400).json({ message: 'Verification session expired. Please send code again.' });
             return;
         }
 
         if (pendingUser.otp !== otp) {
-            res.status(400).json({ message: 'Invalid Email OTP.' });
+            res.status(400).json({ message: 'Invalid Verification Code.' });
             return;
         }
 
-        if (pendingUser.mobileOtp !== mobileOtp) {
-            res.status(400).json({ message: 'Invalid Mobile OTP.' });
-            return;
-        }
+        // Mark as verified but do NOT create the user yet
+        pendingUser.isVerified = true;
+        await pendingUser.save();
 
-        // Create the actual user
-        const user = await User.create({
-            email: pendingUser.email,
-            password: pendingUser.passwordHash,
-            name: pendingUser.name,
-            role: pendingUser.role,
-            institutionId: pendingUser.institutionId,
-            designation: pendingUser.designation,
-            phone: pendingUser.phone,  // Save the verified phone number
-            isApproved: false, // Explicitly set to false indicating manual approval is still required
-        });
-
-        // Delete the pending record
-        await PendingUser.deleteMany({ email: pendingUser.email });
-
-        res.status(201).json({
-            message: 'Email verified successfully! Your account is pending admin approval.',
-        });
+        res.status(200).json({ message: 'Email verified successfully!' });
     } catch (error) {
         console.error('Verification error:', error);
         res.status(500).json({ message: 'Error verifying email' });

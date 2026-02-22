@@ -33,9 +33,10 @@ const Register: React.FC = () => {
     });
     const [loading, setLoading] = useState(false);
     const [success, setSuccess] = useState(false);
-    const [showOtp, setShowOtp] = useState(false);
     const [otp, setOtp] = useState('');
-    const [mobileOtp, setMobileOtp] = useState('');
+    const [emailVerified, setEmailVerified] = useState(false);
+    const [sendingOtp, setSendingOtp] = useState(false);
+    const [showOtpInput, setShowOtpInput] = useState(false);
     const navigate = useNavigate();
 
     // Redirect if admin role is manually entered in URL
@@ -70,8 +71,8 @@ const Register: React.FC = () => {
             return;
         }
 
-        if (!formData.phone || !/^[0-9]{10}$/.test(formData.phone)) {
-            toast.error('A valid 10-digit mobile number is required.');
+        if (!emailVerified) {
+            toast.error('Please verify your email address before registering.');
             return;
         }
 
@@ -79,13 +80,8 @@ const Register: React.FC = () => {
         try {
             const { confirmPassword, ...registerData } = formData;
             const res = await authApi.register({ ...registerData, role: roleParam });
-            if (res.requireVerification) {
-                setShowOtp(true);
-                toast.success(res.message);
-            } else {
-                setSuccess(true);
-                toast.success('Registration request submitted');
-            }
+            setSuccess(true);
+            toast.success('Registration request submitted');
         } catch (err: any) {
             toast.error(err.response?.data?.message || 'Registration failed');
         } finally {
@@ -93,14 +89,30 @@ const Register: React.FC = () => {
         }
     };
 
-    const handleVerifyOtp = async (e: React.FormEvent) => {
-        e.preventDefault();
+    const handleSendOtp = async () => {
+        if (!formData.email.toLowerCase().endsWith('@gmail.com')) {
+            toast.error('Only Google (@gmail.com) email addresses are allowed.');
+            return;
+        }
+        setSendingOtp(true);
+        try {
+            await authApi.sendOtp({ email: formData.email });
+            setShowOtpInput(true);
+            toast.success('Verification code sent to your email.');
+        } catch (err: any) {
+            toast.error(err.response?.data?.message || 'Failed to send verification code');
+        } finally {
+            setSendingOtp(false);
+        }
+    };
+
+    const handleVerifyInlineOtp = async () => {
+        if (otp.length < 6) return;
         setLoading(true);
         try {
-            await authApi.verifyEmail({ email: formData.email, otp, mobileOtp });
-            setShowOtp(false);
-            setSuccess(true);
-            toast.success('Email verified! Your account is now pending admin approval.');
+            await authApi.verifyOtp({ email: formData.email, otp });
+            setEmailVerified(true);
+            toast.success('Email verified successfully!');
         } catch (err: any) {
             toast.error(err.response?.data?.message || 'Invalid OTP');
         } finally {
@@ -155,68 +167,7 @@ const Register: React.FC = () => {
         );
     }
 
-    if (showOtp) {
-        return (
-            <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4 }}
-                className="min-h-screen bg-background flex items-center justify-center p-4 relative"
-            >
-                <Card className="w-full max-w-md border bg-card text-center shadow-lg relative z-10 overflow-hidden">
-                    <div className="relative z-10 flex flex-col items-center justify-center w-full p-10 bg-primary/5 rounded-t-xl">
-                        <div className="bg-primary/10 p-6 rounded-2xl mb-6">
-                            <Mail className="size-16 text-primary" />
-                        </div>
-                        <h1 className="text-2xl font-bold tracking-tight text-center text-foreground">Verify Your Email</h1>
-                        <CardDescription className="mt-2 text-sm text-muted-foreground text-center">
-                            We sent a 6-digit code to <span className="font-bold text-foreground">{formData.email}</span>
-                        </CardDescription>
-                    </div>
-                    <CardContent className="space-y-6 pt-6 mb-2">
-                        <form onSubmit={handleVerifyOtp} className="space-y-4">
-                            <div className="space-y-2">
-                                <Label htmlFor="otp" className="text-sm font-medium">Verification Code (OTP)</Label>
-                                <Input
-                                    id="otp"
-                                    type="text"
-                                    placeholder="Enter 6-digit code"
-                                    value={otp}
-                                    onChange={(e) => setOtp(e.target.value)}
-                                    maxLength={6}
-                                    className="h-14 bg-background text-center text-2xl tracking-widest font-mono font-bold"
-                                    required
-                                />
-                            </div>
 
-                            <div className="space-y-2 mt-4">
-                                <Label htmlFor="mobileOtp" className="text-sm font-medium">Mobile Verification Code</Label>
-                                <Input
-                                    id="mobileOtp"
-                                    type="text"
-                                    placeholder="Enter 6-digit SMS code"
-                                    value={mobileOtp}
-                                    onChange={(e) => setMobileOtp(e.target.value)}
-                                    maxLength={6}
-                                    className="h-14 bg-background text-center text-2xl tracking-widest font-mono font-bold"
-                                    required
-                                />
-                            </div>
-
-                            <Button type="submit" className="w-full h-11 mt-6" disabled={loading || otp.length < 6 || mobileOtp.length < 6}>
-                                {loading ? 'Verifying...' : 'Verify Accounts'}
-                            </Button>
-                        </form>
-                    </CardContent>
-                    <CardFooter className="pb-8 px-6 text-sm text-muted-foreground justify-center">
-                        <button type="button" onClick={() => setShowOtp(false)} className="hover:text-primary underline">
-                            Change Email Address
-                        </button>
-                    </CardFooter>
-                </Card>
-            </motion.div>
-        );
-    }
 
     return (
         <motion.div
@@ -258,38 +209,66 @@ const Register: React.FC = () => {
                                 </div>
                             </div>
 
-                            {/* Email */}
-                            <div className="space-y-2">
+                            {/* Email with Inline Verification */}
+                            <div className="space-y-2 col-span-1 md:col-span-2 lg:col-span-1">
                                 <Label htmlFor="email" className="text-sm font-medium">{t('auth.register.email', 'Email Address')}</Label>
-                                <div className="relative group">
-                                    <Mail className="absolute left-3 top-3 size-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
-                                    <Input
-                                        id="email"
-                                        type="email"
-                                        placeholder="name@example.com"
-                                        value={formData.email}
-                                        onChange={handleChange}
-                                        className="pl-10 h-11 bg-background"
-                                        required
-                                    />
-                                </div>
-                            </div>
+                                <div className="flex flex-col gap-2">
+                                    <div className="flex gap-2 relative">
+                                        <div className="relative group flex-1">
+                                            <Mail className="absolute left-3 top-3 size-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
+                                            <Input
+                                                id="email"
+                                                type="email"
+                                                placeholder="name@example.com"
+                                                value={formData.email}
+                                                onChange={handleChange}
+                                                disabled={emailVerified || sendingOtp}
+                                                className={`pl-10 h-11 bg-background ${emailVerified ? 'border-green-500 bg-green-50/50' : ''}`}
+                                                required
+                                            />
+                                        </div>
+                                        {emailVerified ? (
+                                            <Button type="button" variant="outline" className="h-11 bg-green-50 text-green-600 hover:text-green-700 hover:bg-green-100 border-green-200 pointer-events-none w-[120px]">
+                                                <ShieldCheck className="mr-2 h-4 w-4" /> Verified
+                                            </Button>
+                                        ) : (
+                                            <Button
+                                                type="button"
+                                                onClick={handleSendOtp}
+                                                disabled={sendingOtp || !formData.email || emailVerified}
+                                                className="h-11 w-[120px]"
+                                            >
+                                                {sendingOtp ? 'Sending...' : 'Send Code'}
+                                            </Button>
+                                        )}
+                                    </div>
 
-                            {/* Phone Number */}
-                            <div className="space-y-2">
-                                <Label htmlFor="phone" className="text-sm font-medium">Mobile Number</Label>
-                                <div className="relative group">
-                                    <Phone className="absolute left-3 top-3 size-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
-                                    <Input
-                                        id="phone"
-                                        type="tel"
-                                        placeholder="10-digit number"
-                                        value={formData.phone}
-                                        onChange={handleChange}
-                                        maxLength={10}
-                                        className="pl-10 h-11 bg-background"
-                                        required
-                                    />
+                                    {!emailVerified && showOtpInput && (
+                                        <motion.div
+                                            initial={{ opacity: 0, height: 0 }}
+                                            animate={{ opacity: 1, height: 'auto' }}
+                                            className="flex gap-2"
+                                        >
+                                            <Input
+                                                id="otp"
+                                                type="text"
+                                                placeholder="Enter 6-digit code"
+                                                value={otp}
+                                                onChange={(e) => setOtp(e.target.value)}
+                                                maxLength={6}
+                                                className="h-11 bg-background text-center tracking-widest font-mono font-bold flex-1"
+                                                required
+                                            />
+                                            <Button
+                                                type="button"
+                                                onClick={handleVerifyInlineOtp}
+                                                disabled={loading || otp.length < 6}
+                                                className="h-11 w-[120px] bg-green-600 hover:bg-green-700 text-white"
+                                            >
+                                                {loading ? '...' : 'Verify'}
+                                            </Button>
+                                        </motion.div>
+                                    )}
                                 </div>
                             </div>
 

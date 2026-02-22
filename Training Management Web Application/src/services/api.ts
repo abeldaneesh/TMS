@@ -57,8 +57,11 @@ export const authApi = {
     register(userData: any): Promise<{ message: string; requireVerification?: boolean }> {
         return api.post('/auth/register', userData).then(res => res.data);
     },
-    verifyEmail(data: { email: string; otp: string; mobileOtp: string }): Promise<any> {
-        return api.post('/auth/verify-email', data).then(res => res.data);
+    sendOtp(data: { email: string }): Promise<any> {
+        return api.post('/auth/send-otp', data).then(res => res.data);
+    },
+    verifyOtp(data: { email: string; otp: string }): Promise<any> {
+        return api.post('/auth/verify-otp', data).then(res => res.data);
     },
 
     getCurrentUser: async (): Promise<User> => {
