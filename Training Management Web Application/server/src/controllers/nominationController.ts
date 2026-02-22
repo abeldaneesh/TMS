@@ -3,6 +3,7 @@ import Nomination from '../models/Nomination';
 import User from '../models/User';
 import Training from '../models/Training';
 import { AuthRequest } from '../middleware/authMiddleware';
+import { createAndSendNotification } from '../utils/notificationUtils';
 
 // Nominate participant
 export const nominateParticipant = async (req: AuthRequest, res: Response): Promise<void> => {
@@ -99,6 +100,20 @@ export const nominateParticipant = async (req: AuthRequest, res: Response): Prom
             nominatedBy: req.user!.userId,
         });
 
+        // Send Notification to Participant
+        try {
+            await createAndSendNotification({
+                userId: participantId,
+                title: 'New Training Appointment',
+                message: `You have been appointed for training: ${training.title}`,
+                type: 'training_nomination',
+                relatedId: nomination._id.toString()
+            });
+        } catch (notifErr) {
+            console.error('Failed to send nomination notification:', notifErr);
+            // Don't fail the request if notification fails
+        }
+
         res.status(201).json({
             ...nomination.toObject(),
             id: nomination._id
@@ -192,11 +207,27 @@ export const updateNominationStatus = async (req: AuthRequest, res: Response): P
             id,
             updateData,
             { new: true }
-        );
+        ).populate('trainingId', 'title');
 
         if (!nomination) {
             res.status(404).json({ message: 'Nomination not found' });
             return;
+        }
+
+        // Send Notification to Participant
+        try {
+            const trainingTitle = (nomination.trainingId as any)?.title || 'Training';
+            const action = status === 'approved' ? 'approved' : 'rejected';
+
+            await createAndSendNotification({
+                userId: nomination.participantId.toString(),
+                title: `Nomination ${status.charAt(0).toUpperCase() + status.slice(1)}`,
+                message: `Your nomination for "${trainingTitle}" has been ${action}.`,
+                type: 'nomination_status',
+                relatedId: nomination._id.toString()
+            });
+        } catch (notifErr) {
+            console.error('Failed to send nomination status notification:', notifErr);
         }
 
         res.json({

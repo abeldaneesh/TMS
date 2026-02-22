@@ -31,18 +31,23 @@ export const createAndSendNotification = async (params: CreateNotificationParams
                     title: params.title,
                     body: params.message,
                 },
-                data: {
-                    type: params.type,
-                    relatedId: params.relatedId || '',
-                },
-                token: user.fcmToken,
                 android: {
                     priority: 'high' as const,
                     notification: {
-                        channelId: 'dmo_alerts', // Must match frontend channel creation
-                        sound: 'default'
+                        channelId: 'dmo_alerts',
+                        sound: 'default',
+                        priority: 'high' as const,
+                        visibility: 'public' as const,
+                        clickAction: 'FCM_PLUGIN_ACTIVITY', // Standard Capacitor action
                     }
-                }
+                },
+                data: {
+                    type: params.type,
+                    relatedId: params.relatedId || '',
+                    title: params.title, // Also send in data for foreground handling
+                    message: params.message,
+                },
+                token: user.fcmToken,
             };
 
             try {

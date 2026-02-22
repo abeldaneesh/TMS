@@ -142,7 +142,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
   const handleMarkAsRead = async (id: string) => {
     try {
-      await api.patch(`/ notifications / ${id}/read`);
+      await api.patch(`/notifications/${id}/read`);
       setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
       setUnreadCount(prev => Math.max(0, prev - 1));
     } catch (error) {
