@@ -4,13 +4,19 @@ dotenv.config();
 
 // Initialize Firebase Admin SDK
 try {
-    if (!admin.apps.length) {
+    const projectId = process.env.FIREBASE_PROJECT_ID;
+    const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
+    const privateKey = process.env.FIREBASE_PRIVATE_KEY;
+
+    if (!projectId || !clientEmail || !privateKey) {
+        console.warn('Firebase Admin SDK: Missing FIREBASE environment variables. Push notifications will be disabled.');
+    } else if (!admin.apps.length) {
         admin.initializeApp({
             credential: admin.credential.cert({
-                projectId: process.env.FIREBASE_PROJECT_ID,
-                clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+                projectId,
+                clientEmail,
                 // Replace literal \n with actual newlines
-                privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+                privateKey: privateKey.replace(/\\n/g, '\n'),
             }),
         });
         console.log('Firebase Admin SDK initialized successfully');
