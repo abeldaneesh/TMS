@@ -2,7 +2,10 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTranslation } from 'react-i18next';
-import { Building2, Mail, Lock, AlertCircle, ArrowLeft, ShieldCheck, Database, Cpu } from 'lucide-react';
+import { useTheme } from '../../contexts/ThemeContext';
+import { Mail, Lock, AlertCircle, ArrowLeft, ShieldCheck, Database, Cpu, Sun, Moon } from 'lucide-react';
+import { motion } from 'framer-motion';
+import DoctorLogo from '../components/DoctorLogo';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
@@ -21,7 +24,8 @@ const Login: React.FC<LoginProps> = ({ roleTitle = 'Sign In', allowedRoles }) =>
   const [loading, setLoading] = useState(false);
   const { login, logout } = useAuth();
   const navigate = useNavigate();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const { theme, toggleTheme } = useTheme();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -55,7 +59,22 @@ const Login: React.FC<LoginProps> = ({ roleTitle = 'Sign In', allowedRoles }) =>
   };
 
   return (
-    <div className="min-h-screen flex flex-col md:flex-row bg-background">
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3 }}
+      className="min-h-screen flex flex-col md:flex-row bg-background"
+    >
+      {/* Floating Action Buttons */}
+      <div className="absolute top-4 right-4 z-50 flex gap-2">
+        <Button variant="outline" size="icon" className="bg-background/80 backdrop-blur-md rounded-full shadow-md" onClick={() => i18n.changeLanguage(i18n.language.startsWith('ml') ? 'en' : 'ml')}>
+          <span className="text-lg">🌐</span>
+        </Button>
+        <Button variant="outline" size="icon" className="bg-background/80 backdrop-blur-md rounded-full shadow-md" onClick={toggleTheme}>
+          {theme === 'dark' ? <Sun className="size-5 text-yellow-500" /> : <Moon className="size-5 text-slate-700" />}
+        </Button>
+      </div>
+
       {/* Left Column */}
       <div className="hidden md:flex md:w-1/2 relative overflow-hidden">
         <img
@@ -66,7 +85,7 @@ const Login: React.FC<LoginProps> = ({ roleTitle = 'Sign In', allowedRoles }) =>
         <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" />
         <div className="relative z-10 flex flex-col items-center justify-center w-full p-12 text-white">
           <div className="bg-white/10 backdrop-blur-md p-6 rounded-2xl mb-8 border border-white/20 shadow-2xl">
-            <Building2 className="size-16 text-white" />
+            <DoctorLogo className="size-20 text-white" />
           </div>
           <h1 className="text-4xl font-semibold tracking-tight text-center text-white">
             DMO TMS
@@ -154,7 +173,7 @@ const Login: React.FC<LoginProps> = ({ roleTitle = 'Sign In', allowedRoles }) =>
           </Card>
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 };
 

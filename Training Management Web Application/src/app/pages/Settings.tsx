@@ -150,7 +150,7 @@ const Settings: React.FC = () => {
                 </TabsList>
 
                 <TabsContent value="profile" className="mt-0 focus-visible:outline-none">
-                    <Card className="bg-white/5 border-white/10">
+                    <Card className="bg-card shadow-sm border-border">
                         <CardHeader className="flex flex-row items-center gap-4">
                             <div className="relative group">
                                 <Avatar className="size-20 border-2 border-primary/20">
@@ -260,7 +260,7 @@ const Settings: React.FC = () => {
                 </TabsContent>
 
                 <TabsContent value="security" className="mt-0 focus-visible:outline-none">
-                    <Card className="bg-white/5 border-white/10">
+                    <Card className="bg-card shadow-sm border-border">
                         <CardHeader>
                             <CardTitle>{t('settings.security.title', 'Change Password')}</CardTitle>
                             <CardDescription>{t('settings.security.desc', 'Ensure your account is secure by using a strong password.')}</CardDescription>

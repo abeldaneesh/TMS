@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/table';
 import { Badge } from '../components/ui/badge';
@@ -11,6 +12,7 @@ import { format } from 'date-fns';
 import LoadingScreen from '../components/LoadingScreen';
 
 const MyAttendance: React.FC = () => {
+    const { t } = useTranslation();
     const [attendanceHistory, setAttendanceHistory] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const navigate = useNavigate();
@@ -22,7 +24,7 @@ const MyAttendance: React.FC = () => {
                 setAttendanceHistory(data);
             } catch (error) {
                 console.error('Failed to fetch attendance history', error);
-                toast.error('Failed to load attendance history');
+                toast.error(t('myAttendance.loadError', 'Failed to load attendance history'));
             } finally {
                 setLoading(false);
             }
@@ -33,8 +35,8 @@ const MyAttendance: React.FC = () => {
 
     const getMethodBadge = (method: string) => {
         return method === 'qr'
-            ? <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">QR Scan</Badge>
-            : <Badge variant="outline" className="bg-gray-50 text-gray-700 border-gray-200">Manual</Badge>;
+            ? <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">{t('myAttendance.methods.qr', 'QR Scan')}</Badge>
+            : <Badge variant="outline" className="bg-gray-50 text-gray-700 border-gray-200">{t('myAttendance.methods.manual', 'Manual')}</Badge>;
     };
 
     if (loading) {
@@ -44,30 +46,30 @@ const MyAttendance: React.FC = () => {
     return (
         <div className="space-y-6">
             <div>
-                <h1 className="text-3xl font-bold">My Attendance</h1>
-                <p className="text-gray-500 mt-1">History of trainings you have attended</p>
+                <h1 className="text-3xl font-bold">{t('myAttendance.title', 'My Attendance')}</h1>
+                <p className="text-gray-500 mt-1">{t('myAttendance.subtitle', 'History of trainings you have attended')}</p>
             </div>
 
             <Card>
                 <CardHeader>
-                    <CardTitle>Attended Trainings</CardTitle>
+                    <CardTitle>{t('myAttendance.cardTitle', 'Attended Trainings')}</CardTitle>
                 </CardHeader>
                 <CardContent>
                     {attendanceHistory.length === 0 ? (
                         <div className="text-center py-12">
                             <CheckCircle className="size-12 mx-auto text-gray-300 mb-3" />
-                            <p className="text-gray-500">No attendance records found.</p>
+                            <p className="text-gray-500">{t('myAttendance.noRecords', 'No attendance records found.')}</p>
                         </div>
                     ) : (
                         <div className="rounded-md border">
                             <Table>
                                 <TableHeader>
                                     <TableRow>
-                                        <TableHead>Training</TableHead>
-                                        <TableHead>Date & Time</TableHead>
-                                        <TableHead>Venue</TableHead>
-                                        <TableHead>Method</TableHead>
-                                        <TableHead className="text-right">Actions</TableHead>
+                                        <TableHead>{t('myAttendance.table.training', 'Training')}</TableHead>
+                                        <TableHead>{t('myAttendance.table.dateTime', 'Date & Time')}</TableHead>
+                                        <TableHead>{t('myAttendance.table.venue', 'Venue')}</TableHead>
+                                        <TableHead>{t('myAttendance.table.method', 'Method')}</TableHead>
+                                        <TableHead className="text-right">{t('myAttendance.table.actions', 'Actions')}</TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
@@ -75,7 +77,7 @@ const MyAttendance: React.FC = () => {
                                         <TableRow key={record.id}>
                                             <TableCell>
                                                 <div className="font-medium text-base">
-                                                    {record.training?.title || 'Unknown Training'}
+                                                    {record.training?.title || t('myAttendance.unknownTraining', 'Unknown Training')}
                                                 </div>
                                                 <div className="text-sm text-gray-500">
                                                     {record.training?.program}
@@ -84,7 +86,7 @@ const MyAttendance: React.FC = () => {
                                             <TableCell>
                                                 <div className="flex items-center gap-2 text-sm">
                                                     <Calendar className="size-4 text-gray-400" />
-                                                    {record.training?.date ? format(new Date(record.training.date), 'MMM dd, yyyy') : 'N/A'}
+                                                    {record.training?.date ? format(new Date(record.training.date), 'MMM dd, yyyy') : t('myAttendance.notAvailable', 'N/A')}
                                                 </div>
                                                 <div className="flex items-center gap-2 text-sm text-gray-500 mt-1">
                                                     <Clock className="size-4 text-gray-400" />
@@ -94,7 +96,7 @@ const MyAttendance: React.FC = () => {
                                             <TableCell>
                                                 <div className="flex items-center gap-2 text-sm">
                                                     <MapPin className="size-4 text-gray-400" />
-                                                    {record.training?.hall?.name || 'Unknown Hall'}
+                                                    {record.training?.hall?.name || t('myAttendance.unknownHall', 'Unknown Hall')}
                                                 </div>
                                             </TableCell>
                                             <TableCell>
@@ -107,7 +109,7 @@ const MyAttendance: React.FC = () => {
                                                 {record.training && (
                                                     <Button variant="ghost" size="sm" onClick={() => navigate(`/trainings/${record.training.id}`)}>
                                                         <Eye className="size-4 mr-2" />
-                                                        View Details
+                                                        {t('myAttendance.viewDetails', 'View Details')}
                                                     </Button>
                                                 )}
                                             </TableCell>

@@ -1,7 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Building2, Mail, Lock, User, Phone, Briefcase, ChevronLeft, ShieldCheck } from 'lucide-react';
+import { useTheme } from '../../contexts/ThemeContext';
+import { motion } from 'framer-motion';
+import { Mail, Lock, User, Phone, Briefcase, ChevronLeft, ShieldCheck, Sun, Moon } from 'lucide-react';
+import DoctorLogo from '../components/DoctorLogo';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
@@ -15,7 +18,8 @@ const Register: React.FC = () => {
     const [searchParams] = useSearchParams();
     const roleParam = searchParams.get('role') || 'participant';
     const displayRole = roleParam === 'program_officer' ? 'Program Officer' : 'Field Personnel';
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
+    const { theme, toggleTheme } = useTheme();
 
     const [formData, setFormData] = useState({
         name: '',
@@ -49,7 +53,7 @@ const Register: React.FC = () => {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (formData.password !== formData.confirmPassword) {
-            toast.error('PASSWORDS DO NOT MATCH');
+            toast.error('Passwords do not match');
             return;
         }
 
@@ -58,9 +62,9 @@ const Register: React.FC = () => {
             const { confirmPassword, ...registerData } = formData;
             await usersApi.create({ ...registerData, role: roleParam });
             setSuccess(true);
-            toast.success('REGISTRATION PROTOCOL INITIATED');
+            toast.success('Registration request submitted');
         } catch (err: any) {
-            toast.error(err.response?.data?.message || 'REGISTRATION FAILED');
+            toast.error(err.response?.data?.message || 'Registration failed');
         } finally {
             setLoading(false);
         }
@@ -68,55 +72,68 @@ const Register: React.FC = () => {
 
     if (success) {
         return (
-            <div className="min-h-screen bg-background flex items-center justify-center p-4 relative">
-                <div className="absolute inset-0 cyber-grid opacity-10 pointer-events-none" />
-                <Card className="w-full max-w-md glass-card text-center border-border shadow-lg relative z-10 bg-card/40">
-                    <CardHeader>
-                        <div className="mx-auto bg-primary/10 text-primary p-5 rounded-full w-fit mb-6 border border-primary/20 shadow-lg">
-                            <ShieldCheck className="size-12" />
+            <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4 }}
+                className="min-h-screen bg-background flex items-center justify-center p-4 relative"
+            >
+                {/* Floating Action Buttons */}
+                <div className="absolute top-4 right-4 z-50 flex gap-2">
+                    <Button variant="outline" size="icon" className="bg-background/80 backdrop-blur-md rounded-full shadow-md" onClick={() => i18n.changeLanguage(i18n.language.startsWith('ml') ? 'en' : 'ml')}>
+                        <span className="text-lg">🌐</span>
+                    </Button>
+                    <Button variant="outline" size="icon" className="bg-background/80 backdrop-blur-md rounded-full shadow-md" onClick={toggleTheme}>
+                        {theme === 'dark' ? <Sun className="size-5 text-yellow-500" /> : <Moon className="size-5 text-slate-700" />}
+                    </Button>
+                </div>
+                <Card className="w-full max-w-md border bg-card text-center shadow-lg relative z-10 overflow-hidden">
+                    <div className="relative z-10 flex flex-col items-center justify-center w-full p-10 bg-primary/5 rounded-t-xl">
+                        <div className="bg-primary/10 p-6 rounded-2xl mb-6">
+                            <DoctorLogo className="size-16 text-primary" />
                         </div>
-                        <CardTitle className="text-3xl font-black tracking-tight text-foreground uppercase leading-none">{t('auth.register.title', 'Access Requested')}</CardTitle>
-                        <CardDescription className="text-primary/70 mt-4 font-mono text-xs uppercase tracking-widest leading-relaxed">
-                            {t('auth.register.subtitle', 'YOUR OPERATIVE CREDENTIALS HAVE BEEN TRANSMITTED.')}
+                        <h1 className="text-2xl font-bold tracking-tight text-center text-foreground">{t('auth.register.title', 'Request Received')}</h1>
+                        <CardDescription className="mt-2 text-sm text-muted-foreground text-center">
+                            {t('auth.register.subtitle', 'Your registration request has been submitted successfully.')}
                         </CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                        <div className="p-4 bg-muted/50 rounded-xl border border-border">
-                            <p className="text-sm text-foreground/80 font-mono uppercase tracking-tight">
-                                {t('auth.register.status', 'STATUS:')} <span className="text-primary font-bold">{t('auth.register.pending', 'PENDING_APPROVAL')}</span>
+                    </div>
+                    <CardContent className="space-y-6 pt-6 mb-2">
+                        <div className="p-4 bg-muted/50 rounded-lg border border-border">
+                            <p className="text-sm font-medium text-foreground">
+                                {t('auth.register.status', 'Status:')} <span className="text-primary">{t('auth.register.pending', 'Pending Approval')}</span>
                             </p>
                         </div>
-                        <p className="text-xs text-muted-foreground font-mono uppercase leading-relaxed">
-                            {t('auth.register.desc', 'YOU WILL GAIN SYSTEM CLEARANCE ONCE A COMMAND ADMINISTRATOR VALIDATES YOUR REQUEST.')}
+                        <p className="text-sm text-muted-foreground">
+                            {t('auth.register.desc', 'You will gain access to the system once an administrator validates your request.')}
                         </p>
                     </CardContent>
-                    <CardFooter>
-                        <Button className="w-full h-12 bg-primary hover:bg-primary/90 text-primary-foreground font-black uppercase tracking-widest rounded-xl transition-all" onClick={() => navigate('/login')}>
-                            {t('auth.register.return', 'RETURN TO ENTRY')}
+                    <CardFooter className="pb-8 px-6">
+                        <Button className="w-full h-11" onClick={() => navigate('/login')}>
+                            {t('auth.register.return', 'Back to Login')}
                         </Button>
                     </CardFooter>
                 </Card>
-            </div>
+            </motion.div>
         );
     }
 
     return (
-        <div className="min-h-screen bg-background flex items-center justify-center p-4 py-16 relative">
-            <div className="absolute inset-0 cyber-grid opacity-10 pointer-events-none" />
-            <div className="absolute inset-0 bg-radial-gradient from-primary/5 via-transparent to-transparent opacity-30 pointer-events-none" />
-
-            <Card className="w-full max-w-2xl glass-card border-border shadow-2xl relative z-10 overflow-hidden bg-card/40">
-                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-primary to-transparent" />
-
-                <CardHeader className="space-y-4 pb-8">
+        <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4 }}
+            className="min-h-screen bg-background flex items-center justify-center p-4 py-8 relative"
+        >
+            <Card className="w-full max-w-2xl border bg-card shadow-lg relative z-10 overflow-hidden">
+                <CardHeader className="space-y-4 pb-6">
                     <div className="flex items-center gap-4">
-                        <Link to="/login" className="bg-muted/50 p-2 rounded-lg text-primary hover:bg-primary/10 transition-colors border border-border">
+                        <Link to="/login" className="text-muted-foreground hover:text-foreground p-2 transition-colors">
                             <ChevronLeft className="size-5" />
                         </Link>
                         <div>
-                            <CardTitle className="text-3xl font-black text-foreground uppercase tracking-tight">{displayRole}</CardTitle>
-                            <CardDescription className="text-primary/60 font-mono text-[10px] uppercase tracking-[0.2em] mt-1">
-                                REGISTRATION PROTOCOL — {roleParam === 'program_officer' ? 'COMMAND_UNIT' : 'FIELD_OPERATIVE'}
+                            <CardTitle className="text-2xl font-bold text-foreground tracking-tight">Register ({displayRole})</CardTitle>
+                            <CardDescription className="text-muted-foreground mt-1 text-sm">
+                                Create your account to access the training management system
                             </CardDescription>
                         </div>
                     </div>
@@ -126,15 +143,15 @@ const Register: React.FC = () => {
                         <div className="grid md:grid-cols-2 gap-x-8 gap-y-6">
                             {/* Name */}
                             <div className="space-y-2">
-                                <Label htmlFor="name" className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest ml-1">{t('auth.register.fullName', 'Full Identity')}</Label>
+                                <Label htmlFor="name" className="text-sm font-medium">{t('auth.register.fullName', 'Full Name')}</Label>
                                 <div className="relative group">
-                                    <User className="absolute left-3 top-3.5 size-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
+                                    <User className="absolute left-3 top-3 size-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
                                     <Input
                                         id="name"
-                                        placeholder="DR. NAME"
+                                        placeholder="John Doe"
                                         value={formData.name}
                                         onChange={handleChange}
-                                        className="pl-10 h-12 bg-input/50 border-input focus:border-primary/50 focus:ring-primary/20 text-foreground placeholder:text-muted-foreground/50 rounded-xl"
+                                        className="pl-10 h-11 bg-background"
                                         required
                                     />
                                 </div>
@@ -142,16 +159,16 @@ const Register: React.FC = () => {
 
                             {/* Email */}
                             <div className="space-y-2">
-                                <Label htmlFor="email" className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest ml-1">{t('auth.register.email', 'Direct Uplink (Email)')}</Label>
+                                <Label htmlFor="email" className="text-sm font-medium">{t('auth.register.email', 'Email Address')}</Label>
                                 <div className="relative group">
-                                    <Mail className="absolute left-3 top-3.5 size-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
+                                    <Mail className="absolute left-3 top-3 size-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
                                     <Input
                                         id="email"
                                         type="email"
-                                        placeholder="ID@HEALTH.GOV"
+                                        placeholder="name@example.com"
                                         value={formData.email}
                                         onChange={handleChange}
-                                        className="pl-10 h-12 bg-input/50 border-input focus:border-primary/50 focus:ring-primary/20 text-foreground placeholder:text-muted-foreground/50 rounded-xl"
+                                        className="pl-10 h-11 bg-background"
                                         required
                                     />
                                 </div>
@@ -159,16 +176,16 @@ const Register: React.FC = () => {
 
                             {/* Password */}
                             <div className="space-y-2">
-                                <Label htmlFor="password" title="Password" className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest ml-1">{t('auth.register.password', 'Access Cipher')}</Label>
+                                <Label htmlFor="password" title="Password" className="text-sm font-medium">{t('auth.register.password', 'Password')}</Label>
                                 <div className="relative group">
-                                    <Lock className="absolute left-3 top-3.5 size-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
+                                    <Lock className="absolute left-3 top-3 size-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
                                     <Input
                                         id="password"
                                         type="password"
                                         placeholder="••••••••"
                                         value={formData.password}
                                         onChange={handleChange}
-                                        className="pl-10 h-12 bg-input/50 border-input focus:border-primary/50 focus:ring-primary/20 text-foreground placeholder:text-muted-foreground/50 rounded-xl"
+                                        className="pl-10 h-11 bg-background"
                                         required
                                     />
                                 </div>
@@ -176,96 +193,80 @@ const Register: React.FC = () => {
 
                             {/* Confirm Password */}
                             <div className="space-y-2">
-                                <Label htmlFor="confirmPassword" title="Confirm Password" className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest ml-1">{t('auth.register.confirmPassword', 'Verify Cipher')}</Label>
+                                <Label htmlFor="confirmPassword" title="Confirm Password" className="text-sm font-medium">{t('auth.register.confirmPassword', 'Confirm Password')}</Label>
                                 <div className="relative group">
-                                    <Lock className="absolute left-3 top-3.5 size-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
+                                    <Lock className="absolute left-3 top-3 size-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
                                     <Input
                                         id="confirmPassword"
                                         type="password"
                                         placeholder="••••••••"
                                         value={formData.confirmPassword}
                                         onChange={handleChange}
-                                        className="pl-10 h-12 bg-input/50 border-input focus:border-primary/50 focus:ring-primary/20 text-foreground placeholder:text-muted-foreground/50 rounded-xl"
+                                        className="pl-10 h-11 bg-background"
                                         required
                                     />
                                 </div>
                             </div>
 
-                            {/* Institution */}
-                            <div className="space-y-2">
-                                <Label htmlFor="institutionId" className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest ml-1">{t('auth.register.sector', 'Sector / Station')}</Label>
-                                <Select onValueChange={handleSelectChange} required>
-                                    <SelectTrigger className="h-12 bg-input/50 border-input text-foreground rounded-xl focus:ring-primary/20">
-                                        <SelectValue placeholder="SELECT STATION" />
-                                    </SelectTrigger>
-                                    <SelectContent className="glass-card border-primary/20">
-                                        <SelectItem value="inst-1">DISTRICT GENERAL HOSPITAL</SelectItem>
-                                        <SelectItem value="inst-2">COMMUNITY HEALTH CENTER - NORTH</SelectItem>
-                                        <SelectItem value="inst-3">PRIMARY HEALTH CENTER - EAST</SelectItem>
-                                        <SelectItem value="inst-4">PRIMARY HEALTH CENTER - WEST</SelectItem>
-                                        <SelectItem value="inst-5">URBAN HEALTH CENTER - SOUTH</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
 
                             {/* Designation */}
                             <div className="space-y-2">
-                                <Label htmlFor="designation" className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest ml-1">{t('auth.register.designation', 'Operational Rank')}</Label>
+                                <Label htmlFor="designation" className="text-sm font-medium">{t('auth.register.designation', 'Designation')}</Label>
                                 <div className="relative group">
-                                    <Briefcase className="absolute left-3 top-3.5 size-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
+                                    <Briefcase className="absolute left-3 top-3 size-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
                                     <Input
                                         id="designation"
-                                        placeholder="MEDICAL OFFICER"
+                                        placeholder="Medical Officer"
                                         value={formData.designation}
                                         onChange={handleChange}
-                                        className="pl-10 h-12 bg-input/50 border-input focus:border-primary/50 focus:ring-primary/20 text-foreground placeholder:text-muted-foreground/50 rounded-xl"
+                                        className="pl-10 h-11 bg-background"
                                     />
                                 </div>
                             </div>
 
                             {/* Phone */}
                             <div className="space-y-2">
-                                <Label htmlFor="phone" className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest ml-1">{t('auth.register.phone', 'Comm Link (Phone)')}</Label>
+                                <Label htmlFor="phone" className="text-sm font-medium">{t('auth.register.phone', 'Phone Number')}</Label>
                                 <div className="relative group">
-                                    <Phone className="absolute left-3 top-3.5 size-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
+                                    <Phone className="absolute left-3 top-3 size-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
                                     <Input
                                         id="phone"
-                                        placeholder="+91-XXXXXXXXXX"
+                                        placeholder="+91 XXXXXXXXXX"
                                         value={formData.phone}
                                         onChange={handleChange}
-                                        className="pl-10 h-12 bg-input/50 border-input focus:border-primary/50 focus:ring-primary/20 text-foreground placeholder:text-muted-foreground/50 rounded-xl"
+                                        className="pl-10 h-11 bg-background"
                                     />
                                 </div>
                             </div>
 
                             {/* Department */}
-                            <div className="space-y-2">
-                                <Label htmlFor="department" className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest ml-1">{t('auth.register.department', 'Division')}</Label>
+                            <div className="space-y-2 md:col-span-2">
+                                <Label htmlFor="department" className="text-sm font-medium">{t('auth.register.department', 'Department')}</Label>
                                 <Input
                                     id="department"
-                                    placeholder="EMERGENCY / PEDIATRICS"
+                                    placeholder="Pediatrics"
                                     value={formData.department}
                                     onChange={handleChange}
-                                    className="h-12 bg-input/50 border-input focus:border-primary/50 focus:ring-primary/20 text-foreground placeholder:text-muted-foreground/50 rounded-xl"
+                                    className="h-11 bg-background"
                                 />
                             </div>
                         </div>
 
-                        <Button type="submit" className="w-full h-12 bg-primary hover:bg-primary/90 text-primary-foreground font-black uppercase tracking-widest rounded-xl transition-all shadow-md" disabled={loading}>
-                            {loading ? t('auth.register.transmitting', 'TRANSMITTING...') : t('auth.register.initiate', 'INITIATE REQUEST')}
+                        <Button type="submit" className="w-full h-11" disabled={loading}>
+                            {loading ? t('auth.register.creating', 'Creating Account...') : t('auth.register.register', 'Register')}
                         </Button>
                     </form>
                 </CardContent>
                 <CardFooter className="justify-center border-t border-border p-6 bg-muted/20">
-                    <p className="text-[10px] font-mono text-muted-foreground uppercase tracking-widest">
-                        {t('auth.register.existing', 'EXISTING OPERATIVE?')}
-                        <Link to="/login" className="text-primary font-black hover:underline ml-2">
-                            {t('auth.register.authenticate', 'AUTHENTICATE')}
+                    <p className="text-sm text-muted-foreground">
+                        {t('auth.register.existing', 'Already have an account?')}
+                        <Link to="/login" className="text-primary hover:underline ml-1 font-medium">
+                            {t('auth.register.authenticate', 'Sign in')}
                         </Link>
                     </p>
                 </CardFooter>
             </Card>
-        </div>
+        </motion.div>
     );
 };
 

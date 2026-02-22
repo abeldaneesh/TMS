@@ -8,8 +8,11 @@ import BottomNav from './BottomNav';
 import {
   LayoutDashboard, Calendar, Users, Building2, DoorOpen,
   FileText, Settings, Bell, Menu, X, LogOut, QrCode,
-  ClipboardList, BarChart3, Search, BookOpen, AppWindowMac, Cast, UserCheck
+  ClipboardList, BarChart3, Search, AppWindowMac, Cast, UserCheck, Sun, Moon, Globe
 } from 'lucide-react';
+import DoctorLogo from './DoctorLogo';
+import { AnimatePresence } from 'framer-motion';
+import PageTransition from './PageTransition';
 
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
@@ -32,6 +35,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const { t, i18n } = useTranslation();
+  const { theme, toggleTheme } = useTheme();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [searchFocused, setSearchFocused] = useState(false);
 
@@ -58,7 +62,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
   const handleMarkAsRead = async (id: string) => {
     try {
-      await api.patch(`/notifications/${id}/read`);
+      await api.patch(`/ notifications / ${id}/read`);
       setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
       setUnreadCount(prev => Math.max(0, prev - 1));
     } catch (error) {
@@ -155,17 +159,17 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           <Button
             variant="ghost"
             size="icon"
-            className="lg:hidden mr-2 text-foreground hover:bg-white/10"
+            className="lg:hidden mr-2 text-foreground hover:bg-accent hover:text-accent-foreground"
             onClick={() => setSidebarOpen(!sidebarOpen)}
           >
             {sidebarOpen ? <X className="size-6" /> : <Menu className="size-6" />}
           </Button>
-          <Link to="/dashboard" className="flex items-center gap-1.5 cursor-pointer mr-6">
-            <div className="text-primary bg-white rounded-full p-1 border border-primary/20">
-              <BookOpen className="size-6 text-primary" />
+          <Link to="/dashboard" className="flex items-center gap-2 cursor-pointer mr-6">
+            <div className="text-primary bg-background rounded-full p-1 border border-primary/20">
+              <DoctorLogo className="size-6 text-primary" />
             </div>
             <h1 className="font-bold text-xl text-foreground tracking-tighter">
-              DMO <span className="text-white opacity-90 font-semibold tracking-normal">TMS</span>
+              DMO <span className="text-primary font-semibold tracking-normal">TMS</span>
             </h1>
           </Link>
         </div>
@@ -186,13 +190,13 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
         {/* Right Section */}
         <div className="flex items-center gap-2 sm:gap-4 flex-shrink-0">
-          <Button variant="ghost" size="icon" className="text-foreground hover:bg-white/10 hidden sm:flex">
+          <Button variant="ghost" size="icon" className="text-foreground hover:bg-accent hover:text-accent-foreground hidden sm:flex">
             <Cast className="size-5" />
           </Button>
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="relative text-foreground hover:bg-white/10 hidden sm:flex">
+              <Button variant="ghost" size="icon" className="relative text-foreground hover:bg-accent hover:text-accent-foreground hidden sm:flex">
                 <Bell className="size-5" />
                 {unreadCount > 0 && (
                   <span className="absolute top-1 right-1 bg-primary text-primary-foreground text-[10px] font-bold rounded-full size-4 flex items-center justify-center">
@@ -219,7 +223,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 notifications.map((notification) => (
                   <DropdownMenuItem
                     key={notification.id}
-                    className={`flex flex-col items-start gap-1 p-3 cursor-pointer transition-colors focus:bg-white/10 ${!notification.read ? 'bg-white/5 border-l-2 border-primary' : ''}`}
+                    className={`flex flex-col items-start gap-1 p-3 cursor-pointer transition-colors focus:bg-accent focus:text-accent-foreground ${!notification.read ? 'bg-muted/50 border-l-2 border-primary' : ''}`}
                     onClick={() => handleMarkAsRead(notification.id)}
                   >
                     <div className="font-medium text-sm flex justify-between w-full text-foreground">
@@ -240,7 +244,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="hover:bg-white/10 rounded-full transition-all group shrink-0 size-9">
+              <Button variant="ghost" size="icon" className="hover:bg-accent hover:text-accent-foreground rounded-full transition-all group shrink-0 size-9">
                 <Avatar className="size-8 transition-colors border border-border">
                   {user.profilePicture ? (
                     <AvatarImage src={user.profilePicture.startsWith('http') ? user.profilePicture : `${BASE_URL}${user.profilePicture}`} alt={user.name} />
@@ -262,11 +266,15 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator className="bg-border" />
-              <DropdownMenuItem className="focus:bg-white/10 cursor-pointer" onClick={(e) => { e.preventDefault(); toggleLanguage(); }}>
-                <span className="mr-2 text-lg">🌐</span>
+              <DropdownMenuItem className="focus:bg-accent focus:text-accent-foreground cursor-pointer" onClick={(e) => { e.preventDefault(); toggleLanguage(); }}>
+                <Globe className="mr-2 size-4 text-muted-foreground" />
                 {i18n.language.startsWith('ml') ? 'Switch to English' : 'മലയാളത്തിലേക്ക് മാറ്റുക (Malayalam)'}
               </DropdownMenuItem>
-              <DropdownMenuItem className="focus:bg-white/10 cursor-pointer" onClick={() => navigate('/settings')}>
+              <DropdownMenuItem className="focus:bg-accent focus:text-accent-foreground cursor-pointer" onClick={(e) => { e.preventDefault(); toggleTheme(); }}>
+                {theme === 'dark' ? <Sun className="mr-2 size-4 text-muted-foreground" /> : <Moon className="mr-2 size-4 text-muted-foreground" />}
+                {theme === 'dark' ? t('nav.lightMode', 'Light Mode') : t('nav.darkMode', 'Dark Mode')}
+              </DropdownMenuItem>
+              <DropdownMenuItem className="focus:bg-accent focus:text-accent-foreground cursor-pointer" onClick={() => navigate('/settings')}>
                 <Settings className="mr-2 size-4 text-muted-foreground" />
                 {t('nav.settings', 'Settings')}
               </DropdownMenuItem>
@@ -300,11 +308,11 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                     to={item.path}
                     onClick={() => setSidebarOpen(false)}
                     className={`flex items-center gap-4 px-3 py-3 rounded-lg transition-all relative group ${isActive
-                      ? 'bg-white/10 text-foreground font-medium'
-                      : 'text-white/70 hover:bg-white/5 hover:text-foreground'
+                      ? 'bg-accent text-accent-foreground font-medium'
+                      : 'text-muted-foreground hover:bg-muted hover:text-foreground'
                       }`}
                   >
-                    <Icon className={`size-6 ${isActive ? 'fill-foreground/20' : ''}`} />
+                    <Icon className={`size-6 ${isActive ? 'text-primary' : 'text-muted-foreground group-hover:text-foreground'}`} />
                     <span className="text-sm font-medium">{item.label}</span>
                   </Link>
                 );
@@ -322,11 +330,11 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                     to={item.path}
                     onClick={() => setSidebarOpen(false)}
                     className={`flex items-center gap-4 px-3 py-2.5 rounded-lg transition-all relative group ${isActive
-                      ? 'bg-white/10 text-foreground font-medium'
-                      : 'text-white/70 hover:bg-white/5 hover:text-foreground'
+                      ? 'bg-accent text-accent-foreground font-medium'
+                      : 'text-muted-foreground hover:bg-muted hover:text-foreground'
                       }`}
                   >
-                    <Icon className={`size-5 ${isActive ? 'text-foreground' : ''}`} />
+                    <Icon className={`size-5 ${isActive ? 'text-primary' : 'text-muted-foreground group-hover:text-foreground'}`} />
                     <span className="text-sm font-medium">{item.label}</span>
                   </Link>
                 );
@@ -338,7 +346,11 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         {/* Main Content */}
         <main className="flex-1 lg:ml-60 relative z-10 min-h-[calc(100vh-64px)] overflow-x-hidden pt-4 sm:pt-6">
           <div className="px-4 sm:px-6 lg:px-10 pb-24 lg:pb-12 h-full">
-            {children}
+            <AnimatePresence mode="wait">
+              <PageTransition key={location.pathname}>
+                {children}
+              </PageTransition>
+            </AnimatePresence>
           </div>
         </main>
       </div>

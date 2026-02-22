@@ -20,6 +20,7 @@ import HallAvailability from './pages/HallAvailability';
 import Register from './pages/Register';
 import UserApprovals from './pages/UserApprovals';
 import ProgramOfficers from './pages/ProgramOfficers';
+import NotificationsMobile from './pages/NotificationsMobile';
 import Participants from './pages/Participants';
 import Institutions from './pages/Institutions';
 import Halls from './pages/Halls';
@@ -160,6 +161,16 @@ const AppRoutes: React.FC = () => {
           <ProtectedRoute>
             <Layout>
               <MyAttendance />
+            </Layout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/notifications-mobile"
+        element={
+          <ProtectedRoute>
+            <Layout>
+              <NotificationsMobile />
             </Layout>
           </ProtectedRoute>
         }

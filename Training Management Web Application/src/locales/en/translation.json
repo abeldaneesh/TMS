@@ -265,6 +265,7 @@
             "networkError": "Network Error",
             "noOfficers": "No Officers Found",
             "noOfficersDesc": "There are no program officers assigned to this sector.",
+            "search": "Search by name, email, or department...",
             "table": {
                 "details": "Officer Details",
                 "contact": "Contact Info",
@@ -291,6 +292,7 @@
             "networkError": "Network Error",
             "noParticipants": "No Participants Found",
             "noParticipantsDesc": "There are no participants registered in the system yet.",
+            "search": "Search by name, email, or department...",
             "table": {
                 "details": "Participant Details",
                 "contact": "Contact Info",
@@ -439,6 +441,39 @@
             "removeSuccess": "Removed successfully",
             "removeFail": "Failed to remove"
         }
+    },
+    "portalSelection": {
+        "adminTitle": "Administrator",
+        "adminDesc": "System settings & oversight",
+        "officerTitle": "Program Officer",
+        "officerDesc": "Manage training programs",
+        "participantTitle": "Participant",
+        "participantDesc": "Access your training records",
+        "title": "Select Portal",
+        "desc": "Choose your role to access the training management portal.",
+        "footerText": "All rights reserved."
+    },
+    "myAttendance": {
+        "title": "My Attendance",
+        "subtitle": "History of trainings you have attended",
+        "cardTitle": "Attended Trainings",
+        "noRecords": "No attendance records found.",
+        "table": {
+            "training": "Training",
+            "dateTime": "Date & Time",
+            "venue": "Venue",
+            "method": "Method",
+            "actions": "Actions"
+        },
+        "unknownTraining": "Unknown Training",
+        "unknownHall": "Unknown Hall",
+        "notAvailable": "N/A",
+        "methods": {
+            "qr": "QR Scan",
+            "manual": "Manual"
+        },
+        "viewDetails": "View Details",
+        "loadError": "Failed to load attendance history"
     },
     "common": {
         "loading": "Loading content...",

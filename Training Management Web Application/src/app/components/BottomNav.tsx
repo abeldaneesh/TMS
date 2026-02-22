@@ -1,7 +1,8 @@
 import React from 'react';
-import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, Calendar, QrCode, ClipboardList, Settings } from 'lucide-react';
+import { NavLink, useNavigate } from 'react-router-dom';
+import { LayoutDashboard, Calendar, QrCode, ClipboardList, Settings, Bell } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
+import { useTranslation } from 'react-i18next';
 import { useIsMobile } from './ui/use-mobile';
 
 const BottomNav: React.FC = () => {
@@ -15,9 +16,10 @@ const BottomNav: React.FC = () => {
         { icon: Calendar, label: 'Trainings', path: '/trainings' },
         {
             icon: user.role === 'participant' ? QrCode : ClipboardList,
-            label: user.role === 'participant' ? 'Scan' : 'Nominations',
+            label: user.role === 'participant' ? 'Scan' : 'Library',
             path: user.role === 'participant' ? '/scan-qr' : '/nominations'
         },
+        { icon: Bell, label: 'Alerts', path: '/notifications-mobile' },
         { icon: Settings, label: 'Settings', path: '/settings' },
     ];
 

@@ -434,13 +434,15 @@ const Nominations: React.FC = () => {
                   <div className="space-y-2">
                     {users.filter(u => u.role === 'participant').map(u => {
                       const isBusy = busyParticipantIds.includes(u.id);
+                      const isAlreadyAssigned = nominations.some(n => n.trainingId === selectedTrainingId && n.participantId === u.id && n.status !== 'rejected');
+                      const isDisabled = isBusy || isAlreadyAssigned;
                       const isSelected = selectedParticipantIds.includes(u.id);
 
                       return (
                         <div
                           key={u.id}
-                          onClick={() => !isBusy && toggleParticipantSelection(u.id)}
-                          className={`p-3 rounded-lg border transition-all flex items-center justify-between gap-3 ${isBusy
+                          onClick={() => !isDisabled && toggleParticipantSelection(u.id)}
+                          className={`p-3 rounded-lg border transition-all flex items-center justify-between gap-3 ${isDisabled
                             ? 'bg-muted/50 border-border opacity-50 cursor-not-allowed'
                             : isSelected
                               ? 'bg-primary/5 border-primary shadow-sm cursor-pointer'
@@ -450,20 +452,24 @@ const Nominations: React.FC = () => {
                           <div className="flex items-center gap-3">
                             <Checkbox
                               checked={isSelected}
-                              disabled={isBusy}
-                              className={isBusy ? 'opacity-50' : ''}
+                              disabled={isDisabled}
+                              className={isDisabled ? 'opacity-50' : ''}
                             />
                             <div>
-                              <p className={`text-sm font-medium ${isBusy ? 'text-muted-foreground' : 'text-foreground'}`}>{u.name}</p>
+                              <p className={`text-sm font-medium ${isDisabled ? 'text-muted-foreground' : 'text-foreground'}`}>{u.name}</p>
                               <p className="text-xs text-muted-foreground">{u.designation} • {getInstitutionName(u.institutionId)}</p>
                             </div>
                           </div>
 
-                          {isBusy && (
+                          {isAlreadyAssigned ? (
+                            <Badge variant="secondary" className="text-xs bg-primary/20 text-primary hover:bg-primary/20">
+                              Already Assigned
+                            </Badge>
+                          ) : isBusy ? (
                             <Badge variant="secondary" className="text-xs">
                               Busy
                             </Badge>
-                          )}
+                          ) : null}
                         </div>
                       );
                     })}
