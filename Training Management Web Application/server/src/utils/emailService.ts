@@ -1,16 +1,26 @@
-import { Resend } from 'resend';
+import sgMail from '@sendgrid/mail';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+const apiKey = process.env.SENDGRID_API_KEY || '';
+if (apiKey) {
+  sgMail.setApiKey(apiKey);
+}
 
 export const sendOTP = async (email: string, otp: string, name: string) => {
   try {
-    const fromEmail = process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev';
+    const fromEmail = process.env.EMAIL_USER?.trim() || 'abeldaneesh3@gmail.com';
 
-    console.log(`[EmailService] Attempting to send OTP email to ${email} via Resend API...`);
+    if (!apiKey) {
+      console.warn('[EmailService] WARNING: SENDGRID_API_KEY is not set. Emails will fail.');
+    }
 
-    const { data, error } = await resend.emails.send({
-      from: `DMO Admin <${fromEmail}>`,
-      to: [email],
+    console.log(`[EmailService] Attempting to send OTP email to ${email} via SendGrid API...`);
+
+    const msg = {
+      to: email,
+      from: {
+        email: fromEmail,
+        name: 'DMO Admin'
+      },
       subject: 'Verify your DMO TMS Registration',
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px;">
@@ -26,17 +36,17 @@ export const sendOTP = async (email: string, otp: string, name: string) => {
           <p style="font-size: 12px; color: #999; text-align: center;">Regards,<br/>DMO Administration</p>
         </div>
       `,
-    });
+    };
 
-    if (error) {
-      console.error('[EmailService] Resend API Error:', error);
-      throw new Error(error.message);
-    }
+    await sgMail.send(msg);
 
-    console.log(`[EmailService] OTP sent to ${email} - Resend ID: ${data?.id}`);
+    console.log(`[EmailService] OTP sent successfully to ${email} via SendGrid`);
     return true;
   } catch (error: any) {
-    console.error('Error sending OTP email via Resend:', error);
+    console.error('Error sending OTP email via SendGrid:', error);
+    if (error.response) {
+      console.error('SendGrid API Body:', error.response.body);
+    }
     throw new Error(`Email Error: ${error.message}`);
   }
 };
