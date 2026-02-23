@@ -117,6 +117,16 @@ export const getTrainingById = async (req: Request, res: Response): Promise<void
             return;
         }
 
+        let userStatus = null;
+        if (authReq.user?.role === 'participant') {
+            const Nomination = require('../models/Nomination').default;
+            const nomination = await Nomination.findOne({
+                trainingId: id,
+                participantId: authReq.user.userId
+            });
+            userStatus = nomination?.status || null;
+        }
+
         const transformedTraining = {
             ...training,
             // @ts-ignore
@@ -124,7 +134,8 @@ export const getTrainingById = async (req: Request, res: Response): Promise<void
             // @ts-ignore
             creator: training.createdById,
             // @ts-ignore
-            createdById: training.createdById?._id || training.createdById
+            createdById: training.createdById?._id || training.createdById,
+            userStatus
         };
 
         res.json(transformedTraining);

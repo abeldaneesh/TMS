@@ -266,7 +266,7 @@ const TrainingDetails: React.FC = () => {
                             </CardHeader>
                             <CardContent className="flex flex-col gap-3">
                                 {/* Participant specific actions */}
-                                {user?.role === 'participant' && (
+                                {user?.role === 'participant' && training.status !== 'completed' && training.userStatus !== 'attended' && (
                                     <Button
                                         className="w-full justify-start bg-primary text-primary-foreground hover:bg-primary/90"
                                         onClick={() => navigate('/scan-qr')}
