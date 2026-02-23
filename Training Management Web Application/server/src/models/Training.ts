@@ -32,6 +32,7 @@ export interface ITraining extends Omit<Document, '_id'> {
         startedBy?: string;
         qrCodeToken?: string;
     };
+    certificatesGenerated: boolean;
     createdAt: Date;
 }
 
@@ -61,6 +62,7 @@ const TrainingSchema: Schema = new Schema({
         startedBy: { type: String, ref: 'User' },
         qrCodeToken: { type: String }
     },
+    certificatesGenerated: { type: Boolean, default: false },
     createdAt: { type: Date, default: Date.now }
 });
 

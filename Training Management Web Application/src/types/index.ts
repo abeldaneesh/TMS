@@ -85,6 +85,7 @@ export interface Training {
     qrCodeToken?: string;
   };
   userStatus?: string | null;
+  certificatesGenerated?: boolean;
   createdAt: Date;
   updatedAt: Date;
 }

@@ -2,6 +2,8 @@ import { Request, Response } from 'express';
 import Training from '../models/Training';
 import HallBlock from '../models/HallBlock';
 import { AuthRequest } from '../middleware/authMiddleware';
+import Nomination from '../models/Nomination';
+import { createAndSendNotification } from '../utils/notificationUtils';
 
 // Get all trainings
 export const getTrainings = async (req: Request, res: Response): Promise<void> => {
@@ -375,5 +377,63 @@ export const deleteTraining = async (req: AuthRequest, res: Response): Promise<v
     } catch (error) {
         console.error('Delete training error:', error);
         res.status(500).json({ message: 'Error deleting training' });
+    }
+};
+
+// Generate certificates for attended participants
+export const generateCertificates = async (req: AuthRequest, res: Response): Promise<void> => {
+    try {
+        const id = req.params.id;
+        const userId = req.user!.userId;
+        const userRole = req.user!.role;
+
+        const training = await Training.findById(id);
+
+        if (!training) {
+            res.status(404).json({ message: 'Training not found' });
+            return;
+        }
+
+        // Authorization: Only creator or master_admin
+        if (training.createdById.toString() !== userId && userRole !== 'master_admin') {
+            res.status(403).json({ message: 'Not authorized to generate certificates' });
+            return;
+        }
+
+        if (training.status !== 'completed') {
+            res.status(400).json({ message: 'Certificates can only be generated for completed trainings' });
+            return;
+        }
+
+        // Update training
+        training.certificatesGenerated = true;
+        await training.save();
+
+        // Get all attended participants
+        const attendedNominations = await Nomination.find({
+            trainingId: id,
+            status: 'attended'
+        });
+
+        // Send notifications
+        const notificationPromises = attendedNominations.map(nomination => {
+            return createAndSendNotification({
+                userId: nomination.participantId,
+                title: 'Certificate Ready',
+                message: `Your certificate for "${training.title}" is now available for download.`,
+                type: 'success',
+                relatedId: training._id
+            });
+        });
+
+        await Promise.all(notificationPromises);
+
+        res.json({
+            message: 'Certificates generated successfully',
+            count: attendedNominations.length
+        });
+    } catch (error) {
+        console.error('Generate certificates error:', error);
+        res.status(500).json({ message: 'Error generating certificates' });
     }
 };

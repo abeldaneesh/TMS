@@ -15,6 +15,9 @@ import AttendanceListModal from '../components/AttendanceListModal';
 import AttendanceSessionManager from '../components/AttendanceSessionManager';
 import { QrCode } from 'lucide-react';
 import LoadingScreen from '../components/LoadingScreen';
+import { Award, FileDown } from 'lucide-react';
+import { generateCertificatePDF } from '../../utils/certificateGenerator';
+import { trainingsApi, nominationsApi, institutionsApi, usersApi } from '../../services/api';
 
 const TrainingDetails: React.FC = () => {
     const { id } = useParams<{ id: string }>();
@@ -23,16 +26,22 @@ const TrainingDetails: React.FC = () => {
 
     const [training, setTraining] = useState<any | null>(null);
     const [loading, setLoading] = useState(true);
+    const [generating, setGenerating] = useState(false);
     const [attendanceModalOpen, setAttendanceModalOpen] = useState(false);
+    const [institutions, setInstitutions] = useState<any[]>([]);
+    const [allUsers, setAllUsers] = useState<any[]>([]);
 
     useEffect(() => {
-        const fetchTraining = async () => {
+        const fetchData = async () => {
             try {
-                const response = await api.get(`/trainings/${id}`);
-                // Adapt response if necessary, though controller seems to return populated objects
-                // The controller returns: { ..., hall: { ... }, creator: { ... } } based on my reading
-                // But let's handle standard properties.
-                setTraining(response.data);
+                const [trainingRes, instsRes, usersRes] = await Promise.all([
+                    api.get(`/trainings/${id}`),
+                    institutionsApi.getAll(),
+                    usersApi.getAll()
+                ]);
+                setTraining(trainingRes.data);
+                setInstitutions(instsRes);
+                setAllUsers(usersRes);
             } catch (error) {
                 console.error('Failed to fetch training details:', error);
                 toast.error('Failed to load training details');
@@ -43,9 +52,50 @@ const TrainingDetails: React.FC = () => {
         };
 
         if (id) {
-            fetchTraining();
+            fetchData();
         }
     }, [id, navigate]);
+
+    const handleGenerateCertificates = async () => {
+        if (!id) return;
+        setGenerating(true);
+        try {
+            await trainingsApi.generateCertificates(id);
+            toast.success('Certificates generated and notifications sent!');
+            // Refresh training data to see certificatesGenerated: true
+            const response = await api.get(`/trainings/${id}`);
+            setTraining(response.data);
+        } catch (error) {
+            console.error('Failed to generate certificates:', error);
+            toast.error('Failed to generate certificates');
+        } finally {
+            setGenerating(false);
+        }
+    };
+
+    const handleDownloadCertificate = async () => {
+        if (!training || !user) return;
+
+        try {
+            const trainer = allUsers.find(u => u.id === training.trainerId || u._id === training.trainerId);
+            const inst = institutions.find(i => i.id === training.hallId?.institutionId || i.id === training.institutionId);
+            // Fallback for institution name if hall populated but institution name not direct
+            const instName = inst?.name || 'Authorized Training Center';
+
+            await generateCertificatePDF({
+                participantName: user.name,
+                trainingTitle: training.title,
+                programName: training.program,
+                date: training.date,
+                trainerName: trainer?.name || 'Authorized Trainer',
+                institutionName: instName
+            });
+            toast.success('Certificate downloaded successfully');
+        } catch (error) {
+            console.error('Failed to download certificate:', error);
+            toast.error('Failed to generate certificate PDF');
+        }
+    };
 
     const getStatusBadge = (status: string) => {
         const variants = {
@@ -225,6 +275,17 @@ const TrainingDetails: React.FC = () => {
                                     </Button>
                                 )}
 
+                                {/* Participant Download Certificate */}
+                                {user?.role === 'participant' && training.userStatus === 'attended' && training.certificatesGenerated && (
+                                    <Button
+                                        variant="outline"
+                                        className="w-full justify-start border-emerald-500/20 text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10"
+                                        onClick={handleDownloadCertificate}
+                                    >
+                                        <Award className="size-4 mr-3" /> Download Certificate
+                                    </Button>
+                                )}
+
                                 {/* Admin/PO actions */}
                                 {(user?.role === 'program_officer' || user?.role === 'master_admin') && (
                                     <Button variant="outline" className="w-full justify-start border-white/10 hover:bg-white/10" onClick={() => setAttendanceModalOpen(true)}>
@@ -234,6 +295,22 @@ const TrainingDetails: React.FC = () => {
 
                                 {(user?.role === 'master_admin' || (user?.role === 'program_officer' && (training.createdById === user.id || training.createdById === (user as any).userId))) && (
                                     <>
+                                        {/* Generate Certificates Button for PO */}
+                                        {training.status === 'completed' && !training.certificatesGenerated && (
+                                            <Button
+                                                className="w-full justify-start bg-emerald-600 text-white hover:bg-emerald-700"
+                                                onClick={handleGenerateCertificates}
+                                                disabled={generating}
+                                            >
+                                                {generating ? (
+                                                    <Clock className="size-4 mr-3 animate-spin" />
+                                                ) : (
+                                                    <Award className="size-4 mr-3" />
+                                                )}
+                                                Generate Certificates
+                                            </Button>
+                                        )}
+
                                         <Button variant="outline" className="w-full justify-start border-white/10 hover:bg-white/10" onClick={() => navigate(`/trainings/${id}/edit`)}>
                                             <Edit className="size-4 mr-3" /> Edit Training
                                         </Button>

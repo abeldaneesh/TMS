@@ -6,6 +6,7 @@ import {
     updateTraining,
     updateTrainingStatus,
     deleteTraining,
+    generateCertificates
 } from '../controllers/trainingController';
 import { authenticateToken } from '../middleware/authMiddleware';
 
@@ -16,6 +17,7 @@ router.get('/:id', authenticateToken, getTrainingById);
 router.post('/', authenticateToken, createTraining);
 router.put('/:id', authenticateToken, updateTraining);
 router.patch('/:id/status', authenticateToken, updateTrainingStatus);
+router.post('/:id/generate-certificates', authenticateToken, generateCertificates);
 router.delete('/:id', authenticateToken, deleteTraining);
 
 export default router;

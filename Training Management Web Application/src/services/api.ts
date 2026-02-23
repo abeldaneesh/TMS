@@ -306,6 +306,11 @@ export const trainingsApi = {
     delete: async (id: string): Promise<void> => {
         await api.delete(`/trainings/${id}`);
     },
+
+    generateCertificates: async (id: string): Promise<{ message: string; count: number }> => {
+        const response = await api.post(`/trainings/${id}/generate-certificates`);
+        return response.data;
+    },
 };
 
 export const nominationsApi = {
