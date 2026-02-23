@@ -87,8 +87,15 @@ const Dashboard: React.FC = () => {
         // Action: Nominations I haven't attended yet for active trainings
         return (t.status === 'ongoing' || t.status === 'scheduled') && t.userStatus !== 'attended';
       }
-      // For PO/Admin, ongoing training is always an action area
-      return t.status === 'ongoing';
+
+      // For PO/Admin, action is required if:
+      // 1. It's ongoing (needs completion)
+      // 2. It's scheduled but the date is in the past (needs status update)
+      const tDate = new Date(t.date);
+      tDate.setHours(0, 0, 0, 0);
+      const isPast = tDate < today;
+
+      return t.status === 'ongoing' || (t.status === 'scheduled' && isPast);
     });
 
   const filters = [
