@@ -95,10 +95,10 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 body: notification.body || '',
                 id: new Date().getTime(),
                 schedule: { at: new Date(Date.now() + 100) },
-                sound: 'default',
+                sound: 'notification',
                 actionTypeId: '',
                 extra: null,
-                channelId: 'dmo_alerts_v2', // Match backend channel
+                channelId: 'dmo_alerts_v3', // Match backend channel
               }
             ]
           });
@@ -110,22 +110,24 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         });
 
         // Create the default channel (Required for Android 8+)
-        // v2 bypasses Android cached channel states that might be silencing the app
+        // v3 bypasses Android cached channel states that might be silencing the app
         await PushNotifications.createChannel({
-          id: 'dmo_alerts_v2',
+          id: 'dmo_alerts_v3',
           name: 'DMO Alerts (Urgent)',
           description: 'Important notifications from the system',
           importance: 5,
           visibility: 1,
+          sound: 'notification'
         });
 
         // Also create channel for LocalNotifications
         await LocalNotifications.createChannel({
-          id: 'dmo_alerts_v2',
+          id: 'dmo_alerts_v3',
           name: 'DMO Alerts (Urgent)',
           description: 'Important notifications from the system',
           importance: 5,
           visibility: 1,
+          sound: 'notification'
         });
       } catch (e) {
         console.log('Push setup failed (likely not on device)', e);

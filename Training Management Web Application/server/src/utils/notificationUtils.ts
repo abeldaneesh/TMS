@@ -34,8 +34,8 @@ export const createAndSendNotification = async (params: CreateNotificationParams
                 android: {
                     priority: 'high' as const,
                     notification: {
-                        channelId: 'dmo_alerts_v2',
-                        sound: 'default',
+                        channelId: 'dmo_alerts_v3',
+                        sound: 'notification',
                         priority: 'high' as const,
                         visibility: 'public' as const,
                         clickAction: 'FCM_PLUGIN_ACTIVITY', // Standard Capacitor action
