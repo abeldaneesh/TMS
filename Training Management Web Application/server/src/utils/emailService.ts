@@ -7,19 +7,10 @@ const getTransporter = () => {
   console.log(`[EmailService] Creating transporter for ${user}...`);
 
   return nodemailer.createTransport({
-    host: '74.125.142.108', // smtp.gmail.com IPv4
-    port: 465,
-    secure: true,
+    service: 'gmail',
     auth: { user, pass },
-    tls: {
-      servername: 'smtp.gmail.com'
-    },
-    connectionTimeout: 15000,
-    greetingTimeout: 15000,
-    socketTimeout: 20000,
-    debug: true,
-    logger: true
-  } as any);
+    connectionTimeout: 20000, // 20s timeout
+  });
 };
 
 export const sendOTP = async (email: string, otp: string, name: string) => {
