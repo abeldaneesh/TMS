@@ -1,9 +1,7 @@
 import { Router, Request, Response } from 'express';
 import multer from 'multer';
-import path from 'path';
-import admin from '../config/firebase';
+import cloudinary from '../config/cloudinary';
 import { authenticateToken, AuthRequest } from '../middleware/authMiddleware';
-import { v4 as uuidv4 } from 'uuid';
 
 const router = Router();
 
@@ -18,9 +16,9 @@ const upload = multer({
     fileFilter: (req, file, cb) => {
         const filetypes = /jpeg|jpg|png|webp/;
         const mimetype = filetypes.test(file.mimetype);
-        const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
+        const extname = filetypes.test(file.originalname.toLowerCase()); // Simplified ext check
 
-        if (mimetype && extname) {
+        if (mimetype || extname) {
             return cb(null, true);
         }
         cb(new Error('Only images (jpeg, jpg, png, webp) are allowed!'));
@@ -35,38 +33,35 @@ router.post('/profile-picture', authenticateToken, upload.single('profilePicture
             return;
         }
 
-        const bucket = admin.storage().bucket();
-        const filename = `profiles/${uuidv4()}-${req.file.originalname}`;
-        const file = bucket.file(filename);
+        console.log('[UploadRoute] Uploading profile picture to Cloudinary...');
 
-        // Upload buffer to Firebase Storage
-        const blobStream = file.createWriteStream({
-            metadata: {
-                contentType: req.file.mimetype
-            },
-            resumable: false
+        // Convert buffer to stream for Cloudinary
+        const uploadResponse = await new Promise((resolve, reject) => {
+            const stream = cloudinary.uploader.upload_stream(
+                {
+                    folder: 'dmo_profiles',
+                    resource_type: 'image',
+                    public_id: `profile-${req.user?.id || 'unknown'}-${Date.now()}`
+                },
+                (error, result) => {
+                    if (error) {
+                        console.error('Cloudinary Upload Error:', error);
+                        reject(error);
+                    } else {
+                        resolve(result);
+                    }
+                }
+            );
+            stream.end(req.file!.buffer);
         });
 
-        blobStream.on('error', (error) => {
-            console.error('Firebase upload error:', error);
-            res.status(500).json({ message: 'Failed to upload to cloud storage' });
+        const result = uploadResponse as any;
+
+        res.status(200).json({
+            message: 'File uploaded successfully to Cloudinary',
+            url: result.secure_url,
+            path: result.secure_url
         });
-
-        blobStream.on('finish', async () => {
-            // Make the file public
-            await file.makePublic();
-
-            // Get the public URL. Note: Standard Firebase URLs follow this pattern
-            const publicUrl = `https://storage.googleapis.com/${bucket.name}/${filename}`;
-
-            res.status(200).json({
-                message: 'File uploaded successfully to cloud storage',
-                url: publicUrl,
-                path: publicUrl
-            });
-        });
-
-        blobStream.end(req.file.buffer);
 
     } catch (error: any) {
         console.error('Upload route error:', error);
