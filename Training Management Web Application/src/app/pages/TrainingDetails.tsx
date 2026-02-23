@@ -77,17 +77,16 @@ const TrainingDetails: React.FC = () => {
         if (!training || !user) return;
 
         try {
-            const inst = institutions.find(i => i.id === training.hallId?.institutionId || i.id === training.institutionId);
-            // Fallback for institution name if hall populated but institution name not direct
-            const instName = inst?.name || 'Authorized Training Center';
+            // Extraction of Hall/Venue name
+            const venueName = (training as any).hallId?.name || (training as any).hallId || 'Authorized Training Center';
 
             await generateCertificatePDF({
                 participantName: user.name,
                 trainingTitle: training.title,
                 programName: training.program,
                 date: training.date,
-                trainerName: (training as any).creator?.name || (training as any).trainerId || 'Authorized Officer',
-                institutionName: instName
+                trainerName: (training as any).creator?.name || 'Authorized Officer',
+                institutionName: venueName
             });
             toast.success('Certificate downloaded successfully');
         } catch (error) {

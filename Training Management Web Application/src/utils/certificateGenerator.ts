@@ -80,23 +80,23 @@ export const generateCertificatePDF = async (data: CertificateData) => {
 
     // Training Title
     doc.setFont('times', 'bold');
-    doc.setFontSize(26);
+    doc.setFontSize(30);
     doc.setTextColor(139, 101, 8); // Deep Gold/Brown
-    doc.text(data.trainingTitle.toUpperCase(), pageWidth / 2, 145, { align: 'center' });
+    doc.text(data.trainingTitle.toUpperCase(), pageWidth / 2, 142, { align: 'center' });
 
     // Program and Location
     doc.setFont('times', 'normal');
     doc.setFontSize(14);
     doc.setTextColor(80, 80, 80);
-    doc.text(`Conducted under the ${data.programName} program`, pageWidth / 2, 158, { align: 'center' });
-    doc.text(`at ${data.institutionName}`, pageWidth / 2, 166, { align: 'center' });
+    doc.text(`Conducted under the ${data.programName} program`, pageWidth / 2, 154, { align: 'center' });
+    doc.text(`at ${data.institutionName}`, pageWidth / 2, 162, { align: 'center' });
 
     // Date
     doc.setFont('times', 'italic');
-    doc.text(`Presented on this day, ${safeFormatDate(data.date, 'MMMM do, yyyy')}`, pageWidth / 2, 178, { align: 'center' });
+    doc.text(`Presented on this day, ${safeFormatDate(data.date, 'MMMM do, yyyy')}`, pageWidth / 2, 172, { align: 'center' });
 
     // --- Signatures ---
-    const sigLineY = 210;
+    const sigLineY = 192;
     const sigWidth = 70;
 
     // Left Signature (Trainer)
@@ -105,11 +105,11 @@ export const generateCertificatePDF = async (data: CertificateData) => {
     doc.setFont('times', 'bold');
     doc.setFontSize(12);
     doc.setTextColor(0, 32, 96);
-    doc.text(data.trainerName, pageWidth / 4, sigLineY + 7, { align: 'center' });
+    doc.text(data.trainerName, pageWidth / 4, sigLineY + 6, { align: 'center' });
     doc.setFont('times', 'normal');
     doc.setFontSize(10);
     doc.setTextColor(100, 100, 100);
-    doc.text('Program Officer', pageWidth / 4, sigLineY + 12, { align: 'center' });
+    doc.text('Program Officer', pageWidth / 4, sigLineY + 11, { align: 'center' });
 
     // Right Signature (Official)
     doc.setDrawColor(0, 32, 96, 0.3);
@@ -117,19 +117,19 @@ export const generateCertificatePDF = async (data: CertificateData) => {
     doc.setFont('times', 'bold');
     doc.setFontSize(12);
     doc.setTextColor(0, 32, 96);
-    doc.text('Training Management System', (pageWidth * 3) / 4, sigLineY + 7, { align: 'center' });
+    doc.text('Training Management System', (pageWidth * 3) / 4, sigLineY + 6, { align: 'center' });
     doc.setFont('times', 'normal');
     doc.setFontSize(10);
     doc.setTextColor(100, 100, 100);
-    doc.text('DMO Verification Authority', (pageWidth * 3) / 4, sigLineY + 12, { align: 'center' });
+    doc.text('DMO Verification Authority', (pageWidth * 3) / 4, sigLineY + 11, { align: 'center' });
 
     // Final Touch: Gold Seal representation (Circle)
     doc.setDrawColor(184, 134, 11);
     doc.setLineWidth(0.5);
-    doc.circle(pageWidth / 2, 195, 10, 'S');
+    doc.circle(pageWidth / 2, 188, 10, 'S');
     doc.setFontSize(8);
-    doc.text('OFFICIAL', pageWidth / 2, 194, { align: 'center' });
-    doc.text('SEAL', pageWidth / 2, 198, { align: 'center' });
+    doc.text('OFFICIAL', pageWidth / 2, 187, { align: 'center' });
+    doc.text('SEAL', pageWidth / 2, 191, { align: 'center' });
 
     // Download PDF
     const pdfBlob = doc.output('blob');
