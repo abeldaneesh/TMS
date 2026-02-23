@@ -349,6 +349,14 @@ export const nominationsApi = {
         throw new Error('Update method not fully implemented in backend for non-status fields');
     },
 
+    updateStatus: async (id: string, status: NominationStatus, rejectionReason?: string): Promise<Nomination> => {
+        const response = await api.patch(`/nominations/${id}/status`, {
+            status,
+            rejectionReason
+        });
+        return response.data;
+    },
+
     approve: async (id: string, approvedBy: string): Promise<Nomination> => {
         const response = await api.patch(`/nominations/${id}/status`, { status: 'approved' });
         return response.data;
