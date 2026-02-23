@@ -70,9 +70,15 @@ export const authApi = {
         return response.data;
     },
 
-    logout: () => {
-        localStorage.removeItem('token');
-        localStorage.removeItem('dmo_user');
+    logout: async () => {
+        try {
+            await api.post('/auth/logout');
+        } catch (error) {
+            console.error('Server logout failed:', error);
+        } finally {
+            localStorage.removeItem('token');
+            localStorage.removeItem('dmo_user');
+        }
     }
 };
 

@@ -231,12 +231,34 @@ export const updateDeviceToken = async (req: AuthRequest, res: Response): Promis
             return;
         }
 
+        // 1. Remove this token from ANY other user first to ensure uniqueness
+        // This prevents multiple users from getting notifications on the same device
+        await User.updateMany(
+            { fcmToken: token, _id: { $ne: userId } },
+            { $unset: { fcmToken: "" } }
+        );
+
+        // 2. Assign token to the current user
         await User.findByIdAndUpdate(userId, { fcmToken: token });
 
         res.status(200).json({ message: 'Device token registered successfully' });
     } catch (error) {
         console.error('Error updating device token:', error);
         res.status(500).json({ message: 'Error updating device token' });
+    }
+};
+
+export const logout = async (req: AuthRequest, res: Response): Promise<void> => {
+    try {
+        const userId = req.user!.userId;
+
+        // Clear the device token on logout so they stop receiving notifications on this device
+        await User.findByIdAndUpdate(userId, { $unset: { fcmToken: "" } });
+
+        res.status(200).json({ message: 'Logged out successfully' });
+    } catch (error) {
+        console.error('Logout error:', error);
+        res.status(500).json({ message: 'Error during logout' });
     }
 };
 
