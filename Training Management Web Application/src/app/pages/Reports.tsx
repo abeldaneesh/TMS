@@ -78,27 +78,27 @@ const Reports: React.FC = () => {
 
       // Title
       doc.setFontSize(20);
-      doc.text('Training Mission Report', 14, 20);
+      doc.text('Training Report', 14, 20);
 
       // Training Details
       doc.setFontSize(12);
-      doc.text(`Mission Objective: ${training.title}`, 14, 35);
+      doc.text(`Training Title: ${training.title}`, 14, 35);
       doc.setFontSize(10);
-      doc.text(`Program Sector: ${training.program}`, 14, 42);
-      doc.text(`Deployment Date: ${safeFormatDate(training.date)}`, 14, 49);
-      doc.text(`Operational Window: ${training.startTime} - ${training.endTime}`, 14, 56);
-      doc.text(`Sector Location: ${hall?.name || 'N/A'}`, 14, 63);
-      doc.text(`Commanding Officer: ${trainer?.name || 'N/A'}`, 14, 70);
-      doc.text(`Mission Status: ${(training.status || '').toUpperCase()}`, 14, 77);
+      doc.text(`Program Area: ${training.program}`, 14, 42);
+      doc.text(`Scheduled Date: ${safeFormatDate(training.date)}`, 14, 49);
+      doc.text(`Time Window: ${training.startTime} - ${training.endTime}`, 14, 56);
+      doc.text(`Venue: ${hall?.name || 'N/A'}`, 14, 63);
+      doc.text(`Trainer: ${trainer?.name || 'N/A'}`, 14, 70);
+      doc.text(`Status: ${(training.status || '').toUpperCase()}`, 14, 77);
 
       // Summary Statistics
       doc.setFontSize(14);
-      doc.text('Performance Analytics', 14, 90);
+      doc.text('Attendance Analytics', 14, 90);
       doc.setFontSize(10);
-      doc.text(`Total Personnel Nominated: ${analytics.totalNominated}`, 14, 97);
-      doc.text(`Total Deployments Approved: ${analytics.totalApproved}`, 14, 104);
-      doc.text(`Total Personnel Present: ${analytics.totalAttended}`, 14, 111);
-      doc.text(`Operational Coverage: ${analytics.attendanceRate}%`, 14, 118);
+      doc.text(`Total Nominated: ${analytics.totalNominated}`, 14, 97);
+      doc.text(`Total Approved: ${analytics.totalApproved}`, 14, 104);
+      doc.text(`Total Attended: ${analytics.totalAttended}`, 14, 111);
+      doc.text(`Attendance Rate: ${analytics.attendanceRate}%`, 14, 118);
 
       // Participants Table
       const participantData = nominations.map(nom => {
@@ -117,24 +117,24 @@ const Reports: React.FC = () => {
 
       autoTable(doc, {
         startY: 130,
-        head: [['Personnel Name', 'Specialization', 'Sector', 'Status', 'Attended']],
+        head: [['Participant Name', 'Designation', 'Institution', 'Status', 'Attended']],
         body: participantData,
         theme: 'grid',
         styles: { fontSize: 8 },
-        headStyles: { fillColor: [0, 236, 255] },
+        headStyles: { fillColor: [0, 80, 150] }, // Professional Navy
       });
 
       // Download PDF
       const pdfBlob = doc.output('blob');
       await downloadFile(
         pdfBlob,
-        `Mission_Report_${training.title.replace(/\s+/g, '_')}_${safeFormatDate(new Date(), 'yyyy-MM-dd')}.pdf`,
+        `Training_Report_${training.title.replace(/\s+/g, '_')}_${safeFormatDate(new Date(), 'yyyy-MM-dd')}.pdf`,
         'application/pdf'
       );
-      toast.success('Mission Intel PDF processing complete!');
+      toast.success('Report generation complete');
     } catch (error) {
       console.error('Error generating PDF:', error);
-      toast.error('Mission Debrief PDF formation failed');
+      toast.error('Failed to generate report PDF');
     }
   };
 
@@ -159,16 +159,16 @@ const Reports: React.FC = () => {
         const attendanceRecord = attendanceRecords.find(a => a.participantId === nom.participantId);
 
         return {
-          'Mission Title': training.title,
-          'Sector': training.program,
+          'Training Title': training.title,
+          'Program': training.program,
           'Date': safeFormatDate(training.date, 'yyyy-MM-dd'),
-          'Personnel': participant?.name || 'N/A',
-          'Specialization': participant?.designation || 'N/A',
-          'Organization': institution?.name || 'N/A',
-          'Contact': participant?.phone || 'N/A',
-          'Comm Link': participant?.email || 'N/A',
+          'Participant': participant?.name || 'N/A',
+          'Designation': participant?.designation || 'N/A',
+          'Institution': institution?.name || 'N/A',
+          'Phone': participant?.phone || 'N/A',
+          'Email': participant?.email || 'N/A',
           'Nomination Status': nom.status,
-          'Deployment Confirmed': attendanceRecord ? 'Yes' : 'No',
+          'Attended': attendanceRecord ? 'Yes' : 'No',
           'Timestamp': safeFormatDate(attendanceRecord?.timestamp, 'yyyy-MM-dd HH:mm:ss'),
         };
       });
@@ -177,13 +177,13 @@ const Reports: React.FC = () => {
       const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
       await downloadFile(
         blob,
-        `Mission_Data_${training.title.replace(/\s+/g, '_')}_${safeFormatDate(new Date(), 'yyyy-MM-dd')}.csv`,
+        `Training_Data_${training.title.replace(/\s+/g, '_')}_${safeFormatDate(new Date(), 'yyyy-MM-dd')}.csv`,
         'text/csv'
       );
-      toast.success('Mission Data CSV exported!');
+      toast.success('Report data exported to CSV');
     } catch (error) {
       console.error('Error generating CSV:', error);
-      toast.error('CSV data extraction failed');
+      toast.error('Failed to export CSV');
     }
   };
 
@@ -198,27 +198,27 @@ const Reports: React.FC = () => {
 
       // Title
       doc.setFontSize(20);
-      doc.text('Sector Personnel Report', 14, 20);
+      doc.text('Institution Training Report', 14, 20);
 
       // Institution Details
       doc.setFontSize(12);
-      doc.text(`Sector: ${institution.name}`, 14, 35);
+      doc.text(`Institution: ${institution.name}`, 14, 35);
       doc.setFontSize(10);
-      doc.text(`Classification: ${institution.type}`, 14, 42);
-      doc.text(`Coordinates: ${institution.location}`, 14, 49);
-      doc.text(`Audit Date: ${safeFormatDate(new Date())}`, 14, 56);
+      doc.text(`Type: ${institution.type}`, 14, 42);
+      doc.text(`Location: ${institution.location}`, 14, 49);
+      doc.text(`Report Date: ${safeFormatDate(new Date())}`, 14, 56);
 
       // Summary Statistics
       doc.setFontSize(14);
-      doc.text('Capability Matrix', 14, 70);
+      doc.text('Training Summary', 14, 70);
       doc.setFontSize(10);
-      doc.text(`Total Staff Complement: ${report.totalStaff}`, 14, 77);
-      doc.text(`Trained Personnel: ${report.trainedStaff}`, 14, 84);
-      doc.text(`Awaiting Deployment: ${report.untrainedStaff || 0}`, 14, 91);
+      doc.text(`Total Staff: ${report.totalStaff}`, 14, 77);
+      doc.text(`Trained Staff: ${report.trainedStaff}`, 14, 84);
+      doc.text(`Untrained Staff: ${report.untrainedStaff || 0}`, 14, 91);
       const trainingPercentage = (report.totalStaff || 0) > 0
         ? Math.round(((report.trainedStaff || 0) / report.totalStaff) * 100)
         : 0;
-      doc.text(`Sector Preparedness: ${trainingPercentage}%`, 14, 98);
+      doc.text(`Training Coverage: ${trainingPercentage}%`, 14, 98);
 
       // Trainings by Program
       const programData = report.trainingsByProgram.map(prog => [
@@ -229,23 +229,23 @@ const Reports: React.FC = () => {
 
       autoTable(doc, {
         startY: 110,
-        head: [['Mission Sector', 'Operations', 'Personnel Count']],
+        head: [['Program Area', 'Trainings', 'Total Participants']],
         body: programData,
         theme: 'grid',
         styles: { fontSize: 10 },
-        headStyles: { fillColor: [110, 64, 201] },
+        headStyles: { fillColor: [80, 80, 80] },
       });
 
       const pdfBlob = doc.output('blob');
       await downloadFile(
         pdfBlob,
-        `Sector_Report_${institution.name.replace(/\s+/g, '_')}_${safeFormatDate(new Date(), 'yyyy-MM-dd')}.pdf`,
+        `Institution_Report_${institution.name.replace(/\s+/g, '_')}_${safeFormatDate(new Date(), 'yyyy-MM-dd')}.pdf`,
         'application/pdf'
       );
-      toast.success('Sector Audit PDF formation complete');
+      toast.success('Institution report ready');
     } catch (error) {
       console.error('Error generating PDF:', error);
-      toast.error('Sector Report generation offline');
+      toast.error('Failed to generate institution report');
     }
   };
 
@@ -273,23 +273,23 @@ const Reports: React.FC = () => {
 
       // Title
       doc.setFontSize(20);
-      doc.text('Global Mission Summary', 14, 20);
+      doc.text('Global Training Summary', 14, 20);
 
       doc.setFontSize(10);
-      doc.text(`Audit Timestamp: ${safeFormatDate(new Date(), 'MMM dd, yyyy HH:mm')}`, 14, 30);
-      doc.text(`Authorized Officer: ${user?.name || 'N/A'}`, 14, 37);
+      doc.text(`Generated: ${safeFormatDate(new Date(), 'MMM dd, yyyy HH:mm')}`, 14, 30);
+      doc.text(`Authorized Personnel: ${user?.name || 'N/A'}`, 14, 37);
 
       // Overall Statistics
       doc.setFontSize(14);
-      doc.text('District Operations Matrix', 14, 50);
+      doc.text('District Training Matrix', 14, 50);
       doc.setFontSize(10);
-      doc.text(`Total Missions: ${stats.totalTrainings}`, 14, 57);
-      doc.text(`Missions Completed: ${stats.completedTrainings}`, 14, 64);
-      doc.text(`Missions Scheduled: ${stats.upcomingTrainings}`, 14, 71);
-      doc.text(`Active Personnel: ${stats.totalParticipants}`, 14, 78);
-      doc.text(`Average Mission Success: ${stats.attendanceRate}%`, 14, 85);
-      doc.text(`Combat Ready Staff: ${stats.trainedStaff}`, 14, 92);
-      doc.text(`Reserve Personnel: ${stats.untrainedStaff}`, 14, 99);
+      doc.text(`Total Trainings: ${stats.totalTrainings}`, 14, 57);
+      doc.text(`Trainings Completed: ${stats.completedTrainings}`, 14, 64);
+      doc.text(`Upcoming Trainings: ${stats.upcomingTrainings}`, 14, 71);
+      doc.text(`Active Participants: ${stats.totalParticipants}`, 14, 78);
+      doc.text(`Average Attendance Rate: ${stats.attendanceRate}%`, 14, 85);
+      doc.text(`Total Trained Staff: ${stats.trainedStaff}`, 14, 92);
+      doc.text(`Remaining Staff: ${stats.untrainedStaff}`, 14, 99);
 
       // Trainings by Status
       const statusCounts = {
@@ -307,17 +307,17 @@ const Reports: React.FC = () => {
 
       autoTable(doc, {
         startY: 110,
-        head: [['Deployment Protocol', 'Count']],
+        head: [['Training Status', 'Count']],
         body: statusData,
         theme: 'grid',
         styles: { fontSize: 10 },
-        headStyles: { fillColor: [0, 236, 255] },
+        headStyles: { fillColor: [0, 80, 150] },
       });
 
       // Institutions Summary
       const lastY = (doc as any).lastAutoTable.finalY + 10;
       doc.setFontSize(14);
-      doc.text('Verified Sectors', 14, lastY);
+      doc.text('Registered Institutions', 14, lastY);
 
       const instData = allInstitutions.map(inst => [
         inst.name,
@@ -327,11 +327,11 @@ const Reports: React.FC = () => {
 
       autoTable(doc, {
         startY: lastY + 7,
-        head: [['Sector Identifier', 'Classification', 'Coordinates']],
+        head: [['Institution Name', 'Type', 'Location']],
         body: instData,
         theme: 'grid',
         styles: { fontSize: 9 },
-        headStyles: { fillColor: [110, 64, 201] },
+        headStyles: { fillColor: [80, 80, 80] },
       });
 
       const pdfBlob = doc.output('blob');
@@ -340,16 +340,16 @@ const Reports: React.FC = () => {
         `Global_Summary_${safeFormatDate(new Date(), 'yyyy-MM-dd')}.pdf`,
         'application/pdf'
       );
-      toast.success('Global Intel Deep Link established');
+      toast.success('Global summary report generated');
     } catch (error) {
       console.error('Error generating PDF:', error);
-      toast.error('Global Intel formation failed');
+      toast.error('Failed to generate summary report');
     }
   };
 
   const handleGenerateReport = async (format: 'pdf' | 'csv') => {
     if (!selectedReport) {
-      toast.error('SELECT DEBRIEFING PROTOCOL');
+      toast.error('Please select a report type');
       return;
     }
 
@@ -358,7 +358,7 @@ const Reports: React.FC = () => {
     try {
       if (selectedReport === 'training') {
         if (!selectedTraining) {
-          toast.error('IDENTIFY MISSION TARGET');
+          toast.error('Please select a training');
           return;
         }
         if (format === 'pdf') {
@@ -368,7 +368,7 @@ const Reports: React.FC = () => {
         }
       } else if (selectedReport === 'institution') {
         if (!selectedInstitution) {
-          toast.error('IDENTIFY SECTOR TARGET');
+          toast.error('Please select an institution');
           return;
         }
         if (format === 'pdf') {
@@ -390,55 +390,44 @@ const Reports: React.FC = () => {
     <div className="max-w-4xl mx-auto space-y-8 pb-12">
       <div className="flex justify-between items-end">
         <div>
-          <h1 className="text-3xl font-extrabold tracking-tighter text-foreground flex items-center gap-3">
-            <Activity className="size-8 text-primary animate-pulse-glow" />
-            MISSION DEBRIEFS
-            <div className="h-1 w-20 bg-gradient-to-r from-primary to-transparent rounded-full ml-4 hidden md:block" />
+          <h1 className="text-3xl font-extrabold tracking-tight text-foreground flex items-center gap-3">
+            <Activity className="size-8 text-primary" />
+            Reports & Analytics
           </h1>
-          <p className="text-muted-foreground mt-1 font-mono text-xs uppercase tracking-widest opacity-70">Strategic Analytics & Tactical Data Export</p>
-        </div>
-        <div className="hidden md:flex items-center gap-4 text-[10px] font-mono text-primary/40 uppercase">
-          <div className="flex items-center gap-2">
-            <Cpu className="size-3" />
-            Core Linked
-          </div>
-          <div className="flex items-center gap-2">
-            <Database className="size-3" />
-            Archive Sync
-          </div>
+          <p className="text-muted-foreground mt-1 text-sm uppercase tracking-wider opacity-70">Training Program Data & Institutional Metrics</p>
         </div>
       </div>
 
-      <Card className="glass-card neon-border overflow-hidden">
-        <CardHeader className="border-b border-primary/10 bg-primary/5 pb-6">
-          <CardTitle className="text-sm font-bold text-primary tracking-[0.2em] flex items-center gap-2 uppercase">
+      <Card className="bg-white/5 border-white/10 overflow-hidden">
+        <CardHeader className="border-b border-white/10 bg-white/5 pb-6">
+          <CardTitle className="text-sm font-bold text-primary tracking-wider flex items-center gap-2 uppercase">
             <FileText className="size-4" />
-            INTEL GENERATOR
+            Report Generator
           </CardTitle>
-          <CardDescription className="text-muted-foreground font-mono text-[10px] uppercase tracking-wider">
-            Define extraction parameters for mission intelligence.
+          <CardDescription className="text-muted-foreground text-xs uppercase tracking-wide">
+            Select parameters to generate training or institutional reports.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-8 pt-8 px-8">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div className="space-y-3">
-              <Label className="text-[10px] font-bold tracking-widest text-primary/70 uppercase flex items-center gap-2">
+              <Label className="text-[10px] font-bold tracking-widest text-muted-foreground uppercase flex items-center gap-2">
                 <Settings2 className="size-3" />
-                Debriefing Protocol
+                Report Type
               </Label>
               <Select value={selectedReport} onValueChange={(value) => {
                 setSelectedReport(value);
                 setSelectedTraining('');
                 setSelectedInstitution('');
               }}>
-                <SelectTrigger className="bg-input/50 border-input text-foreground font-mono text-xs py-5">
-                  <SelectValue placeholder="CHOOSE DEBRIEFER..." />
+                <SelectTrigger className="bg-white/5 border-white/10 text-foreground text-xs py-5">
+                  <SelectValue placeholder="Select Report Type..." />
                 </SelectTrigger>
-                <SelectContent className="bg-popover border-border/50 text-foreground font-mono text-xs">
-                  <SelectItem value="training">MISSION REPORT</SelectItem>
-                  <SelectItem value="institution">SECTOR REPORT</SelectItem>
+                <SelectContent className="bg-background border-white/10 text-foreground text-xs">
+                  <SelectItem value="training">TRAINING REPORT</SelectItem>
+                  <SelectItem value="institution">INSTITUTION REPORT</SelectItem>
                   {(user?.role === 'master_admin' || user?.role === 'program_officer') && (
-                    <SelectItem value="district">GLOBAL SUMMARY</SelectItem>
+                    <SelectItem value="district">DISTRICT SUMMARY</SelectItem>
                   )}
                 </SelectContent>
               </Select>
@@ -446,18 +435,18 @@ const Reports: React.FC = () => {
 
             {selectedReport === 'training' && (
               <div className="space-y-3 animate-in fade-in slide-in-from-top-4 duration-300">
-                <Label className="text-[10px] font-bold tracking-widest text-primary/70 uppercase flex items-center gap-2">
+                <Label className="text-[10px] font-bold tracking-widest text-muted-foreground uppercase flex items-center gap-2">
                   <Calendar className="size-3" />
-                  Mission Target
+                  Select Training
                 </Label>
                 <Select value={selectedTraining} onValueChange={setSelectedTraining}>
-                  <SelectTrigger className="bg-input/50 border-input text-foreground font-mono text-xs py-5">
-                    <SelectValue placeholder="IDENTIFY MISSION..." />
+                  <SelectTrigger className="bg-white/5 border-white/10 text-foreground text-xs py-5">
+                    <SelectValue placeholder="Identify Training..." />
                   </SelectTrigger>
-                  <SelectContent className="bg-popover border-border/50 text-foreground font-mono text-xs">
+                  <SelectContent className="bg-background border-white/10 text-foreground text-xs">
                     {trainings.map((training) => (
                       <SelectItem key={training.id} value={training.id}>
-                        {training.title.toUpperCase()} — {safeFormatDate(training.date, 'MM.dd.yy')}
+                        {training.title} — {safeFormatDate(training.date, 'MM/dd/yy')}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -467,18 +456,18 @@ const Reports: React.FC = () => {
 
             {selectedReport === 'institution' && (
               <div className="space-y-3 animate-in fade-in slide-in-from-top-4 duration-300">
-                <Label className="text-[10px] font-bold tracking-widest text-secondary/70 uppercase flex items-center gap-2">
+                <Label className="text-[10px] font-bold tracking-widest text-muted-foreground uppercase flex items-center gap-2">
                   <Building2 className="size-3" />
-                  Sector Target
+                  Select Institution
                 </Label>
                 <Select value={selectedInstitution} onValueChange={setSelectedInstitution}>
-                  <SelectTrigger className="bg-input/50 border-input text-foreground font-mono text-xs py-5">
-                    <SelectValue placeholder="IDENTIFY SECTOR..." />
+                  <SelectTrigger className="bg-white/5 border-white/10 text-foreground text-xs py-5">
+                    <SelectValue placeholder="Identify Institution..." />
                   </SelectTrigger>
-                  <SelectContent className="bg-popover border-border/50 text-foreground font-mono text-xs">
+                  <SelectContent className="bg-background border-white/10 text-foreground text-xs">
                     {institutions.map((institution) => (
                       <SelectItem key={institution.id} value={institution.id}>
-                        {institution.name.toUpperCase()} ({institution.type.toUpperCase()})
+                        {institution.name} ({institution.type.toUpperCase()})
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -491,24 +480,24 @@ const Reports: React.FC = () => {
             <Button
               onClick={() => handleGenerateReport('pdf')}
               disabled={loading || !selectedReport}
-              className="flex-1 bg-primary/10 hover:bg-primary text-primary hover:text-primary-foreground border border-primary/20 font-bold tracking-[0.2em] text-xs py-6 rounded-xl transition-all shadow-[0_0_15px_rgba(0,236,255,0.1)] group"
+              className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90 font-bold tracking-wider text-xs py-6 rounded-xl transition-all"
             >
               {loading ? (
                 <Cpu className="size-4 mr-2 animate-spin" />
               ) : (
-                <FileDown className="size-4 mr-2 group-hover:scale-110 transition-transform" />
+                <FileDown className="size-4 mr-2" />
               )}
-              FORMATION PDF DEBRIEF
+              GENERATE PDF REPORT
             </Button>
             {selectedReport === 'training' && (
               <Button
                 onClick={() => handleGenerateReport('csv')}
                 disabled={loading}
                 variant="outline"
-                className="flex-1 bg-input/50 border-input hover:border-primary/50 text-foreground font-bold tracking-[0.2em] text-xs py-6 rounded-xl group"
+                className="flex-1 bg-white/5 border-white/10 hover:bg-white/10 text-foreground font-bold tracking-wider text-xs py-6 rounded-xl"
               >
-                <Download className="size-4 mr-2 group-hover:translate-y-0.5 transition-transform" />
-                EXTRACT DATA GRID (CSV)
+                <Download className="size-4 mr-2" />
+                EXPORT TO CSV
               </Button>
             )}
           </div>
@@ -516,38 +505,38 @@ const Reports: React.FC = () => {
       </Card>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="glass-card group hover:border-primary/30 transition-all">
-          <CardContent className="p-8 text-center bg-primary/[0.03]">
-            <div className="bg-primary/10 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-6 border border-primary/20 group-hover:scale-110 group-hover:bg-primary/20 transition-all">
-              <Calendar className="size-8 text-primary shadow-[0_0_10px_rgba(0,236,255,0.3)]" />
+        <div className="bg-white/5 border border-white/10 rounded-2xl group hover:border-primary/30 transition-all overflow-hidden">
+          <CardContent className="p-8 text-center bg-primary/5">
+            <div className="bg-primary/10 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-6 border border-primary/20 group-hover:scale-110 transition-all">
+              <Calendar className="size-8 text-primary" />
             </div>
-            <h3 className="text-sm font-bold text-foreground tracking-widest mb-3 uppercase">MISSION INTEL</h3>
-            <p className="text-[10px] text-muted-foreground font-mono leading-relaxed opacity-60 uppercase">
-              DEEP ANALYSIS OF MISSION COORDINATES, PERSONNEL DEPLOYMENT, AND ATTENDANCE SUCCESS VECTORS.
+            <h3 className="text-sm font-bold text-foreground tracking-wider mb-3 uppercase">TRAINING ANALYTICS</h3>
+            <p className="text-xs text-muted-foreground leading-relaxed opacity-70 uppercase tracking-tight">
+              Detailed analysis of training sessions, participation rates, and attendance success metrics.
             </p>
           </CardContent>
         </div>
 
-        <div className="glass-card group hover:border-secondary/30 transition-all">
-          <CardContent className="p-8 text-center bg-secondary/[0.03]">
-            <div className="bg-secondary/10 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-6 border border-secondary/20 group-hover:scale-110 group-hover:bg-secondary/20 transition-all">
-              <Building2 className="size-8 text-secondary shadow-[0_0_10px_rgba(110,64,201,0.3)]" />
+        <div className="bg-white/5 border border-white/10 rounded-2xl group hover:border-secondary/30 transition-all overflow-hidden">
+          <CardContent className="p-8 text-center bg-secondary/5">
+            <div className="bg-secondary/10 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-6 border border-secondary/20 group-hover:scale-110 transition-all">
+              <Building2 className="size-8 text-secondary" />
             </div>
-            <h3 className="text-sm font-bold text-foreground tracking-widest mb-3 uppercase">SECTOR AUDIT</h3>
-            <p className="text-[10px] text-muted-foreground font-mono leading-relaxed opacity-60 uppercase">
-              CAPABILITY MATRICES AND PREPAREDNESS RATIOS ACROSS SPECIFIC ORGANIZATIONAL DEPLOYMENT SECTORS.
+            <h3 className="text-sm font-bold text-foreground tracking-wider mb-3 uppercase">INSTITUTION DATA</h3>
+            <p className="text-xs text-muted-foreground leading-relaxed opacity-70 uppercase tracking-tight">
+              Reports on staff training status, program coverage, and preparedness levels across sectors.
             </p>
           </CardContent>
         </div>
 
-        <div className="glass-card group hover:border-emerald-500/30 transition-all">
-          <CardContent className="p-8 text-center bg-emerald-500/[0.03]">
-            <div className="bg-emerald-500/10 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-6 border border-emerald-500/20 group-hover:scale-110 group-hover:bg-emerald-500/20 transition-all">
-              <ShieldCheck className="size-8 text-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.3)]" />
+        <div className="bg-white/5 border border-white/10 rounded-2xl group hover:border-emerald-500/30 transition-all overflow-hidden">
+          <CardContent className="p-8 text-center bg-emerald-500/5">
+            <div className="bg-emerald-500/10 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-6 border border-emerald-500/20 group-hover:scale-110 transition-all">
+              <ShieldCheck className="size-8 text-emerald-400" />
             </div>
-            <h3 className="text-sm font-bold text-foreground tracking-widest mb-3 uppercase">GLOBAL INTEL</h3>
-            <p className="text-[10px] text-muted-foreground font-mono leading-relaxed opacity-60 uppercase">
-              TOTAL OPERATIONAL OVERVIEW OF DISTRICT-WIDE MISSION SUCCESS AND PERSONNEL READINESS.
+            <h3 className="text-sm font-bold text-foreground tracking-wider mb-3 uppercase">DISTRICT DATA</h3>
+            <p className="text-xs text-muted-foreground leading-relaxed opacity-70 uppercase tracking-tight">
+              Consolidated overview of all training activities and professional readiness across the district.
             </p>
           </CardContent>
         </div>
