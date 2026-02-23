@@ -160,23 +160,6 @@ const TrainingDetails: React.FC = () => {
                         isOwnerOrAdmin={user?.role === 'master_admin' || (user?.role === 'program_officer' && training.createdById === user.id)}
                     />
 
-                    {/* Participant Actions */}
-
-                    {user?.role === 'participant' && (
-                        <Card className="bg-white/5 border-white/10">
-                            <CardHeader>
-                                <CardTitle className="text-lg">Actions</CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <Button
-                                    className="w-full"
-                                    onClick={() => navigate('/scan-qr')}
-                                >
-                                    <QrCode className="size-4 mr-2" /> Scan Attendance QR
-                                </Button>
-                            </CardContent>
-                        </Card>
-                    )}
 
                     <Card className="bg-white/5 border-white/10">
                         <CardHeader>
@@ -225,53 +208,67 @@ const TrainingDetails: React.FC = () => {
                         </CardContent>
                     </Card>
 
-                    <Card className="bg-white/5 border-white/10">
-                        <CardHeader>
-                            <CardTitle className="text-lg">Manage</CardTitle>
-                        </CardHeader>
-                        <CardContent className="flex flex-col gap-3">
-                            {(user?.role === 'program_officer' || user?.role === 'master_admin') && (
-                                <Button variant="outline" className="w-full justify-start border-white/10 hover:bg-white/10" onClick={() => setAttendanceModalOpen(true)}>
-                                    <Users className="size-4 mr-3" /> View Attendance
-                                </Button>
-                            )}
-
-                            {(user?.role === 'master_admin' || (user?.role === 'program_officer' && training.createdById === user.id)) && (
-                                <>
-                                    <Button variant="outline" className="w-full justify-start border-white/10 hover:bg-white/10" onClick={() => navigate(`/trainings/${id}/edit`)}>
-                                        <Edit className="size-4 mr-3" /> Edit Training
-                                    </Button>
-
-                                    {(training.status === 'scheduled' || training.status === 'ongoing') && (
-                                        <>
-                                            <Button
-                                                variant="outline"
-                                                className="w-full justify-start border-emerald-500/20 text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10"
-                                                onClick={() => handleStatusUpdate('completed')}
-                                            >
-                                                <CheckCircle className="size-4 mr-3" /> Mark Completed
-                                            </Button>
-                                            <Button
-                                                variant="outline"
-                                                className="w-full justify-start border-orange-500/20 text-orange-400 hover:text-orange-300 hover:bg-orange-500/10"
-                                                onClick={() => handleStatusUpdate('cancelled')}
-                                            >
-                                                <XCircle className="size-4 mr-3" /> Cancel Training
-                                            </Button>
-                                        </>
-                                    )}
-
+                    {/* Manage Section - Consolidated for all roles */}
+                    {(user?.role === 'participant' || user?.role === 'program_officer' || user?.role === 'master_admin') && (
+                        <Card className="bg-white/5 border-white/10">
+                            <CardHeader>
+                                <CardTitle className="text-lg">Manage</CardTitle>
+                            </CardHeader>
+                            <CardContent className="flex flex-col gap-3">
+                                {/* Participant specific actions */}
+                                {user?.role === 'participant' && (
                                     <Button
-                                        variant="outline"
-                                        className="w-full justify-start border-destructive/20 text-destructive hover:text-destructive hover:bg-destructive/10"
-                                        onClick={handleDelete}
+                                        className="w-full justify-start bg-primary text-primary-foreground hover:bg-primary/90"
+                                        onClick={() => navigate('/scan-qr')}
                                     >
-                                        <Trash2 className="size-4 mr-3" /> Delete Training
+                                        <QrCode className="size-4 mr-3" /> Scan Attendance QR
                                     </Button>
-                                </>
-                            )}
-                        </CardContent>
-                    </Card>
+                                )}
+
+                                {/* Admin/PO actions */}
+                                {(user?.role === 'program_officer' || user?.role === 'master_admin') && (
+                                    <Button variant="outline" className="w-full justify-start border-white/10 hover:bg-white/10" onClick={() => setAttendanceModalOpen(true)}>
+                                        <Users className="size-4 mr-3" /> View Attendance
+                                    </Button>
+                                )}
+
+                                {(user?.role === 'master_admin' || (user?.role === 'program_officer' && (training.createdById === user.id || training.createdById === (user as any).userId))) && (
+                                    <>
+                                        <Button variant="outline" className="w-full justify-start border-white/10 hover:bg-white/10" onClick={() => navigate(`/trainings/${id}/edit`)}>
+                                            <Edit className="size-4 mr-3" /> Edit Training
+                                        </Button>
+
+                                        {(training.status === 'scheduled' || training.status === 'ongoing') && (
+                                            <>
+                                                <Button
+                                                    variant="outline"
+                                                    className="w-full justify-start border-emerald-500/20 text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10"
+                                                    onClick={() => handleStatusUpdate('completed')}
+                                                >
+                                                    <CheckCircle className="size-4 mr-3" /> Mark Completed
+                                                </Button>
+                                                <Button
+                                                    variant="outline"
+                                                    className="w-full justify-start border-orange-500/20 text-orange-400 hover:text-orange-300 hover:bg-orange-500/10"
+                                                    onClick={() => handleStatusUpdate('cancelled')}
+                                                >
+                                                    <XCircle className="size-4 mr-3" /> Cancel Training
+                                                </Button>
+                                            </>
+                                        )}
+
+                                        <Button
+                                            variant="outline"
+                                            className="w-full justify-start border-destructive/20 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                            onClick={handleDelete}
+                                        >
+                                            <Trash2 className="size-4 mr-3" /> Delete Training
+                                        </Button>
+                                    </>
+                                )}
+                            </CardContent>
+                        </Card>
+                    )}
                 </div>
             </div>
 
