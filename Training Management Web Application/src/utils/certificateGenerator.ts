@@ -109,7 +109,7 @@ export const generateCertificatePDF = async (data: CertificateData) => {
     doc.setFont('times', 'normal');
     doc.setFontSize(10);
     doc.setTextColor(100, 100, 100);
-    doc.text('Lead Instructor', pageWidth / 4, sigLineY + 12, { align: 'center' });
+    doc.text('Program Officer', pageWidth / 4, sigLineY + 12, { align: 'center' });
 
     // Right Signature (Official)
     doc.setDrawColor(0, 32, 96, 0.3);

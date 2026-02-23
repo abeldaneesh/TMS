@@ -77,7 +77,6 @@ const TrainingDetails: React.FC = () => {
         if (!training || !user) return;
 
         try {
-            const trainer = allUsers.find(u => u.id === training.trainerId || u._id === training.trainerId);
             const inst = institutions.find(i => i.id === training.hallId?.institutionId || i.id === training.institutionId);
             // Fallback for institution name if hall populated but institution name not direct
             const instName = inst?.name || 'Authorized Training Center';
@@ -87,7 +86,7 @@ const TrainingDetails: React.FC = () => {
                 trainingTitle: training.title,
                 programName: training.program,
                 date: training.date,
-                trainerName: trainer?.name || 'Authorized Trainer',
+                trainerName: (training as any).creator?.name || (training as any).trainerId || 'Authorized Officer',
                 institutionName: instName
             });
             toast.success('Certificate downloaded successfully');
