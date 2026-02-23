@@ -41,7 +41,7 @@ router.post('/profile-picture', authenticateToken, upload.single('profilePicture
                 {
                     folder: 'dmo_profiles',
                     resource_type: 'image',
-                    public_id: `profile-${req.user?.id || 'unknown'}-${Date.now()}`
+                    public_id: `profile-${req.user?.userId || 'unknown'}-${Date.now()}`
                 },
                 (error, result) => {
                     if (error) {
