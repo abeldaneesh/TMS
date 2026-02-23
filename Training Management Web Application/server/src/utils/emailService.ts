@@ -11,12 +11,13 @@ const getTransporter = () => {
     port: 465,
     secure: true, // Use SSL
     auth: { user, pass },
-    connectionTimeout: 10000, // 10s timeout to prevent hanging
+    connectionTimeout: 10000,
     greetingTimeout: 10000,
     socketTimeout: 15000,
+    family: 4, // Force IPv4 to avoid ENETUNREACH IPv6 issue
     debug: true,
     logger: true
-  });
+  } as any);
 };
 
 export const sendOTP = async (email: string, otp: string, name: string) => {
