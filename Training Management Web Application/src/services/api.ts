@@ -14,6 +14,7 @@ const api = axios.create({
         'Content-Type': 'application/json',
         'bypass-tunnel-reminder': 'true'
     },
+    timeout: 15000, // 15-second timeout to prevent infinite UI hangs
     withCredentials: true,
 });
 
