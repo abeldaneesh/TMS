@@ -42,14 +42,14 @@ async function migrateImages() {
         for (const user of users) {
             const pic = user.profilePicture!;
 
-            // Check if it's a local path (starts with /uploads or doesn't have http)
-            if (!pic.startsWith('http')) {
+            const isLocal = !pic.startsWith('http') || pic.includes('localhost') || pic.includes('127.0.0.1');
+
+            if (isLocal) {
                 console.log(`Migrating image for user ${user.email}: ${pic}`);
 
                 // Construct local file path
-                // Local paths are usually like /uploads/profiles/filename.jpg
-                const cleanPath = pic.startsWith('/') ? pic.substring(1) : pic;
-                const localPath = path.join(__dirname, '../../', cleanPath);
+                const baseFilename = path.basename(pic);
+                const localPath = path.join(__dirname, '../../uploads/profiles', baseFilename);
 
                 if (fs.existsSync(localPath)) {
                     const filename = `profiles/migrated-${Date.now()}-${path.basename(localPath)}`;
