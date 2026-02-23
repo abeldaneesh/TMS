@@ -39,7 +39,7 @@ export const getTrainings = async (req: Request, res: Response): Promise<void> =
             const Nomination = require('../models/Nomination').default;
             const userNominations = await Nomination.find({
                 participantId: authReq.user.userId,
-                status: { $in: ['nominated', 'approved'] }
+                status: { $in: ['nominated', 'approved', 'attended'] }
             }).select('trainingId');
 
             const nominatedTrainingIds = userNominations.map((n: any) => n.trainingId);
