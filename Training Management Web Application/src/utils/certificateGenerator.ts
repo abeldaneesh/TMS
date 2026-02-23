@@ -54,53 +54,54 @@ export const generateCertificatePDF = async (data: CertificateData) => {
     // --- Header ---
     doc.setTextColor(0, 32, 96); // Navy
     doc.setFont('times', 'bold');
-    doc.setFontSize(44);
-    doc.text('CERTIFICATE', pageWidth / 2, 45, { align: 'center' });
+    doc.setFontSize(40);
+    doc.text('CERTIFICATE', pageWidth / 2, 40, { align: 'center' });
 
-    doc.setFontSize(22);
-    doc.text('OF APPRECIATION', pageWidth / 2, 58, { align: 'center' });
+    doc.setFontSize(20);
+    doc.text('OF APPRECIATION', pageWidth / 2, 52, { align: 'center' });
 
     // --- Content ---
     doc.setFont('times', 'italic');
     doc.setFontSize(16);
     doc.setTextColor(60, 60, 60);
-    doc.text('This is to certify that', pageWidth / 2, 80, { align: 'center' });
+    doc.text('This is to certify that', pageWidth / 2, 72, { align: 'center' });
 
     // Participant Name
     doc.setFont('times', 'bold');
     doc.setFontSize(36);
     doc.setTextColor(0, 32, 96);
-    doc.text(data.participantName, pageWidth / 2, 105, { align: 'center' });
+    doc.text(data.participantName, pageWidth / 2, 95, { align: 'center' });
 
     // Achievement text
     doc.setFont('times', 'italic');
     doc.setFontSize(16);
     doc.setTextColor(60, 60, 60);
-    doc.text('has successfully completed the training program on', pageWidth / 2, 125, { align: 'center' });
+    doc.text('has successfully completed the training program on', pageWidth / 2, 112, { align: 'center' });
 
     // Training Title
     doc.setFont('times', 'bold');
     doc.setFontSize(30);
     doc.setTextColor(139, 101, 8); // Deep Gold/Brown
-    doc.text(data.trainingTitle.toUpperCase(), pageWidth / 2, 142, { align: 'center' });
+    doc.text(data.trainingTitle.toUpperCase(), pageWidth / 2, 128, { align: 'center' });
 
     // Program and Location
     doc.setFont('times', 'normal');
     doc.setFontSize(14);
     doc.setTextColor(80, 80, 80);
-    doc.text(`Conducted under the ${data.programName} program`, pageWidth / 2, 154, { align: 'center' });
-    doc.text(`at ${data.institutionName}`, pageWidth / 2, 162, { align: 'center' });
+    doc.text(`Conducted under the ${data.programName} program`, pageWidth / 2, 140, { align: 'center' });
+    doc.text(`at ${data.institutionName}`, pageWidth / 2, 148, { align: 'center' });
 
     // Date
     doc.setFont('times', 'italic');
-    doc.text(`Presented on this day, ${safeFormatDate(data.date, 'MMMM do, yyyy')}`, pageWidth / 2, 172, { align: 'center' });
+    doc.text(`Presented on this day, ${safeFormatDate(data.date, 'MMMM do, yyyy')}`, pageWidth / 2, 160, { align: 'center' });
 
     // --- Signatures ---
-    const sigLineY = 192;
+    const sigLineY = 180;
     const sigWidth = 70;
 
     // Left Signature (Trainer)
-    doc.setDrawColor(0, 32, 96, 0.3);
+    doc.setDrawColor(180, 180, 180); // Clear Light Grey for signature line
+    doc.setLineWidth(0.3);
     doc.line(pageWidth / 4 - sigWidth / 2, sigLineY, pageWidth / 4 + sigWidth / 2, sigLineY);
     doc.setFont('times', 'bold');
     doc.setFontSize(12);
@@ -112,7 +113,7 @@ export const generateCertificatePDF = async (data: CertificateData) => {
     doc.text('Program Officer', pageWidth / 4, sigLineY + 11, { align: 'center' });
 
     // Right Signature (Official)
-    doc.setDrawColor(0, 32, 96, 0.3);
+    doc.setDrawColor(180, 180, 180);
     doc.line((pageWidth * 3) / 4 - sigWidth / 2, sigLineY, (pageWidth * 3) / 4 + sigWidth / 2, sigLineY);
     doc.setFont('times', 'bold');
     doc.setFontSize(12);
@@ -126,10 +127,10 @@ export const generateCertificatePDF = async (data: CertificateData) => {
     // Final Touch: Gold Seal representation (Circle)
     doc.setDrawColor(184, 134, 11);
     doc.setLineWidth(0.5);
-    doc.circle(pageWidth / 2, 188, 10, 'S');
+    doc.circle(pageWidth / 2, 178, 10, 'S');
     doc.setFontSize(8);
-    doc.text('OFFICIAL', pageWidth / 2, 187, { align: 'center' });
-    doc.text('SEAL', pageWidth / 2, 191, { align: 'center' });
+    doc.text('OFFICIAL', pageWidth / 2, 177, { align: 'center' });
+    doc.text('SEAL', pageWidth / 2, 181, { align: 'center' });
 
     // Download PDF
     const pdfBlob = doc.output('blob');
