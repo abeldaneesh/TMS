@@ -13,9 +13,13 @@ const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
 const privateKey = process.env.FIREBASE_PRIVATE_KEY;
 
 if (!projectId || !clientEmail || !privateKey) {
-    console.error('Missing Firebase environment variables');
+    console.error('Missing Firebase environment variables (PROJECT_ID, CLIENT_EMAIL, PRIVATE_KEY)');
     process.exit(1);
 }
+
+// Try to detect the correct bucket name
+const bucketName = process.env.FIREBASE_STORAGE_BUCKET || `${projectId}.appspot.com`;
+const altBucketName = `${projectId}.firebasestorage.app`;
 
 if (!admin.apps.length) {
     admin.initializeApp({
@@ -24,11 +28,12 @@ if (!admin.apps.length) {
             clientEmail,
             privateKey: privateKey.replace(/\\n/g, '\n').replace(/^"|"$/g, '').trim(),
         }),
-        storageBucket: `${projectId}.firebasestorage.app`
+        storageBucket: bucketName
     });
 }
 
-const bucket = admin.storage().bucket();
+let bucket = admin.storage().bucket();
+// We will check if it works later or try the alternative
 
 async function migrateImages() {
     try {
@@ -56,12 +61,27 @@ async function migrateImages() {
                     const file = bucket.file(filename);
 
                     console.log(`Uploading ${localPath} to Firebase...`);
-                    await bucket.upload(localPath, {
-                        destination: filename,
-                        metadata: {
-                            contentType: 'image/jpeg', // Multer would know this, but here we guess or check ext
+                    try {
+                        await bucket.upload(localPath, {
+                            destination: filename,
+                            metadata: {
+                                contentType: 'image/jpeg',
+                            }
+                        });
+                    } catch (uploadError: any) {
+                        if (uploadError.status === 404) {
+                            console.log(`Bucket ${bucket.name} not found, trying ${altBucketName}...`);
+                            bucket = admin.storage().bucket(altBucketName);
+                            await bucket.upload(localPath, {
+                                destination: filename,
+                                metadata: {
+                                    contentType: 'image/jpeg',
+                                }
+                            });
+                        } else {
+                            throw uploadError;
                         }
-                    });
+                    }
 
                     await file.makePublic();
                     const publicUrl = `https://storage.googleapis.com/${bucket.name}/${filename}`;
