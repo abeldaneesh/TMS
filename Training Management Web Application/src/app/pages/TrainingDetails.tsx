@@ -270,13 +270,24 @@ const TrainingDetails: React.FC = () => {
                             </CardHeader>
                             <CardContent className="flex flex-col gap-3">
                                 {/* Participant specific actions */}
-                                {user?.role === 'participant' && training.status !== 'completed' && training.userStatus !== 'attended' && isAttendanceSessionActive && (
-                                    <Button
-                                        className="w-full justify-start bg-primary text-primary-foreground hover:bg-primary/90"
-                                        onClick={() => navigate('/scan-qr')}
-                                    >
-                                        <QrCode className="size-4 mr-3" /> Scan Attendance QR
-                                    </Button>
+                                {user?.role === 'participant' && (
+                                    <>
+                                        {training.userStatus === 'attended' ? (
+                                            <div className="flex items-center gap-3 p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-lg text-emerald-400">
+                                                <CheckCircle className="size-4 flex-shrink-0" />
+                                                <span className="font-semibold text-sm">Attendance Marked</span>
+                                            </div>
+                                        ) : (
+                                            training.status !== 'completed' && isAttendanceSessionActive && (
+                                                <Button
+                                                    className="w-full justify-start bg-primary text-primary-foreground hover:bg-primary/90"
+                                                    onClick={() => navigate('/scan-qr')}
+                                                >
+                                                    <QrCode className="size-4 mr-3" /> Scan Attendance QR
+                                                </Button>
+                                            )
+                                        )}
+                                    </>
                                 )}
 
                                 {/* Participant Download Certificate */}
