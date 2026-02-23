@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { PushNotifications, Token, PushNotificationSchema, ActionPerformed } from '@capacitor/push-notifications';
+import { LocalNotifications } from '@capacitor/local-notifications';
 import { Capacitor } from '@capacitor/core';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
@@ -85,6 +86,22 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             audioRef.current.play().catch(e => console.log('Audio prevented', e));
           }
           fetchNotifications(); // Update UI badges
+
+          // Trigger Local Notification for foreground popups
+          LocalNotifications.schedule({
+            notifications: [
+              {
+                title: notification.title || 'New Notification',
+                body: notification.body || '',
+                id: new Date().getTime(),
+                schedule: { at: new Date(Date.now() + 100) },
+                sound: 'default',
+                actionTypeId: '',
+                extra: null,
+                channelId: 'dmo_alerts_v2', // Match backend channel
+              }
+            ]
+          });
         });
 
         // Listen for when a user TAPS the push notification from Android system menu
@@ -93,9 +110,19 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         });
 
         // Create the default channel (Required for Android 8+)
+        // v2 bypasses Android cached channel states that might be silencing the app
         await PushNotifications.createChannel({
-          id: 'dmo_alerts',
-          name: 'DMO Alerts',
+          id: 'dmo_alerts_v2',
+          name: 'DMO Alerts (Urgent)',
+          description: 'Important notifications from the system',
+          importance: 5,
+          visibility: 1,
+        });
+
+        // Also create channel for LocalNotifications
+        await LocalNotifications.createChannel({
+          id: 'dmo_alerts_v2',
+          name: 'DMO Alerts (Urgent)',
           description: 'Important notifications from the system',
           importance: 5,
           visibility: 1,
