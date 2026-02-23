@@ -8,13 +8,13 @@ const getTransporter = () => {
 
   return nodemailer.createTransport({
     host: 'smtp.gmail.com',
-    port: 465,
-    secure: true, // Use SSL
+    port: 587,
+    secure: false, // Use STARTTLS
     auth: { user, pass },
-    connectionTimeout: 10000,
-    greetingTimeout: 10000,
-    socketTimeout: 15000,
-    family: 4, // Force IPv4 to avoid ENETUNREACH IPv6 issue
+    connectionTimeout: 15000,
+    greetingTimeout: 15000,
+    socketTimeout: 20000,
+    family: 4, // Force IPv4
     debug: true,
     logger: true
   } as any);
