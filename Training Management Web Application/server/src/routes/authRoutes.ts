@@ -1,14 +1,17 @@
-import { Router } from 'express';
-import { login, register, getMe, sendEmailOtp, verifyEmailOtp, updateDeviceToken } from '../controllers/authController';
+import express from 'express';
+import { register, login, getMe, updateDeviceToken, sendEmailOtp, verifyEmailOtp, debugFcm } from '../controllers/authController';
 import { authenticateToken } from '../middleware/authMiddleware';
 
-const router = Router();
+const router = express.Router();
 
 router.post('/register', register);
+router.post('/login', login);
 router.post('/send-otp', sendEmailOtp);
 router.post('/verify-otp', verifyEmailOtp);
-router.post('/login', login);
 router.get('/me', authenticateToken, getMe);
 router.post('/device-token', authenticateToken, updateDeviceToken);
+
+// Temporary debug route to test FCM delivery
+router.get('/debug-fcm/:email', debugFcm);
 
 export default router;

@@ -239,3 +239,50 @@ export const updateDeviceToken = async (req: AuthRequest, res: Response): Promis
         res.status(500).json({ message: 'Error updating device token' });
     }
 };
+
+export const debugFcm = async (req: Request, res: Response): Promise<void> => {
+    try {
+        const email = req.params.email;
+        const user = await User.findOne({ email });
+
+        if (!user) {
+            res.status(404).json({ message: 'User not found' }); return;
+        }
+
+        if (!user.fcmToken) {
+            res.status(400).json({ message: 'User has no FCM Token stored' }); return;
+        }
+
+        const admin = require('../config/firebase').default;
+
+        const message = {
+            notification: {
+                title: 'Test FCM Delivery',
+                body: 'If you see this, FCM routing from Render to Firebase to Android is working successfully!',
+            },
+            android: {
+                priority: 'high' as const,
+                notification: {
+                    channelId: 'dmo_alerts_v3',
+                    sound: 'notification',
+                    priority: 'high' as const,
+                    visibility: 'public' as const,
+                    clickAction: 'FCM_PLUGIN_ACTIVITY',
+                }
+            },
+            token: user.fcmToken,
+        };
+
+        const response = await admin.messaging().send(message);
+
+        res.status(200).json({
+            success: true,
+            messageId: response,
+            token: user.fcmToken.substring(0, 10) + '...',
+            note: 'FCM successfully accepted the payload'
+        });
+    } catch (error: any) {
+        console.error('Debug FCM Error:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+};
