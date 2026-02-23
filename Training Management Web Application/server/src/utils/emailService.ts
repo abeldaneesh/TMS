@@ -1,13 +1,14 @@
 import nodemailer from 'nodemailer';
 
-// Initialize Nodemailer transporter using credentials from .env
-const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS
-  }
-});
+const getTransporter = () => {
+  return nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+      user: process.env.EMAIL_USER?.trim(),
+      pass: process.env.EMAIL_PASS?.trim()
+    }
+  });
+};
 
 export const sendOTP = async (email: string, otp: string, name: string) => {
   try {
@@ -39,7 +40,7 @@ export const sendOTP = async (email: string, otp: string, name: string) => {
       html: htmlContent
     };
 
-    const info = await transporter.sendMail(mailOptions);
+    const info = await getTransporter().sendMail(mailOptions);
 
     console.log(`[EmailService] OTP sent to ${email} via Nodemailer - MsgID: ${info.messageId}`);
     return true;
