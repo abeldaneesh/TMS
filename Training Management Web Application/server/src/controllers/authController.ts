@@ -109,9 +109,9 @@ export const sendEmailOtp = async (req: Request, res: Response): Promise<void> =
         }
 
         res.status(200).json({ message: 'Verification code sent to your email.' });
-    } catch (error) {
+    } catch (error: any) {
         console.error('Error sending OTP:', error);
-        res.status(500).json({ message: 'Error sending verification code' });
+        res.status(500).json({ message: error.message || 'Error sending verification code' });
     }
 };
 
