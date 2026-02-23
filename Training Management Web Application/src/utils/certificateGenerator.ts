@@ -22,100 +22,114 @@ export const generateCertificatePDF = async (data: CertificateData) => {
     const pageWidth = doc.internal.pageSize.getWidth();
     const pageHeight = doc.internal.pageSize.getHeight();
 
-    // --- Decorative Background / Border ---
-    // Dark base
-    doc.setFillColor(10, 11, 14);
+    // --- Formal Background ---
+    // Ivory / Cream Background
+    doc.setFillColor(253, 252, 240);
     doc.rect(0, 0, pageWidth, pageHeight, 'F');
 
-    // Cyberpunk Border
-    doc.setDrawColor(0, 236, 255); // Primary Cyan
-    doc.setLineWidth(1);
-    doc.rect(5, 5, pageWidth - 10, pageHeight - 10, 'S');
+    // --- Elegant Borders ---
+    // Outer Navy Border
+    doc.setDrawColor(0, 32, 96); // Navy blue
+    doc.setLineWidth(1.5);
+    doc.rect(10, 10, pageWidth - 20, pageHeight - 20, 'S');
 
-    doc.setDrawColor(110, 64, 201); // Secondary Purple
+    // Inner Gold Border
+    doc.setDrawColor(184, 134, 11); // Dark gold
     doc.setLineWidth(0.5);
-    doc.rect(7, 7, pageWidth - 14, pageHeight - 14, 'S');
+    doc.rect(13, 13, pageWidth - 26, pageHeight - 26, 'S');
 
-    // Corner accents
-    const accentSize = 20;
-    doc.setDrawColor(0, 236, 255);
-    doc.setLineWidth(2);
+    // Ornamental Corners (Traditional)
+    doc.setDrawColor(184, 134, 11);
+    doc.setLineWidth(1);
+    const cornerSize = 15;
     // Top Left
-    doc.line(5, 5, 5 + accentSize, 5);
-    doc.line(5, 5, 5, 5 + accentSize);
+    doc.line(10, 10 + cornerSize, 10 + cornerSize, 10);
+    // Top Right
+    doc.line(pageWidth - 10, 10 + cornerSize, pageWidth - 10 - cornerSize, 10);
+    // Bottom Left
+    doc.line(10, pageHeight - 10 - cornerSize, 10 + cornerSize, pageHeight - 10);
     // Bottom Right
-    doc.line(pageWidth - 5, pageHeight - 5, pageWidth - 5 - accentSize, pageHeight - 5);
-    doc.line(pageWidth - 5, pageHeight - 5, pageWidth - 5, pageHeight - 5 - accentSize);
+    doc.line(pageWidth - 10, pageHeight - 10 - cornerSize, pageWidth - 10 - cornerSize, pageHeight - 10);
 
-    // --- Content ---
-
-    // Header
-    doc.setTextColor(0, 236, 255);
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(40);
+    // --- Header ---
+    doc.setTextColor(0, 32, 96); // Navy
+    doc.setFont('times', 'bold');
+    doc.setFontSize(44);
     doc.text('CERTIFICATE', pageWidth / 2, 45, { align: 'center' });
 
-    doc.setFontSize(20);
-    doc.setTextColor(255, 255, 255);
-    doc.text('OF PARTICIPATION', pageWidth / 2, 58, { align: 'center' });
+    doc.setFontSize(22);
+    doc.text('OF APPRECIATION', pageWidth / 2, 58, { align: 'center' });
 
-    // "This is to certify that"
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(14);
-    doc.setTextColor(150, 150, 150);
-    doc.text('This mission debrief confirms that', pageWidth / 2, 80, { align: 'center' });
+    // --- Content ---
+    doc.setFont('times', 'italic');
+    doc.setFontSize(16);
+    doc.setTextColor(60, 60, 60);
+    doc.text('This is to certify that', pageWidth / 2, 80, { align: 'center' });
 
     // Participant Name
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(32);
-    doc.setTextColor(255, 255, 255);
-    doc.text(data.participantName.toUpperCase(), pageWidth / 2, 100, { align: 'center' });
-
-    // Separator line
-    doc.setDrawColor(255, 255, 255, 0.2);
-    doc.line(pageWidth / 4, 108, (pageWidth * 3) / 4, 108);
+    doc.setFont('times', 'bold');
+    doc.setFontSize(36);
+    doc.setTextColor(0, 32, 96);
+    doc.text(data.participantName, pageWidth / 2, 105, { align: 'center' });
 
     // Achievement text
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(14);
-    doc.setTextColor(150, 150, 150);
-    doc.text('has successfully completed the strategic training mission', pageWidth / 2, 125, { align: 'center' });
+    doc.setFont('times', 'italic');
+    doc.setFontSize(16);
+    doc.setTextColor(60, 60, 60);
+    doc.text('has successfully completed the training program on', pageWidth / 2, 125, { align: 'center' });
 
     // Training Title
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(24);
-    doc.setTextColor(0, 236, 255);
-    doc.text(data.trainingTitle.toUpperCase(), pageWidth / 2, 140, { align: 'center' });
+    doc.setFont('times', 'bold');
+    doc.setFontSize(26);
+    doc.setTextColor(139, 101, 8); // Deep Gold/Brown
+    doc.text(data.trainingTitle.toUpperCase(), pageWidth / 2, 145, { align: 'center' });
 
-    // Program and Date
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(12);
-    doc.setTextColor(150, 150, 150);
-    doc.text(`Program Sector: ${data.programName} | Verified on: ${safeFormatDate(data.date, 'MMMM do, yyyy')}`, pageWidth / 2, 150, { align: 'center' });
+    // Program and Location
+    doc.setFont('times', 'normal');
+    doc.setFontSize(14);
+    doc.setTextColor(80, 80, 80);
+    doc.text(`Conducted under the ${data.programName} program`, pageWidth / 2, 158, { align: 'center' });
+    doc.text(`at ${data.institutionName}`, pageWidth / 2, 166, { align: 'center' });
 
-    // Location / Institution
-    doc.text(`Sector Node: ${data.institutionName}`, pageWidth / 2, 158, { align: 'center' });
+    // Date
+    doc.setFont('times', 'italic');
+    doc.text(`Presented on this day, ${safeFormatDate(data.date, 'MMMM do, yyyy')}`, pageWidth / 2, 178, { align: 'center' });
 
-    // Signatures
-    const sigLineY = 185;
-    const sigWidth = 60;
+    // --- Signatures ---
+    const sigLineY = 210;
+    const sigWidth = 70;
 
-    // Trainer Signature
-    doc.setDrawColor(0, 236, 255, 0.5);
+    // Left Signature (Trainer)
+    doc.setDrawColor(0, 32, 96, 0.3);
     doc.line(pageWidth / 4 - sigWidth / 2, sigLineY, pageWidth / 4 + sigWidth / 2, sigLineY);
+    doc.setFont('times', 'bold');
+    doc.setFontSize(12);
+    doc.setTextColor(0, 32, 96);
+    doc.text(data.trainerName, pageWidth / 4, sigLineY + 7, { align: 'center' });
+    doc.setFont('times', 'normal');
     doc.setFontSize(10);
-    doc.setTextColor(255, 255, 255);
-    doc.text(data.trainerName, pageWidth / 4, sigLineY + 5, { align: 'center' });
     doc.setTextColor(100, 100, 100);
-    doc.text('Commanding Officer', pageWidth / 4, sigLineY + 10, { align: 'center' });
+    doc.text('Lead Instructor', pageWidth / 4, sigLineY + 12, { align: 'center' });
 
-    // System Verification
-    doc.setDrawColor(110, 64, 201, 0.5);
+    // Right Signature (Official)
+    doc.setDrawColor(0, 32, 96, 0.3);
     doc.line((pageWidth * 3) / 4 - sigWidth / 2, sigLineY, (pageWidth * 3) / 4 + sigWidth / 2, sigLineY);
-    doc.setTextColor(255, 255, 255);
-    doc.text('DMO TMS CORE', (pageWidth * 3) / 4, sigLineY + 5, { align: 'center' });
+    doc.setFont('times', 'bold');
+    doc.setFontSize(12);
+    doc.setTextColor(0, 32, 96);
+    doc.text('Training Management System', (pageWidth * 3) / 4, sigLineY + 7, { align: 'center' });
+    doc.setFont('times', 'normal');
+    doc.setFontSize(10);
     doc.setTextColor(100, 100, 100);
-    doc.text('Automated Verification', (pageWidth * 3) / 4, sigLineY + 10, { align: 'center' });
+    doc.text('DMO Verification Authority', (pageWidth * 3) / 4, sigLineY + 12, { align: 'center' });
+
+    // Final Touch: Gold Seal representation (Circle)
+    doc.setDrawColor(184, 134, 11);
+    doc.setLineWidth(0.5);
+    doc.circle(pageWidth / 2, 195, 10, 'S');
+    doc.setFontSize(8);
+    doc.text('OFFICIAL', pageWidth / 2, 194, { align: 'center' });
+    doc.text('SEAL', pageWidth / 2, 198, { align: 'center' });
 
     // Download PDF
     const pdfBlob = doc.output('blob');
