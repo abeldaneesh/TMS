@@ -1,27 +1,14 @@
 import { Router, Request, Response } from 'express';
 import multer from 'multer';
 import path from 'path';
-import fs from 'fs';
+import admin from '../config/firebase';
 import { authenticateToken, AuthRequest } from '../middleware/authMiddleware';
+import { v4 as uuidv4 } from 'uuid';
 
 const router = Router();
 
-// Ensure uploads directory exists
-const uploadDir = path.join(__dirname, '../../uploads/profiles');
-if (!fs.existsSync(uploadDir)) {
-    fs.mkdirSync(uploadDir, { recursive: true });
-}
-
-// Configure multer storage
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        cb(null, uploadDir);
-    },
-    filename: (req, file, cb) => {
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-        cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
-    }
-});
+// Configure multer for memory storage
+const storage = multer.memoryStorage();
 
 const upload = multer({
     storage: storage,
@@ -41,25 +28,48 @@ const upload = multer({
 });
 
 // @ts-ignore
-router.post('/profile-picture', authenticateToken, upload.single('profilePicture'), (req: AuthRequest, res: Response) => {
+router.post('/profile-picture', authenticateToken, upload.single('profilePicture'), async (req: AuthRequest, res: Response) => {
     try {
         if (!req.file) {
             res.status(400).json({ message: 'No file uploaded' });
             return;
         }
 
-        const protocol = req.protocol;
-        const host = req.get('host');
-        const filePath = `/uploads/profiles/${req.file.filename}`;
-        // const fullUrl = `${protocol}://${host}${filePath}`; // Removed full URL for portability
+        const bucket = admin.storage().bucket();
+        const filename = `profiles/${uuidv4()}-${req.file.originalname}`;
+        const file = bucket.file(filename);
 
-        res.status(200).json({
-            message: 'File uploaded successfully',
-            url: filePath, // Using relative path as 'url' to maintain frontend compatibility
-            path: filePath
+        // Upload buffer to Firebase Storage
+        const blobStream = file.createWriteStream({
+            metadata: {
+                contentType: req.file.mimetype
+            },
+            resumable: false
         });
+
+        blobStream.on('error', (error) => {
+            console.error('Firebase upload error:', error);
+            res.status(500).json({ message: 'Failed to upload to cloud storage' });
+        });
+
+        blobStream.on('finish', async () => {
+            // Make the file public
+            await file.makePublic();
+
+            // Get the public URL. Note: Standard Firebase URLs follow this pattern
+            const publicUrl = `https://storage.googleapis.com/${bucket.name}/${filename}`;
+
+            res.status(200).json({
+                message: 'File uploaded successfully to cloud storage',
+                url: publicUrl,
+                path: publicUrl
+            });
+        });
+
+        blobStream.end(req.file.buffer);
+
     } catch (error: any) {
-        console.error('Upload error:', error);
+        console.error('Upload route error:', error);
         res.status(500).json({ message: error.message || 'Server error during upload' });
     }
 });
