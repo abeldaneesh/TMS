@@ -128,12 +128,8 @@ export const markAttendance = async (req: AuthRequest, res: Response): Promise<v
 
             // Identify recipients: 
             // - The creator of the training (Program Officer)
-            // - All Master Admins
             const recipients = new Set<string>();
             recipients.add(training.createdById);
-
-            const masterAdmins = await User.find({ role: 'master_admin' }).select('_id');
-            masterAdmins.forEach(admin => recipients.add(admin._id));
 
             console.log(`[DEBUG] Attendance marked for training ${trainingId} by ${participantId}`);
             console.log(`[DEBUG] Sending notifications to ${recipients.size} recipients:`, Array.from(recipients));
