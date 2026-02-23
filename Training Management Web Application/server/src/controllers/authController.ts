@@ -286,3 +286,35 @@ export const debugFcm = async (req: Request, res: Response): Promise<void> => {
         res.status(500).json({ success: false, error: error.message });
     }
 };
+
+export const testEmail = async (req: Request, res: Response): Promise<void> => {
+    try {
+        const { email } = req.query;
+        const targetEmail = (email as string) || process.env.EMAIL_USER || 'test@example.com';
+
+        console.log(`[Diagnostic] Attempting SMTP test to ${targetEmail}...`);
+
+        // We use the same sendOTP utility to test the real flow
+        const result = await sendOTP(targetEmail, '123456', 'Diagnostic Test');
+
+        res.status(200).json({
+            success: true,
+            message: 'Diagnostic email sent successfully!',
+            target: targetEmail,
+            config: {
+                user: process.env.EMAIL_USER ? `${process.env.EMAIL_USER.substring(0, 3)}...` : 'not set',
+                passLength: process.env.EMAIL_PASS ? process.env.EMAIL_PASS.length : 0
+            }
+        });
+    } catch (error: any) {
+        console.error('[Diagnostic] SMTP Test Failed:', error);
+        res.status(500).json({
+            success: false,
+            message: 'SMTP Diagnostic Failed',
+            error: error.message,
+            stack: error.stack,
+            code: error.code,
+            command: error.command
+        });
+    }
+};
