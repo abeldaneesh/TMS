@@ -1,25 +1,18 @@
-import nodemailer from 'nodemailer';
+import { Resend } from 'resend';
 
-const getTransporter = () => {
-  const user = process.env.EMAIL_USER?.trim();
-  const pass = process.env.EMAIL_PASS?.trim();
-
-  console.log(`[EmailService] Creating transporter for ${user}...`);
-
-  return nodemailer.createTransport({
-    service: 'gmail',
-    auth: { user, pass },
-    connectionTimeout: 20000, // 20s timeout
-  });
-};
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 export const sendOTP = async (email: string, otp: string, name: string) => {
   try {
-    if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
-      console.warn('[EmailService] WARNING: Email credentials are not set. Emails won\'t be sent successfully.');
-    }
+    const fromEmail = process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev';
 
-    const htmlContent = `
+    console.log(`[EmailService] Attempting to send OTP email to ${email} via Resend API...`);
+
+    const { data, error } = await resend.emails.send({
+      from: `DMO Admin <${fromEmail}>`,
+      to: [email],
+      subject: 'Verify your DMO TMS Registration',
+      html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px;">
           <h2 style="color: #2563eb; text-align: center;">Account Verification</h2>
           <p style="font-size: 16px; color: #333;">Hello ${name},</p>
@@ -32,25 +25,18 @@ export const sendOTP = async (email: string, otp: string, name: string) => {
           <hr style="border: none; border-top: 1px solid #e0e0e0; margin: 30px 0;" />
           <p style="font-size: 12px; color: #999; text-align: center;">Regards,<br/>DMO Administration</p>
         </div>
-      `;
+      `,
+    });
 
-    console.log(`[EmailService] Attempting to send OTP email to ${email} via Nodemailer...`);
+    if (error) {
+      console.error('[EmailService] Resend API Error:', error);
+      throw new Error(error.message);
+    }
 
-    const mailOptions = {
-      from: `"DMO Admin" <${process.env.EMAIL_USER}>`,
-      to: email,
-      subject: 'Verify your DMO TMS Registration',
-      html: htmlContent
-    };
-
-    const info = await getTransporter().sendMail(mailOptions);
-
-    console.log(`[EmailService] OTP sent to ${email} via Nodemailer - MsgID: ${info.messageId}`);
+    console.log(`[EmailService] OTP sent to ${email} - Resend ID: ${data?.id}`);
     return true;
   } catch (error: any) {
-    console.error('Error sending OTP email via Nodemailer:', error);
-    // Standardize error message for frontend to match the previous Resend ones if needed, 
-    // or just pass it through.
+    console.error('Error sending OTP email via Resend:', error);
     throw new Error(`Email Error: ${error.message}`);
   }
 };

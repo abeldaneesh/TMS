@@ -155,7 +155,7 @@ const Settings: React.FC = () => {
                             <div className="relative group">
                                 <Avatar className="size-20 border-2 border-primary/20">
                                     {profileData.profilePicture && (
-                                        <AvatarImage src={profileData.profilePicture.startsWith('http') ? profileData.profilePicture : `${BASE_URL}${profileData.profilePicture}`} alt={profileData.name} />
+                                        <AvatarImage src={profileData.profilePicture} alt={profileData.name} />
                                     )}
                                     <AvatarFallback className="bg-blue-600 text-white text-xl">
                                         {profileData.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
