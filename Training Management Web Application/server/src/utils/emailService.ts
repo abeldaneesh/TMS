@@ -1,13 +1,18 @@
-import { Resend } from 'resend';
+import nodemailer from 'nodemailer';
 
-// Initialize Resend with the API key from environment variables
-// It will fall back to a dummy key to prevent crashes if not set during init
-const resend = new Resend(process.env.RESEND_API_KEY || 're_dummy_key');
+// Initialize Nodemailer transporter using credentials from .env
+const transporter = nodemailer.createTransport({
+  service: 'gmail',
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS
+  }
+});
 
 export const sendOTP = async (email: string, otp: string, name: string) => {
   try {
-    if (!process.env.RESEND_API_KEY) {
-      console.warn('[EmailService] WARNING: RESEND_API_KEY is not set. Emails won\'t be sent successfully.');
+    if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+      console.warn('[EmailService] WARNING: Email credentials are not set. Emails won\'t be sent successfully.');
     }
 
     const htmlContent = `
@@ -25,28 +30,23 @@ export const sendOTP = async (email: string, otp: string, name: string) => {
         </div>
       `;
 
-    console.log(`[EmailService] Attempting to send OTP email to ${email} via Resend...`);
+    console.log(`[EmailService] Attempting to send OTP email to ${email} via Nodemailer...`);
 
-    // Send email via Resend API (HTTP POST) mapping
-    // We use "onboarding@resend.dev" as the 'from' address unless you verified your own domain
-    // Resend's free tier only allows sending TO the email that registered the Resend account
-    // unless you verify a custom domain.
-    const { data, error } = await resend.emails.send({
-      from: 'DMO Admin <onboarding@resend.dev>', // Required formats for Free Tiers
-      to: email, // IMPORTANT: On Resend Free, this MUST be your verified email address until a domain is verified
+    const mailOptions = {
+      from: `"DMO Admin" <${process.env.EMAIL_USER}>`,
+      to: email,
       subject: 'Verify your DMO TMS Registration',
       html: htmlContent
-    });
+    };
 
-    if (error) {
-      console.error('[EmailService] Resend API Error:', error);
-      throw new Error(`Resend Error: ${error.message}`);
-    }
+    const info = await transporter.sendMail(mailOptions);
 
-    console.log(`[EmailService] OTP sent to ${email} via Resend - MsgID: ${data?.id}`);
+    console.log(`[EmailService] OTP sent to ${email} via Nodemailer - MsgID: ${info.messageId}`);
     return true;
   } catch (error: any) {
-    console.error('Error sending OTP email via Resend:', error);
-    throw error;
+    console.error('Error sending OTP email via Nodemailer:', error);
+    // Standardize error message for frontend to match the previous Resend ones if needed, 
+    // or just pass it through.
+    throw new Error(`Email Error: ${error.message}`);
   }
 };
