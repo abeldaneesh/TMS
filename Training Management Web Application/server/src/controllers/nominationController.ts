@@ -190,9 +190,27 @@ export const updateNominationStatus = async (req: AuthRequest, res: Response): P
         const id = req.params.id as string;
         const { status, rejectionReason } = req.body;
 
-        // Only master_admin can approve or reject nominations
-        if (req.user?.role !== 'master_admin') {
-            res.status(403).json({ message: 'Only admins can approve/reject nominations' });
+        // Only master_admin or the program_officer who created the training can approve/reject
+        let isAuthorized = false;
+
+        const nomination = await Nomination.findById(id).populate('trainingId', 'title createdById');
+
+        if (!nomination) {
+            res.status(404).json({ message: 'Nomination not found' });
+            return;
+        }
+
+        if (req.user?.role === 'master_admin') {
+            isAuthorized = true;
+        } else if (req.user?.role === 'program_officer') {
+            const trainingCreatorId = (nomination.trainingId as any)?.createdById?.toString();
+            if (trainingCreatorId === req.user.userId) {
+                isAuthorized = true;
+            }
+        }
+
+        if (!isAuthorized) {
+            res.status(403).json({ message: 'Not authorized to modify this nomination status' });
             return;
         }
 
@@ -203,36 +221,36 @@ export const updateNominationStatus = async (req: AuthRequest, res: Response): P
             updateData.approvedAt = new Date();
         }
 
-        const nomination = await Nomination.findByIdAndUpdate(
+        const updatedNomination = await Nomination.findByIdAndUpdate(
             id,
             updateData,
             { new: true }
         ).populate('trainingId', 'title');
 
-        if (!nomination) {
-            res.status(404).json({ message: 'Nomination not found' });
+        if (!updatedNomination) {
+            res.status(404).json({ message: 'Nomination update failed' });
             return;
         }
 
         // Send Notification to Participant
         try {
-            const trainingTitle = (nomination.trainingId as any)?.title || 'Training';
+            const trainingTitle = (updatedNomination.trainingId as any)?.title || 'Training';
             const action = status === 'approved' ? 'approved' : 'rejected';
 
             await createAndSendNotification({
-                userId: nomination.participantId.toString(),
+                userId: updatedNomination.participantId.toString(),
                 title: `Nomination ${status.charAt(0).toUpperCase() + status.slice(1)}`,
                 message: `Your nomination for "${trainingTitle}" has been ${action}.`,
                 type: 'nomination_status',
-                relatedId: nomination._id.toString()
+                relatedId: updatedNomination._id.toString()
             });
         } catch (notifErr) {
             console.error('Failed to send nomination status notification:', notifErr);
         }
 
         res.json({
-            ...nomination.toObject(),
-            id: nomination._id
+            ...updatedNomination.toObject(),
+            id: updatedNomination._id
         });
     } catch (error) {
         res.status(500).json({ message: 'Error updating nomination status' });

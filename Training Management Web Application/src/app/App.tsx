@@ -11,6 +11,7 @@ import Trainings from './pages/Trainings';
 import TrainingDetails from './pages/TrainingDetails';
 import CreateTraining from './pages/CreateTraining';
 import MyAttendance from './pages/MyAttendance';
+import TrainingParticipants from './pages/TrainingParticipants';
 
 import ScanQR from './pages/ScanQR';
 import Reports from './pages/Reports';
@@ -140,6 +141,16 @@ const AppRoutes: React.FC = () => {
           <ProtectedRoute>
             <Layout>
               <CreateTraining />
+            </Layout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/trainings/:id/participants"
+        element={
+          <ProtectedRoute>
+            <Layout>
+              <TrainingParticipants />
             </Layout>
           </ProtectedRoute>
         }

@@ -16,7 +16,6 @@ import { toast } from 'sonner';
 
 import FilterChips from '../components/FilterChips';
 import AttendanceListModal from '../components/AttendanceListModal';
-import AssignedParticipantsModal from '../components/AssignedParticipantsModal';
 import LoadingScreen from '../components/LoadingScreen';
 
 const Trainings: React.FC = () => {
@@ -32,7 +31,6 @@ const Trainings: React.FC = () => {
 
   // Modal state
   const [attendanceModalOpen, setAttendanceModalOpen] = useState(false);
-  const [participantsModalOpen, setParticipantsModalOpen] = useState(false);
   const [selectedTrainingId, setSelectedTrainingId] = useState<string | null>(null);
   const [selectedTrainingTitle, setSelectedTrainingTitle] = useState('');
 
@@ -109,9 +107,7 @@ const Trainings: React.FC = () => {
   };
 
   const handleViewParticipants = (training: Training) => {
-    setSelectedTrainingId(training.id);
-    setSelectedTrainingTitle(training.title);
-    setParticipantsModalOpen(true);
+    navigate(`/trainings/${training.id}/participants`);
   };
 
   if (loading) {
@@ -303,12 +299,6 @@ const Trainings: React.FC = () => {
           <AttendanceListModal
             isOpen={attendanceModalOpen}
             onClose={() => setAttendanceModalOpen(false)}
-            trainingId={selectedTrainingId}
-            trainingTitle={selectedTrainingTitle}
-          />
-          <AssignedParticipantsModal
-            isOpen={participantsModalOpen}
-            onClose={() => setParticipantsModalOpen(false)}
             trainingId={selectedTrainingId}
             trainingTitle={selectedTrainingTitle}
           />
