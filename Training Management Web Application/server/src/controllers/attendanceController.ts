@@ -299,12 +299,11 @@ export const startAttendanceSession = async (req: AuthRequest, res: Response): P
                 const message = `An attendance session has started for "${training.title}". Please scan the QR code to mark your attendance.`;
 
                 await Promise.all(participantIds.map(userId =>
-                    Notification.create({
-                        userId,
+                    createAndSendNotification({
+                        userId: userId.toString(),
                         title: 'Attendance Session Started',
-                        message,
+                        message: message,
                         type: 'info',
-                        read: false
                     })
                 ));
                 console.log(`[DEBUG] Sent notifications to ${participantIds.length} participants for training ${trainingId}`);

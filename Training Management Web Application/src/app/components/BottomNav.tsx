@@ -4,8 +4,11 @@ import { LayoutDashboard, Calendar, QrCode, ClipboardList, Settings, Bell } from
 import { useAuth } from '../../contexts/AuthContext';
 import { useTranslation } from 'react-i18next';
 import { useIsMobile } from './ui/use-mobile';
+interface BottomNavProps {
+    unreadCount?: number;
+}
 
-const BottomNav: React.FC = () => {
+const BottomNav: React.FC<BottomNavProps> = ({ unreadCount = 0 }) => {
     const { user } = useAuth();
     const isMobile = useIsMobile();
 
@@ -37,8 +40,13 @@ const BottomNav: React.FC = () => {
                     >
                         {({ isActive }) => (
                             <>
-                                <div className={`p-1 rounded-lg transition-all`}>
+                                <div className={`p-1 rounded-lg transition-all relative`}>
                                     <item.icon className="size-5" />
+                                    {item.label === 'Alerts' && unreadCount > 0 && (
+                                        <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[9px] font-bold rounded-full size-4 flex items-center justify-center border-2 border-background">
+                                            {unreadCount > 99 ? '99+' : unreadCount}
+                                        </span>
+                                    )}
                                 </div>
                                 <span className="text-[10px] font-medium">{item.label}</span>
                                 {/* Active Indicator Bar */}

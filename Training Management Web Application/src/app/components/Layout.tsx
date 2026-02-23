@@ -473,7 +473,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       )}
 
       {/* Bottom Navigation for Mobile */}
-      <BottomNav />
+      <BottomNav unreadCount={unreadCount} />
     </div>
   );
 };
