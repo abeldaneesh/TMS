@@ -7,14 +7,16 @@ const getTransporter = () => {
   console.log(`[EmailService] Creating transporter for ${user}...`);
 
   return nodemailer.createTransport({
-    host: 'smtp.gmail.com',
-    port: 587,
-    secure: false, // Use STARTTLS
+    host: '74.125.142.108', // smtp.gmail.com IPv4
+    port: 465,
+    secure: true,
     auth: { user, pass },
+    tls: {
+      servername: 'smtp.gmail.com'
+    },
     connectionTimeout: 15000,
     greetingTimeout: 15000,
     socketTimeout: 20000,
-    family: 4, // Force IPv4
     debug: true,
     logger: true
   } as any);
