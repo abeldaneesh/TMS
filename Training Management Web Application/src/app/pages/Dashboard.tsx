@@ -156,7 +156,6 @@ const Dashboard: React.FC = () => {
           <HorizontalScrollList
             title={t('dashboard.sections.quickActions.title', 'Quick Actions')}
             subtitle={t('dashboard.sections.quickActions.subtitle', 'Manage your tasks')}
-            avatarUrl={getProfileAvatarUrl()}
           >
             {quickActions
               .filter(action => !action.roles || (user?.role && action.roles.includes(user.role)))

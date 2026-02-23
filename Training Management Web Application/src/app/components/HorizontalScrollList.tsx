@@ -28,11 +28,6 @@ const HorizontalScrollList: React.FC<HorizontalScrollListProps> = ({ title, subt
         <div className="mb-12 w-full overflow-hidden">
             <div className="flex items-end justify-between mb-4 mt-2">
                 <div className="flex items-center gap-4">
-                    {avatarUrl && (
-                        <div className="size-12 rounded-full overflow-hidden shrink-0 hidden sm:block">
-                            <img src={avatarUrl} alt="Channel avatar" className="w-full h-full object-cover" />
-                        </div>
-                    )}
                     <div className="flex flex-col">
                         {subtitle && (
                             <p className="text-xs sm:text-sm text-muted-foreground font-medium uppercase tracking-wider mb-1">
