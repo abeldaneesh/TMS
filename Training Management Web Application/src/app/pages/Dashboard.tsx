@@ -47,16 +47,49 @@ const Dashboard: React.FC = () => {
   }
 
   // Derived data based on filter
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
   const upcomingTrainings = allTrainings
-    .filter(t => t && t.date && new Date(t.date) > new Date() && t.status !== 'cancelled')
+    .filter(t => {
+      if (!t || t.status === 'cancelled') return false;
+      // If participant, hide if already attended
+      if (user?.role === 'participant' && t.userStatus === 'attended') return false;
+
+      const tDate = new Date(t.date);
+      tDate.setHours(0, 0, 0, 0);
+      return tDate >= today && t.status === 'scheduled';
+    })
     .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
   const completedTrainings = allTrainings
-    .filter(t => t && t.status === 'completed')
+    .filter(t => {
+      if (!t) return false;
+      // If participant, it's completed for them IF they attended OR the training is officially completed
+      if (user?.role === 'participant') {
+        return t.userStatus === 'attended' || t.status === 'completed';
+      }
+      return t.status === 'completed';
+    })
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
   const activeOrOngoing = allTrainings
-    .filter(t => t && t.status === 'ongoing');
+    .filter(t => {
+      if (!t) return false;
+      if (user?.role === 'participant' && t.userStatus === 'attended') return false;
+      return t.status === 'ongoing';
+    });
+
+  const actionRequired = allTrainings
+    .filter(t => {
+      if (!t) return false;
+      if (user?.role === 'participant') {
+        // Action: Nominations I haven't attended yet for active trainings
+        return (t.status === 'ongoing' || t.status === 'scheduled') && t.userStatus !== 'attended';
+      }
+      // For PO/Admin, ongoing training is always an action area
+      return t.status === 'ongoing';
+    });
 
   const filters = [
     { value: 'all', label: t('dashboard.filters.all', 'All Activity') },
@@ -111,8 +144,8 @@ const Dashboard: React.FC = () => {
       />
 
       <div className="space-y-4">
-        {/* Listen Again -> Quick Actions */}
-        {user?.role !== 'participant' && (activeFilter === 'all' || activeFilter === 'action') && (
+        {/* Quick Actions */}
+        {user?.role !== 'participant' && (activeFilter === 'all' || activeFilter === 'action') && quickActions.filter(a => !a.roles || (user?.role && a.roles.includes(user.role))).length > 0 && (
           <HorizontalScrollList
             title={t('dashboard.sections.quickActions.title', 'Quick Actions')}
             subtitle={t('dashboard.sections.quickActions.subtitle', 'Manage your tasks')}
@@ -133,27 +166,27 @@ const Dashboard: React.FC = () => {
           </HorizontalScrollList>
         )}
 
-        {/* Start Radio -> Ongoing Trainings */}
-        {activeOrOngoing.length > 0 && (activeFilter === 'all' || activeFilter === 'action') && (
+        {/* Action Required / Ongoing Trainings */}
+        {actionRequired.length > 0 && (activeFilter === 'all' || activeFilter === 'action') && (
           <HorizontalScrollList
-            title={t('dashboard.sections.ongoing.title', 'Ongoing Trainings')}
-            subtitle={t('dashboard.sections.ongoing.subtitle', 'Currently active sessions')}
+            title={activeFilter === 'action' ? t('dashboard.sections.actionRequired.title', 'Action Required') : t('dashboard.sections.ongoing.title', 'Ongoing Trainings')}
+            subtitle={activeFilter === 'action' ? t('dashboard.sections.actionRequired.subtitle', 'Items needing your attention') : t('dashboard.sections.ongoing.subtitle', 'Currently active sessions')}
           >
-            {activeOrOngoing.map(training => (
+            {actionRequired.map(training => (
               <MediaCard
                 key={training.id}
                 id={training.id}
                 title={training.title}
                 subtitle={`${safeFormatDate(training.date)} • ${training.program}`}
-                statusBadge="LIVE"
-                statusColor="bg-red-600 text-white"
+                statusBadge={training.status === 'ongoing' ? "LIVE" : (training.userStatus === 'approved' ? "CONFIRMED" : "NOMINATED")}
+                statusColor={training.status === 'ongoing' ? "bg-red-600 text-white" : "bg-blue-600 text-white"}
                 onClick={() => navigate(`/trainings/${training.id}`)}
               />
             ))}
           </HorizontalScrollList>
         )}
 
-        {/* Fresh Finds -> Upcoming Trainings */}
+        {/* Upcoming Trainings */}
         {upcomingTrainings.length > 0 && (activeFilter === 'all' || activeFilter === 'upcoming') && (
           <HorizontalScrollList
             title={t('dashboard.sections.upcoming.title', 'Upcoming Trainings')}
@@ -171,7 +204,7 @@ const Dashboard: React.FC = () => {
           </HorizontalScrollList>
         )}
 
-        {/* Recommended -> Completed Trainings / Past */}
+        {/* Completed Trainings / Past */}
         {completedTrainings.length > 0 && (activeFilter === 'all' || activeFilter === 'completed') && (
           <HorizontalScrollList
             title={t('dashboard.sections.past.title', 'Past Trainings')}
@@ -187,6 +220,28 @@ const Dashboard: React.FC = () => {
               />
             ))}
           </HorizontalScrollList>
+        )}
+
+        {/* Empty States */}
+        {activeFilter === 'upcoming' && upcomingTrainings.length === 0 && (
+          <div className="py-20 text-center text-muted-foreground">
+            <p className="text-xl">{t('dashboard.noUpcoming', 'No upcoming sessions scheduled.')}</p>
+          </div>
+        )}
+        {activeFilter === 'completed' && completedTrainings.length === 0 && (
+          <div className="py-20 text-center text-muted-foreground">
+            <p className="text-xl">{t('dashboard.noPast', 'No past training history found.')}</p>
+          </div>
+        )}
+        {activeFilter === 'action' && actionRequired.length === 0 && (
+          <div className="py-20 text-center text-muted-foreground">
+            <p className="text-xl">{t('dashboard.noAction', 'Great job! No urgent actions required.')}</p>
+          </div>
+        )}
+        {activeFilter === 'all' && upcomingTrainings.length === 0 && completedTrainings.length === 0 && actionRequired.length === 0 && (
+          <div className="py-20 text-center text-muted-foreground">
+            <p className="text-xl">{t('dashboard.noActivity', 'No activity found in your library.')}</p>
+          </div>
         )}
 
         {/* System Overview Details */}

@@ -84,6 +84,7 @@ export interface Training {
     startedBy?: string;
     qrCodeToken?: string;
   };
+  userStatus?: string | null;
   createdAt: Date;
   updatedAt: Date;
 }

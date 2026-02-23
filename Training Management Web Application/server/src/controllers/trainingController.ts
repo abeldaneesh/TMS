@@ -56,10 +56,21 @@ export const getTrainings = async (req: Request, res: Response): Promise<void> =
 
         const trainings = await query.lean() as any[];
 
+        // If participant, fetch their nominations to attach status
+        let userStatusMap: Record<string, string> = {};
+        if (authReq.user?.role === 'participant') {
+            const Nomination = require('../models/Nomination').default;
+            const nominations = await Nomination.find({ participantId: authReq.user.userId });
+            nominations.forEach((n: any) => {
+                userStatusMap[n.trainingId] = n.status;
+            });
+        }
+
         // Map populated fields to match expected output
         const formattedTrainings = trainings.map(t => ({
             ...t,
             id: t._id,
+            userStatus: userStatusMap[t._id.toString()] || null,
             hallId: t.hallId?._id || t.hallId,
             createdById: t.createdById?._id || t.createdById,
             hall: {
