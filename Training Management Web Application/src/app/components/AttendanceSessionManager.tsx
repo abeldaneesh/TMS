@@ -14,25 +14,71 @@ import { downloadFile } from '../../utils/fileDownloader';
 interface AttendanceSessionManagerProps {
     trainingId: string;
     isOwnerOrAdmin: boolean;
+    date: string;
+    startTime: string;
+    endTime: string;
+    onSessionStatusChange?: (isActive: boolean) => void;
 }
 
-const AttendanceSessionManager: React.FC<AttendanceSessionManagerProps> = ({ trainingId, isOwnerOrAdmin }) => {
+const AttendanceSessionManager: React.FC<AttendanceSessionManagerProps> = ({
+    trainingId,
+    isOwnerOrAdmin,
+    date,
+    startTime,
+    endTime,
+    onSessionStatusChange
+}) => {
     const { user } = useAuth();
     const [session, setSession] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const [duration, setDuration] = useState<number>(30); // Default 30 mins
     const [qrCodeUrl, setQrCodeUrl] = useState('');
     const [timeLeft, setTimeLeft] = useState<string>('');
+    const [isWithinWindow, setIsWithinWindow] = useState(false);
     const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
-    const fetchSession = async () => {
+    // Calculate if current time is within the scheduled window
+    useEffect(() => {
+        const checkWindow = () => {
+            try {
+                const now = new Date();
+                const trainingDate = new Date(date);
 
+                // Parse startTime and endTime (format HH:mm)
+                const [startH, startM] = startTime.split(':').map(Number);
+                const [endH, endM] = endTime.split(':').map(Number);
+
+                const windowStart = new Date(trainingDate);
+                windowStart.setHours(startH, startM, 0, 0);
+
+                const windowEnd = new Date(trainingDate);
+                windowEnd.setHours(endH, endM, 0, 0);
+
+                // Buffer: Allow starting 30 mins before and up to the end time
+                const bufferStart = new Date(windowStart.getTime() - 30 * 60000);
+
+                setIsWithinWindow(now >= bufferStart && now <= windowEnd);
+            } catch (e) {
+                console.error('Error calculating window:', e);
+                setIsWithinWindow(false);
+            }
+        };
+
+        checkWindow();
+        const interval = setInterval(checkWindow, 60000); // Check every minute
+        return () => clearInterval(interval);
+    }, [date, startTime, endTime]);
+
+    const fetchSession = async () => {
         try {
             const data = await attendanceApi.getSession(trainingId);
             setSession(data);
+            if (onSessionStatusChange) {
+                onSessionStatusChange(!!data?.isActive);
+            }
         } catch (error) {
             console.error('Error fetching session:', error);
-            // Ignore 404 (no session yet)
+            if (onSessionStatusChange) onSessionStatusChange(false);
         } finally {
             setLoading(false);
         }
@@ -56,7 +102,7 @@ const AttendanceSessionManager: React.FC<AttendanceSessionManagerProps> = ({ tra
                 if (diff <= 0) {
                     setTimeLeft('Expired');
                     if (intervalRef.current) clearInterval(intervalRef.current);
-                    // Optionally refresh session to see updated state if backend auto-expires (it doesn't auto-update DB but logic expires)
+                    if (onSessionStatusChange) onSessionStatusChange(false);
                 } else {
                     const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
                     const seconds = Math.floor((diff % (1000 * 60)) / 1000);
@@ -80,9 +126,6 @@ const AttendanceSessionManager: React.FC<AttendanceSessionManagerProps> = ({ tra
         const generateQR = async () => {
             if (session?.isActive && session?.qrCodeToken) {
                 try {
-                    // We encode the Token. 
-                    // Or better, a JSON object: { trainingId, token }
-                    // The backend verification expects `token` or JSON with `token`.
                     const data = JSON.stringify({
                         trainingId,
                         token: session.qrCodeToken,
@@ -105,6 +148,10 @@ const AttendanceSessionManager: React.FC<AttendanceSessionManagerProps> = ({ tra
     }, [session, trainingId]);
 
     const handleStart = async () => {
+        if (!isWithinWindow) {
+            toast.error('Cannot start session outside scheduled training time');
+            return;
+        }
         try {
             setLoading(true);
             await attendanceApi.startSession(trainingId, duration);
@@ -159,7 +206,9 @@ const AttendanceSessionManager: React.FC<AttendanceSessionManagerProps> = ({ tra
                     Attendance Session
                 </CardTitle>
                 <CardDescription className="text-muted-foreground">
-                    Manage QR code based attendance for this training.
+                    {isOwnerOrAdmin
+                        ? "Manage QR code based attendance for this training."
+                        : "Scan the QR code to mark your attendance."}
                 </CardDescription>
             </CardHeader>
             <CardContent>
@@ -202,25 +251,40 @@ const AttendanceSessionManager: React.FC<AttendanceSessionManagerProps> = ({ tra
                                 )}
                             </div>
                         ) : (
-                            <div className="flex flex-col sm:flex-row items-end gap-4 p-4 bg-muted/30 rounded-lg border border-border/50">
-                                <div className="flex-1 w-full space-y-2">
-                                    <Label htmlFor="duration" className="text-muted-foreground">Session Duration (Minutes)</Label>
-                                    <div className="flex items-center gap-2">
-                                        <Clock className="size-4 text-muted-foreground" />
-                                        <Input
-                                            id="duration"
-                                            type="number"
-                                            min="1"
-                                            max="120"
-                                            value={duration}
-                                            onChange={(e) => setDuration(parseInt(e.target.value) || 0)}
-                                            className="bg-input/50 border-input text-foreground"
-                                        />
+                            <div className="flex flex-col space-y-4">
+                                {!isWithinWindow && isOwnerOrAdmin && (
+                                    <div className="text-xs text-orange-500 bg-orange-500/10 p-2 rounded border border-orange-500/20 flex items-center gap-2">
+                                        <AlertTriangle className="size-3" />
+                                        Session can only be started during scheduled time ({startTime} - {endTime})
                                     </div>
+                                )}
+                                <div className="flex flex-col sm:flex-row items-end gap-4 p-4 bg-muted/30 rounded-lg border border-border/50">
+                                    <div className="flex-1 w-full space-y-2">
+                                        <Label htmlFor="duration" className="text-muted-foreground">Session Duration (Minutes)</Label>
+                                        <div className="flex items-center gap-2">
+                                            <Clock className="size-4 text-muted-foreground" />
+                                            <Input
+                                                id="duration"
+                                                type="number"
+                                                min="1"
+                                                max="120"
+                                                value={duration}
+                                                onChange={(e) => setDuration(parseInt(e.target.value) || 0)}
+                                                className="bg-input/50 border-input text-foreground"
+                                                disabled={!isWithinWindow && isOwnerOrAdmin}
+                                            />
+                                        </div>
+                                    </div>
+                                    {isOwnerOrAdmin && (
+                                        <Button
+                                            onClick={handleStart}
+                                            disabled={!isWithinWindow}
+                                            className="w-full sm:w-auto bg-primary text-primary-foreground hover:bg-primary/80 font-bold tracking-wider disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            <PlayCircle className="size-4 mr-2" /> Start Session
+                                        </Button>
+                                    )}
                                 </div>
-                                <Button onClick={handleStart} className="w-full sm:w-auto bg-primary text-primary-foreground hover:bg-primary/80 font-bold tracking-wider">
-                                    <PlayCircle className="size-4 mr-2" /> Start Session
-                                </Button>
                             </div>
                         )}
 

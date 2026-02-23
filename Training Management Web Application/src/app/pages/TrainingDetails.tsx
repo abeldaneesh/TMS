@@ -27,7 +27,9 @@ const TrainingDetails: React.FC = () => {
     const [training, setTraining] = useState<any | null>(null);
     const [loading, setLoading] = useState(true);
     const [generating, setGenerating] = useState(false);
+    const [statusUpdating, setStatusUpdating] = useState(false);
     const [attendanceModalOpen, setAttendanceModalOpen] = useState(false);
+    const [isAttendanceSessionActive, setIsAttendanceSessionActive] = useState(false);
     const [institutions, setInstitutions] = useState<any[]>([]);
     const [allUsers, setAllUsers] = useState<any[]>([]);
 
@@ -206,6 +208,10 @@ const TrainingDetails: React.FC = () => {
                     <AttendanceSessionManager
                         trainingId={id!}
                         isOwnerOrAdmin={user?.role === 'master_admin' || (user?.role === 'program_officer' && training.createdById === user.id)}
+                        date={training.date}
+                        startTime={training.startTime}
+                        endTime={training.endTime}
+                        onSessionStatusChange={setIsAttendanceSessionActive}
                     />
 
 
@@ -264,7 +270,7 @@ const TrainingDetails: React.FC = () => {
                             </CardHeader>
                             <CardContent className="flex flex-col gap-3">
                                 {/* Participant specific actions */}
-                                {user?.role === 'participant' && training.status !== 'completed' && training.userStatus !== 'attended' && (
+                                {user?.role === 'participant' && training.status !== 'completed' && training.userStatus !== 'attended' && isAttendanceSessionActive && (
                                     <Button
                                         className="w-full justify-start bg-primary text-primary-foreground hover:bg-primary/90"
                                         onClick={() => navigate('/scan-qr')}
