@@ -43,6 +43,8 @@ const MyAttendance: React.FC = () => {
         return <LoadingScreen />;
     }
 
+    const validHistory = attendanceHistory.filter(record => record.training);
+
     return (
         <div className="space-y-6">
             <div>
@@ -55,7 +57,7 @@ const MyAttendance: React.FC = () => {
                     <CardTitle>{t('myAttendance.cardTitle', 'Attended Trainings')}</CardTitle>
                 </CardHeader>
                 <CardContent>
-                    {attendanceHistory.length === 0 ? (
+                    {validHistory.length === 0 ? (
                         <div className="text-center py-12">
                             <CheckCircle className="size-12 mx-auto text-gray-300 mb-3" />
                             <p className="text-gray-500">{t('myAttendance.noRecords', 'No attendance records found.')}</p>
@@ -73,7 +75,7 @@ const MyAttendance: React.FC = () => {
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
-                                    {attendanceHistory.map((record) => (
+                                    {validHistory.map((record) => (
                                         <TableRow key={record.id}>
                                             <TableCell>
                                                 <div className="font-medium text-base">
