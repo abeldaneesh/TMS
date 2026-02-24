@@ -297,6 +297,50 @@ export const updateTraining = async (req: AuthRequest, res: Response): Promise<v
                 res.status(403).json({ message: 'This hall slot is blocked by admin and cannot be booked.' });
                 return;
             }
+
+            // 3. Check Participant Conflicts
+            const dateChanged = date !== undefined && new Date(date).getTime() !== new Date(training.date).getTime();
+            const timeChanged = (startTime !== undefined && startTime !== training.startTime) || (endTime !== undefined && endTime !== training.endTime);
+            const statusChanged = status !== undefined && status !== training.status && status !== 'draft';
+
+            if (dateChanged || timeChanged || statusChanged) {
+                // Find all active nominations for this training
+                const activeNominations = await Nomination.find({
+                    trainingId: id,
+                    status: { $in: ['nominated', 'approved', 'attended'] }
+                }).select('participantId');
+
+                const participantIds = activeNominations.map(n => n.participantId);
+
+                if (participantIds.length > 0) {
+                    // Find conflicting trainings
+                    const conflictingTrainings = await Training.find({
+                        _id: { $ne: id },
+                        date: { $gte: startOfDay, $lte: endOfDay },
+                        $and: [
+                            { startTime: { $lt: endTime || training.endTime } },
+                            { endTime: { $gt: startTime || training.startTime } }
+                        ],
+                        status: { $in: ['scheduled', 'ongoing'] }
+                    }).select('_id');
+
+                    const conflictingTrainingIds = conflictingTrainings.map(t => t._id);
+
+                    if (conflictingTrainingIds.length > 0) {
+                        const conflictingNomination = await Nomination.findOne({
+                            participantId: { $in: participantIds },
+                            status: { $in: ['nominated', 'approved', 'attended'] },
+                            trainingId: { $in: conflictingTrainingIds }
+                        }).populate('participantId', 'name');
+
+                        if (conflictingNomination) {
+                            const participantName = (conflictingNomination.participantId as any)?.name || 'A participant';
+                            res.status(409).json({ message: `${participantName} is already assigned to another training on the selected date and time.` });
+                            return;
+                        }
+                    }
+                }
+            }
         }
 
         // Update fields
