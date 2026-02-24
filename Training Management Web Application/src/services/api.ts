@@ -388,6 +388,9 @@ export const attendanceApi = {
         if (filters?.trainingId) {
             const response = await api.get(`/attendance/${filters.trainingId}`);
             return response.data;
+        } else if (filters?.participantId) {
+            const response = await api.get(`/attendance/user/${filters.participantId}`);
+            return response.data;
         }
         return [];
     },

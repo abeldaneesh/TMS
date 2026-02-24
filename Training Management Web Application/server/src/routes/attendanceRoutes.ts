@@ -1,11 +1,12 @@
 import { Router } from 'express';
-import { markAttendance, getAttendance, getMyAttendance } from '../controllers/attendanceController';
+import { markAttendance, getAttendance, getMyAttendance, getAttendanceByParticipant } from '../controllers/attendanceController';
 import { authenticateToken } from '../middleware/authMiddleware';
 
 const router = Router();
 
 router.post('/', authenticateToken, markAttendance);
 router.get('/my', authenticateToken, getMyAttendance);
+router.get('/user/:participantId', authenticateToken, getAttendanceByParticipant);
 router.get('/:trainingId', authenticateToken, getAttendance);
 
 // Session Management Routes

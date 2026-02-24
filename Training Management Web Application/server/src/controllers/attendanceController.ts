@@ -242,6 +242,49 @@ export const getMyAttendance = async (req: AuthRequest, res: Response): Promise<
     }
 };
 
+// Get attendance history for a specific participant (for admins)
+export const getAttendanceByParticipant = async (req: AuthRequest, res: Response): Promise<void> => {
+    try {
+        const participantId = req.params.participantId as string;
+
+        // Authorization check: Only admins or POs can view other's attendance
+        if (req.user?.role === 'participant' && req.user.userId !== participantId) {
+            res.status(403).json({ message: 'Not authorized to view this participant\'s attendance' });
+            return;
+        }
+
+        const attendance = await Attendance.find({ participantId })
+            .populate({
+                path: 'trainingId',
+                select: 'title date startTime endTime program hallId',
+                populate: {
+                    path: 'hallId',
+                    select: 'name location'
+                }
+            })
+            .sort({ createdAt: -1 })
+            .lean() as any[];
+
+        const formattedAttendance = attendance.map(att => ({
+            id: att._id,
+            ...att,
+            training: att.trainingId ? {
+                ...att.trainingId,
+                id: att.trainingId._id,
+                hall: att.trainingId.hallId ? {
+                    ...att.trainingId.hallId,
+                    id: att.trainingId.hallId._id
+                } : null
+            } : null
+        }));
+
+        res.json(formattedAttendance);
+    } catch (error) {
+        console.error('Error fetching participant attendance:', error);
+        res.status(500).json({ message: 'Error fetching attendance history' });
+    }
+};
+
 
 import { v4 as uuidv4 } from 'uuid';
 
