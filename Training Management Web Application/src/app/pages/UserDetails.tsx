@@ -195,9 +195,11 @@ const UserDetails: React.FC = () => {
                                     {nominations.map((nom, idx) => (
                                         <div key={nom.id || idx} className="flex items-start justify-between p-3 rounded-lg border border-border/40 bg-card hover:bg-accent/50 transition-colors">
                                             <div>
-                                                <p className="font-medium text-sm text-foreground line-clamp-1">{typeof nom.trainingId === 'object' ? (nom.trainingId as any).title : nom.trainingId}</p>
+                                                <p className="font-medium text-sm text-foreground line-clamp-1">
+                                                    {nom.trainingId && typeof nom.trainingId === 'object' && 'title' in nom.trainingId ? (nom.trainingId as any).title : (nom.trainingId || 'Unknown Training')}
+                                                </p>
                                                 <div className="text-xs text-muted-foreground mt-1 flex items-center gap-2">
-                                                    <span>{nom.nominatedAt ? format(new Date(nom.nominatedAt), 'MMM d, yyyy') : 'Unknown Date'}</span>
+                                                    <span>{nom.nominatedAt ? format(new Date(nom.nominatedAt), 'MMM d, yyyy') : 'Date unavailable'}</span>
                                                 </div>
                                             </div>
                                             <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full shrink-0
@@ -233,9 +235,11 @@ const UserDetails: React.FC = () => {
                                     {attendance.slice(0, 5).map((record, idx) => (
                                         <div key={record.id || idx} className="flex items-start justify-between p-3 rounded-lg border border-border/40 bg-card hover:bg-accent/50 transition-colors">
                                             <div>
-                                                <p className="font-medium text-sm text-foreground line-clamp-1">{typeof record.trainingId === 'object' ? (record.trainingId as any).title : record.trainingId}</p>
+                                                <p className="font-medium text-sm text-foreground line-clamp-1">
+                                                    {record.trainingId && typeof record.trainingId === 'object' && 'title' in record.trainingId ? (record.trainingId as any).title : (record.trainingId || 'Unknown Training')}
+                                                </p>
                                                 <div className="text-xs text-muted-foreground mt-1 flex items-center gap-2">
-                                                    <span>{format(new Date(record.timestamp), 'MMM d, yyyy • h:mm a')}</span>
+                                                    <span>{record.timestamp ? format(new Date(record.timestamp), 'MMM d, yyyy • h:mm a') : 'Date unavailable'}</span>
                                                 </div>
                                             </div>
                                             <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full shrink-0 bg-emerald-500/10 text-emerald-500 flex items-center gap-1">
