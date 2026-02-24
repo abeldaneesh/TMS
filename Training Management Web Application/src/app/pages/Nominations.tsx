@@ -425,7 +425,25 @@ const Nominations: React.FC = () => {
                     onChange={(e) => setSelectedTrainingId(e.target.value)}
                   >
                     <option value="">{t('nominationsProps.selectTrainingPlaceholder')}</option>
-                    {trainings.filter(t => t.status !== 'cancelled').map(t => (
+                    {trainings.filter(t => {
+                      if (t.status === 'cancelled' || t.status === 'completed') return false;
+
+                      // Also filter out if it's past the start time of the training
+                      if (t.date && t.startTime) {
+                        try {
+                          const trainingDateStr = typeof t.date === 'string' ? t.date : new Date(t.date).toISOString().split('T')[0];
+                          const trainingDateTime = new Date(`${trainingDateStr}T${t.startTime}`);
+
+                          if (!isNaN(trainingDateTime.getTime()) && new Date() > trainingDateTime) {
+                            return false; // It has already started/passed
+                          }
+                        } catch (e) {
+                          // Ignore date parsing errors and just show it
+                        }
+                      }
+
+                      return true;
+                    }).map(t => (
                       <option key={t.id} value={t.id}>{t.title}</option>
                     ))}
                   </select>

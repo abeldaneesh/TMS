@@ -39,8 +39,8 @@ const UserDetails: React.FC = () => {
                     ]);
 
                     // Filter out records where the training has been deleted
-                    const validNoms = Array.isArray(nomsData) ? nomsData.filter(nom => nom.trainingId && typeof nom.trainingId === 'object' && 'title' in nom.trainingId) : [];
-                    const validAtt = Array.isArray(attData) ? attData.filter(att => att.trainingId && typeof att.trainingId === 'object' && 'title' in att.trainingId) : [];
+                    const validNoms = Array.isArray(nomsData) ? nomsData.filter((nom: any) => nom.training) : [];
+                    const validAtt = Array.isArray(attData) ? attData.filter((att: any) => att.training) : [];
 
                     setNominations(validNoms);
                     setAttendance(validAtt);
@@ -201,7 +201,7 @@ const UserDetails: React.FC = () => {
                                         <div key={nom.id || idx} className="flex items-start justify-between p-3 rounded-lg border border-border/40 bg-card hover:bg-accent/50 transition-colors">
                                             <div>
                                                 <p className="font-medium text-sm text-foreground line-clamp-1">
-                                                    {nom.trainingId && typeof nom.trainingId === 'object' && 'title' in nom.trainingId ? (nom.trainingId as any).title : 'Deleted / Unknown Training'}
+                                                    {(nom as any).training?.title || 'Deleted / Unknown Training'}
                                                 </p>
                                                 <div className="text-xs text-muted-foreground mt-1 flex items-center gap-2">
                                                     <span>{nom.nominatedAt ? format(new Date(nom.nominatedAt), 'MMM d, yyyy') : 'Date unavailable'}</span>
@@ -241,7 +241,7 @@ const UserDetails: React.FC = () => {
                                         <div key={record.id || idx} className="flex items-start justify-between p-3 rounded-lg border border-border/40 bg-card hover:bg-accent/50 transition-colors">
                                             <div>
                                                 <p className="font-medium text-sm text-foreground line-clamp-1">
-                                                    {record.trainingId && typeof record.trainingId === 'object' && 'title' in record.trainingId ? (record.trainingId as any).title : 'Deleted / Unknown Training'}
+                                                    {(record as any).training?.title || 'Deleted / Unknown Training'}
                                                 </p>
                                                 <div className="text-xs text-muted-foreground mt-1 flex items-center gap-2">
                                                     <span>{record.timestamp ? format(new Date(record.timestamp), 'MMM d, yyyy • h:mm a') : 'Date unavailable'}</span>
