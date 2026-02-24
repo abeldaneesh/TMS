@@ -7,9 +7,11 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../co
 import { Alert, AlertDescription } from '../components/ui/alert';
 import { Html5QrcodeScanner } from 'html5-qrcode';
 import { toast } from 'sonner';
+import { useTranslation } from 'react-i18next';
 
 const ScanQR: React.FC = () => {
   const { user } = useAuth();
+  const { t } = useTranslation();
   const [scanning, setScanning] = useState(false);
   const [scanner, setScanner] = useState<Html5QrcodeScanner | null>(null);
   const [result, setResult] = useState<{ success: boolean; message: string } | null>(null);
@@ -87,9 +89,9 @@ const ScanQR: React.FC = () => {
 
       setResult({
         success: true,
-        message: 'Attendance marked successfully!',
+        message: t('scanQrPage.success', 'Attendance marked successfully!'),
       });
-      toast.success('Attendance marked successfully!');
+      toast.success(t('scanQrPage.success', 'Attendance marked successfully!'));
       stopScanning();
       stopScanning();
     } catch (error: any) {
@@ -114,24 +116,24 @@ const ScanQR: React.FC = () => {
   };
 
   const handleManualEntry = () => {
-    toast.info('Manual entry feature coming soon');
+    toast.info(t('scanQrPage.manualEntryInfo', 'Manual entry feature coming soon'));
   };
 
   return (
     <div className="max-w-2xl mx-auto space-y-6 pb-12 sm:pb-0">
       <div className="text-center sm:text-left">
-        <h1 className="text-3xl font-black uppercase tracking-tight text-foreground">Scan <span className="text-primary">QR Code</span></h1>
-        <p className="text-muted-foreground mt-2 font-mono text-xs uppercase tracking-widest">Mark your presence in the system</p>
+        <h1 className="text-3xl font-black uppercase tracking-tight text-foreground">{t('scanQrPage.title1', 'Scan')} <span className="text-primary">{t('scanQrPage.title2', 'QR Code')}</span></h1>
+        <p className="text-muted-foreground mt-2 font-mono text-xs uppercase tracking-widest">{t('scanQrPage.subtitle', 'Mark your presence in the system')}</p>
       </div>
 
       <Card className="glass-card border-primary/20 overflow-hidden bg-card/40">
         <CardHeader className="text-center sm:text-left border-b border-white/5 bg-white/5">
           <CardTitle className="flex items-center justify-center sm:justify-start gap-2 text-foreground uppercase tracking-widest">
             <QrCode className="size-5 text-primary" />
-            QR Scanner
+            {t('scanQrPage.scannerTitle', 'QR Scanner')}
           </CardTitle>
           <CardDescription className="text-muted-foreground font-mono text-[10px] uppercase">
-            Position the code within the detection field
+            {t('scanQrPage.scannerDesc', 'Position the code within the detection field')}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6 pt-6 px-4 sm:px-6">
@@ -141,9 +143,9 @@ const ScanQR: React.FC = () => {
                 <Camera className="size-12 text-primary group-hover:scale-110 transition-transform" />
               </div>
               <div className="space-y-2">
-                <h3 className="text-xl font-bold text-foreground">SENSOR READY</h3>
+                <h3 className="text-xl font-bold text-foreground">{t('scanQrPage.sensorReady', 'SENSOR READY')}</h3>
                 <p className="text-sm text-muted-foreground font-mono uppercase tracking-tighter max-w-[280px] mx-auto">
-                  Click below to activate the optical imaging system
+                  {t('scanQrPage.activateDesc', 'Click below to activate the optical imaging system')}
                 </p>
               </div>
               <Button
@@ -155,7 +157,7 @@ const ScanQR: React.FC = () => {
                 className="w-full sm:w-auto h-14 px-8 bg-primary hover:bg-primary/90 text-primary-foreground font-black uppercase tracking-widest rounded-xl transition-all shadow-[0_0_20px_rgba(0,236,255,0.2)] active:scale-95"
               >
                 <QrCode className="size-5 mr-3" />
-                INITIATE SCAN
+                {t('scanQrPage.initiateScan', 'INITIATE SCAN')}
               </Button>
             </div>
           )}
@@ -164,7 +166,7 @@ const ScanQR: React.FC = () => {
             <div className="space-y-4">
               <div id="qr-reader" className="w-full" />
               <Button onClick={stopScanning} variant="outline" className="w-full">
-                Stop Scanning
+                {t('scanQrPage.stopScanning', 'Stop Scanning')}
               </Button>
             </div>
           )}
@@ -185,10 +187,10 @@ const ScanQR: React.FC = () => {
                 }}
                 className="flex-1"
               >
-                Scan Another
+                {t('scanQrPage.scanAnother', 'Scan Another')}
               </Button>
               <Button onClick={() => setResult(null)} variant="outline" className="flex-1">
-                Close
+                {t('scanQrPage.close', 'Close')}
               </Button>
             </div>
           )}
@@ -197,25 +199,24 @@ const ScanQR: React.FC = () => {
 
       <Card className="glass-card border-border bg-card/40">
         <CardHeader className="bg-white/5 border-b border-white/5">
-          <CardTitle className="text-foreground uppercase tracking-widest text-sm">Operation Manual</CardTitle>
+          <CardTitle className="text-foreground uppercase tracking-widest text-sm">{t('scanQrPage.manualTitle', 'Operation Manual')}</CardTitle>
         </CardHeader>
         <CardContent className="pt-6">
           <ol className="list-decimal list-inside space-y-3 text-xs text-muted-foreground font-mono uppercase tracking-tighter">
-            <li>Click "INITIATE SCAN" to activate primary sensor</li>
-            <li>Grant security clearance for camera access</li>
-            <li>Align QR certificate within the capture frame</li>
-            <li>Maintain steady handshake until data syncs</li>
-            <li>Attendance log will be updated in real-time</li>
+            <li>{t('scanQrPage.instruction1', 'Click "INITIATE SCAN" to activate primary sensor')}</li>
+            <li>{t('scanQrPage.instruction2', 'Grant security clearance for camera access')}</li>
+            <li>{t('scanQrPage.instruction3', 'Align QR certificate within the capture frame')}</li>
+            <li>{t('scanQrPage.instruction4', 'Maintain steady handshake until data syncs')}</li>
+            <li>{t('scanQrPage.instruction5', 'Attendance log will be updated in real-time')}</li>
           </ol>
 
           <div className="mt-6 p-4 bg-primary/5 border border-primary/20 rounded-xl relative overflow-hidden">
             <div className="absolute top-0 left-0 w-1 h-full bg-primary" />
             <p className="text-[10px] text-primary font-bold uppercase tracking-widest">
-              MISSION ADVISORY:
+              {t('scanQrPage.advisoryTitle', 'MISSION ADVISORY:')}
             </p>
             <p className="text-[10px] text-muted-foreground mt-1 uppercase leading-relaxed">
-              Data uplink is only active during the scheduled session window.
-              Ensure GPS coordinates match the training objective site.
+              {t('scanQrPage.advisoryDesc', 'Data uplink is only active during the scheduled session window. Ensure GPS coordinates match the training objective site.')}
             </p>
           </div>
         </CardContent>
@@ -223,18 +224,18 @@ const ScanQR: React.FC = () => {
 
       <Card className="glass-card border-border bg-card/40">
         <CardHeader className="bg-white/5 border-b border-white/5">
-          <CardTitle className="text-foreground uppercase tracking-widest text-sm">System Diagnostics</CardTitle>
+          <CardTitle className="text-foreground uppercase tracking-widest text-sm">{t('scanQrPage.diagnosticsTitle', 'System Diagnostics')}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4 pt-6">
-          <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold">In case of optical failure:</p>
+          <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold">{t('scanQrPage.opticalFailure', 'In case of optical failure:')}</p>
           <ul className="list-disc list-inside text-xs text-muted-foreground space-y-2 ml-2 font-mono uppercase tracking-tighter">
-            <li>Verify camera permissions in system settings</li>
-            <li>Ensure adequate photon levels (environmental lighting)</li>
-            <li>Inspect physical QR medium for data corruption</li>
-            <li>Recalibrate lens (clean with soft cloth)</li>
+            <li>{t('scanQrPage.diag1', 'Verify camera permissions in system settings')}</li>
+            <li>{t('scanQrPage.diag2', 'Ensure adequate photon levels (environmental lighting)')}</li>
+            <li>{t('scanQrPage.diag3', 'Inspect physical QR medium for data corruption')}</li>
+            <li>{t('scanQrPage.diag4', 'Recalibrate lens (clean with soft cloth)')}</li>
           </ul>
           <Button onClick={handleManualEntry} variant="outline" className="w-full mt-4 h-12 border-primary/20 text-primary hover:bg-primary/10 font-bold uppercase tracking-widest text-[10px] rounded-xl">
-            REPORT SYSTEM ANOMALY
+            {t('scanQrPage.reportAnomaly', 'REPORT SYSTEM ANOMALY')}
           </Button>
         </CardContent>
       </Card>

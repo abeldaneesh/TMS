@@ -49,12 +49,12 @@ const NotificationsMobile: React.FC = () => {
         <div className="space-y-6 pb-20">
             <div className="flex justify-between items-end">
                 <div>
-                    <h1 className="text-3xl font-bold tracking-tight">Alerts</h1>
-                    <p className="text-muted-foreground mt-1">Updates and notifications</p>
+                    <h1 className="text-3xl font-bold tracking-tight">{t('notificationsPage.title', 'Alerts')}</h1>
+                    <p className="text-muted-foreground mt-1">{t('notificationsPage.subtitle', 'Updates and notifications')}</p>
                 </div>
                 {unreadCount > 0 && (
                     <Button variant="outline" size="sm" onClick={handleMarkAllAsRead} className="text-xs">
-                        Mark all as read
+                        {t('notificationsPage.markAllAsRead', 'Mark all as read')}
                     </Button>
                 )}
             </div>
@@ -63,7 +63,7 @@ const NotificationsMobile: React.FC = () => {
                 <Card className="border-dashed border-2 bg-transparent text-center py-12">
                     <CardContent className="flex flex-col items-center justify-center h-full pt-6">
                         <CheckCircle2 className="size-12 text-muted-foreground/30 mb-3" />
-                        <p className="text-muted-foreground">You have no active feeds</p>
+                        <p className="text-muted-foreground">{t('notificationsPage.noFeeds', 'You have no active feeds')}</p>
                     </CardContent>
                 </Card>
             ) : (

@@ -647,5 +647,43 @@
     "cannotRemoveAttended": "Cannot remove someone who already attended",
     "removeUser": "Remove user from training",
     "remove": "Remove"
+  },
+  "notificationsPage": {
+    "title": "Alerts",
+    "subtitle": "Updates and notifications",
+    "markAllAsRead": "Mark all as read",
+    "noFeeds": "You have no active feeds"
+  },
+  "scanQrPage": {
+    "title1": "Scan",
+    "title2": "QR Code",
+    "subtitle": "Mark your presence in the system",
+    "scannerTitle": "QR Scanner",
+    "scannerDesc": "Position the code within the detection field",
+    "sensorReady": "SENSOR READY",
+    "activateDesc": "Click below to activate the optical imaging system",
+    "initiateScan": "INITIATE SCAN",
+    "stopScanning": "Stop Scanning",
+    "scanAnother": "Scan Another",
+    "close": "Close",
+    "manualTitle": "Operation Manual",
+    "instruction1": "Click \"INITIATE SCAN\" to activate primary sensor",
+    "instruction2": "Grant security clearance for camera access",
+    "instruction3": "Align QR certificate within the capture frame",
+    "instruction4": "Maintain steady handshake until data syncs",
+    "instruction5": "Attendance log will be updated in real-time",
+    "advisoryTitle": "MISSION ADVISORY:",
+    "advisoryDesc": "Data uplink is only active during the scheduled session window. Ensure GPS coordinates match the training objective site.",
+    "diagnosticsTitle": "System Diagnostics",
+    "opticalFailure": "In case of optical failure:",
+    "diag1": "Verify camera permissions in system settings",
+    "diag2": "Ensure adequate photon levels (environmental lighting)",
+    "diag3": "Inspect physical QR medium for data corruption",
+    "diag4": "Recalibrate lens (clean with soft cloth)",
+    "reportAnomaly": "REPORT SYSTEM ANOMALY",
+    "success": "Attendance marked successfully!",
+    "errorFormat": "Invalid QR code format",
+    "errorMissing": "Training ID not found in QR code",
+    "manualEntryInfo": "Manual entry feature coming soon"
   }
 }
