@@ -111,6 +111,8 @@
     "descAdmin": "Discover and oversee all training missions",
     "newMission": "New Mission",
     "searchPlaceholder": "Search trainings, sectors, or programs...",
+    "filterByDate": "Filter by date",
+    "clearDate": "Clear date",
     "filters": {
       "all": "All Deployments",
       "draft": "Drafts",

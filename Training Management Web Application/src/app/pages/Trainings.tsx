@@ -28,6 +28,7 @@ const Trainings: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const { t } = useTranslation();
   const [searchTerm, setSearchTerm] = useState('');
+  const [dateFilter, setDateFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
 
   // Modal state
@@ -105,7 +106,16 @@ const Trainings: React.FC = () => {
 
     const matchesStatus = statusFilter === 'all' || training.status === statusFilter;
 
-    return matchesSearch && matchesStatus;
+    // Convert both to YYYY-MM-DD for accurate comparison if a date is selected
+    let matchesDate = true;
+    if (dateFilter) {
+      const trainingDateObj = new Date(training.date);
+      // Ensure we don't have timezone offset issues by comparing the date string parts
+      const trainingDateStr = trainingDateObj.toISOString().split('T')[0];
+      matchesDate = trainingDateStr === dateFilter;
+    }
+
+    return matchesSearch && matchesStatus && matchesDate;
   });
 
   const handleViewAttendance = (training: Training) => {
@@ -144,8 +154,8 @@ const Trainings: React.FC = () => {
         )}
       </div>
 
-      <div className="flex flex-col sm:flex-row gap-4 mb-8">
-        <div className="relative flex-1 max-w-md">
+      <div className="flex flex-col sm:flex-row gap-4 mb-4">
+        <div className="relative max-w-md w-full sm:w-2/3">
           <Search className="absolute left-4 top-3.5 size-5 text-muted-foreground" />
           <Input
             placeholder={t('trainings.searchPlaceholder', 'Search trainings, sectors, or programs...')}
@@ -154,20 +164,43 @@ const Trainings: React.FC = () => {
             className="pl-12 bg-secondary/30 border-transparent focus:border-[#3d3d3d] rounded-full h-12 text-foreground"
           />
         </div>
+
+        <div className="relative max-w-md w-full sm:w-1/3">
+          <Input
+            type="date"
+            value={dateFilter}
+            onChange={(e) => setDateFilter(e.target.value)}
+            className="bg-secondary/30 border-transparent focus:border-[#3d3d3d] rounded-full h-12 text-foreground px-4 w-full cursor-pointer"
+            title={t('trainings.filterByDate', 'Filter by date')}
+          />
+          {dateFilter && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="absolute right-2 top-1.5 size-9 text-muted-foreground hover:bg-transparent hover:text-foreground"
+              onClick={() => setDateFilter('')}
+              title={t('trainings.clearDate', 'Clear date')}
+            >
+              <XCircle className="size-4" />
+            </Button>
+          )}
+        </div>
       </div>
 
-      <FilterChips
-        options={[
-          { value: 'all', label: t('trainings.filters.all', 'All Deployments') },
-          { value: 'draft', label: t('trainings.filters.draft', 'Drafts') },
-          { value: 'scheduled', label: t('trainings.filters.scheduled', 'Scheduled') },
-          { value: 'ongoing', label: t('trainings.filters.ongoing', 'Active') },
-          { value: 'completed', label: t('trainings.filters.completed', 'Completed') },
-          { value: 'cancelled', label: t('trainings.filters.cancelled', 'Aborted') }
-        ]}
-        selectedValue={statusFilter}
-        onChange={setStatusFilter}
-      />
+      <div className="mb-8">
+        <FilterChips
+          options={[
+            { value: 'all', label: t('trainings.filters.all', 'All Deployments') },
+            { value: 'draft', label: t('trainings.filters.draft', 'Drafts') },
+            { value: 'scheduled', label: t('trainings.filters.scheduled', 'Scheduled') },
+            { value: 'ongoing', label: t('trainings.filters.ongoing', 'Active') },
+            { value: 'completed', label: t('trainings.filters.completed', 'Completed') },
+            { value: 'cancelled', label: t('trainings.filters.cancelled', 'Aborted') }
+          ]}
+          selectedValue={statusFilter}
+          onChange={setStatusFilter}
+        />
+      </div>
 
       {/* Trainings List */}
       {filteredTrainings.length === 0 ? (
@@ -177,7 +210,7 @@ const Trainings: React.FC = () => {
           </div>
           <h3 className="text-2xl font-bold mb-2">{t('trainings.noResults', 'No matching results')}</h3>
           <p className="text-muted-foreground max-w-md mb-8">
-            {searchTerm || statusFilter !== 'all'
+            {searchTerm || statusFilter !== 'all' || dateFilter
               ? t('trainings.adjustSearch', 'Try adjusting your search terms or filters to find what you are looking for.')
               : t('trainings.emptyLibrary', 'There are no items in this library yet.')}
           </p>
