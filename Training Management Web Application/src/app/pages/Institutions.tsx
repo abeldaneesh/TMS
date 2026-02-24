@@ -146,7 +146,7 @@ const Institutions: React.FC = () => {
                                             </div>
                                         </TableCell>
                                         <TableCell className="py-4">
-                                            <Badge variant="outline" className="text-secondary border-secondary/30 bg-secondary/5 font-mono text-[10px] tracking-widest uppercase px-3">
+                                            <Badge variant="outline" className="text-foreground border-border bg-muted font-mono text-[10px] tracking-widest uppercase px-3">
                                                 {institution.type}
                                             </Badge>
                                         </TableCell>

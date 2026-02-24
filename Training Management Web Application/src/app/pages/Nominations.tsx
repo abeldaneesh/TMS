@@ -289,13 +289,7 @@ const Nominations: React.FC = () => {
 
     return (
       <div className="space-y-6 pb-20">
-        {/* Toggle for Emergency View (Useful for mobile debugging) */}
-        <button
-          onClick={() => setBarebonesMode(true)}
-          className="fixed bottom-24 right-4 z-50 p-2 bg-secondary/10 text-secondary-foreground text-xs rounded-lg border border-border shadow-sm font-medium"
-        >
-          Debug View
-        </button>
+
 
         <div className="flex flex-col md:flex-row justify-between items-center gap-4">
           <h1 className="text-2xl font-semibold text-foreground flex items-center gap-3">
