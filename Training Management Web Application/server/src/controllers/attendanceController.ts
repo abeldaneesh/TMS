@@ -113,6 +113,7 @@ export const markAttendance = async (req: AuthRequest, res: Response): Promise<v
             {
                 trainingId,
                 participantId,
+                status: 'approved'
             },
             {
                 status: 'attended',

@@ -1,5 +1,5 @@
 import { Response } from 'express';
-import Nomination from '../models/Nomination';
+import Nomination, { NominationStatus } from '../models/Nomination';
 import User from '../models/User';
 import Training from '../models/Training';
 import { AuthRequest } from '../middleware/authMiddleware';
@@ -38,15 +38,16 @@ export const nominateParticipant = async (req: AuthRequest, res: Response): Prom
         const participantName = participant?.name || 'User';
 
         // Check if participant is already nominated/appointed for this training
-        const existingNomination = await Nomination.findOne({
+        let existingNomination = await Nomination.findOne({
             trainingId,
-            participantId,
-            status: { $in: ['nominated', 'approved', 'attended'] }
+            participantId
         });
 
         if (existingNomination) {
-            res.status(400).json({ message: `${participantName} is already appointed for this training` });
-            return;
+            if (['nominated', 'approved', 'attended'].includes(existingNomination.status)) {
+                res.status(400).json({ message: `${participantName} is already appointed for this training` });
+                return;
+            }
         }
 
         // Fetch training details to check for conflicts
@@ -93,12 +94,22 @@ export const nominateParticipant = async (req: AuthRequest, res: Response): Prom
             }
         }
 
-        const nomination = await Nomination.create({
-            trainingId,
-            participantId,
-            institutionId,
-            nominatedBy: req.user!.userId,
-        });
+        let nomination;
+        if (existingNomination) {
+            existingNomination.status = NominationStatus.NOMINATED;
+            existingNomination.institutionId = institutionId;
+            existingNomination.nominatedBy = req.user!.userId;
+            existingNomination.rejectionReason = undefined;
+            await existingNomination.save();
+            nomination = existingNomination;
+        } else {
+            nomination = await Nomination.create({
+                trainingId,
+                participantId,
+                institutionId,
+                nominatedBy: req.user!.userId,
+            });
+        }
 
         // Send Notification to Participant
         try {

@@ -1,0 +1,1 @@
+src/controllers/nominationController.ts(99,13): error TS2322: Type '"nominated"' is not assignable to type 'NominationStatus'.
