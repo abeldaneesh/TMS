@@ -23,28 +23,23 @@
       z-index: 9999;
     }
 
-    .pulse-logo {
-      width: 60px;
-      height: 60px;
-      background: #00ecff;
-      border-radius: 12px;
-      box-shadow: 0 0 20px rgba(0, 236, 255, 0.4);
-      animation: pulse 1.5s ease-in-out infinite;
+    .spinner {
+      width: 40px;
+      height: 40px;
+      border: 3px solid #f3f4f6;
+      border-top: 3px solid #2563eb;
+      /* Primary blue */
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
     }
 
-    @keyframes pulse {
-
-      0%,
-      100% {
-        transform: scale(0.8);
-        opacity: 0.5;
-        box-shadow: 0 0 10px rgba(0, 236, 255, 0.2);
+    @keyframes spin {
+      0% {
+        transform: rotate(0deg);
       }
 
-      50% {
-        transform: scale(1);
-        opacity: 1;
-        box-shadow: 0 0 30px rgba(0, 236, 255, 0.6);
+      100% {
+        transform: rotate(360deg);
       }
     }
   </style>
@@ -52,7 +47,7 @@
 
 <body>
   <div id="initial-loader">
-    <div class="pulse-logo"></div>
+    <div class="spinner"></div>
   </div>
   <div id="root"></div>
   <script type="module" src="/src/main.tsx"></script>
