@@ -34,6 +34,33 @@ export const getUsers = async (req: Request, res: Response): Promise<void> => {
     }
 };
 
+export const getUserById = async (req: Request, res: Response): Promise<void> => {
+    try {
+        const { userId } = req.params;
+        const user = await User.findById(userId)
+            .populate('institutionId', 'name')
+            .lean();
+
+        if (!user) {
+            res.status(404).json({ message: 'User not found' });
+            return;
+        }
+
+        const transformedUser = {
+            ...user,
+            // @ts-ignore
+            id: user._id,
+            // @ts-ignore
+            institution: user.institutionId ? { name: user.institutionId.name } : null
+        };
+
+        res.status(200).json(transformedUser);
+    } catch (error) {
+        console.error('Error fetching user:', error);
+        res.status(500).json({ message: 'Error fetching user' });
+    }
+};
+
 export const getPendingUsers = async (req: Request, res: Response): Promise<void> => {
     try {
         const users = await User.find({ isApproved: false })
