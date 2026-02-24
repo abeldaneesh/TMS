@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { User } from '../../types';
+import { useNavigate } from 'react-router-dom';
 import { usersApi, BASE_URL } from '../../services/api';
 import { Avatar, AvatarFallback, AvatarImage } from '../components/ui/avatar';
 
@@ -11,6 +12,7 @@ import { useTranslation } from 'react-i18next';
 import LoadingScreen from '../components/LoadingScreen';
 
 const Participants: React.FC = () => {
+    const navigate = useNavigate();
     const { t } = useTranslation();
     const [participants, setParticipants] = useState<User[]>([]);
     const [loading, setLoading] = useState(true);
@@ -111,7 +113,8 @@ const Participants: React.FC = () => {
                         .map((user, index) => (
                             <div
                                 key={user.id}
-                                className="group relative flex flex-col sm:flex-row sm:items-center py-3 px-2 sm:px-4 hover:bg-white/5 rounded-lg transition-colors border-b border-border/30"
+                                onClick={() => navigate(`/user/${user.id}`)}
+                                className="group relative flex flex-col sm:flex-row sm:items-center py-3 px-2 sm:px-4 hover:bg-white/5 rounded-lg transition-colors border-b border-border/30 cursor-pointer"
                             >
                                 <div className="flex items-center flex-1 min-w-0">
                                     <div className="text-muted-foreground w-8 mr-4 text-center text-sm font-medium hidden md:block">
@@ -173,8 +176,11 @@ const Participants: React.FC = () => {
                                     <Button
                                         variant="ghost"
                                         size="icon"
-                                        onClick={() => handleDelete(user.id, user.name)}
-                                        className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-full size-8 sm:size-10"
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleDelete(user.id, user.name);
+                                        }}
+                                        className="text-muted-foreground hover:text-white hover:bg-destructive rounded-full size-8 sm:size-10 z-10"
                                         title="Remove Participant"
                                     >
                                         <Trash2 className="size-4" />

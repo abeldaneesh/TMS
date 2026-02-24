@@ -21,7 +21,7 @@ const PortalSelection: React.FC = () => {
             title: t('portalSelection.officerTitle', 'Program Officer'),
             description: t('portalSelection.officerDesc', 'Manage training programs'),
             icon: UserCog,
-            color: 'text-secondary bg-secondary/10',
+            color: 'text-blue-600 bg-blue-500/10',
             path: '/login/officer',
         },
         {

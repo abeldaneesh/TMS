@@ -28,6 +28,7 @@ import Halls from './pages/Halls';
 import Settings from './pages/Settings';
 import HallRequests from './pages/HallRequests';
 import Personnel from './pages/Personnel';
+import UserDetails from './pages/UserDetails';
 
 // Protected Route Component
 // Protected Route Component
@@ -302,6 +303,16 @@ const AppRoutes: React.FC = () => {
           <ProtectedRoute allowedRoles={['master_admin', 'institutional_admin']}>
             <Layout>
               <Personnel />
+            </Layout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/user/:id"
+        element={
+          <ProtectedRoute allowedRoles={['master_admin', 'institutional_admin']}>
+            <Layout>
+              <UserDetails />
             </Layout>
           </ProtectedRoute>
         }
