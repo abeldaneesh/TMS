@@ -37,8 +37,13 @@ const UserDetails: React.FC = () => {
                         nominationsApi.getAll({ participantId: id }),
                         attendanceApi.getAll({ participantId: id })
                     ]);
-                    setNominations(Array.isArray(nomsData) ? nomsData : []);
-                    setAttendance(Array.isArray(attData) ? attData : []);
+
+                    // Filter out records where the training has been deleted
+                    const validNoms = Array.isArray(nomsData) ? nomsData.filter(nom => nom.trainingId && typeof nom.trainingId === 'object' && 'title' in nom.trainingId) : [];
+                    const validAtt = Array.isArray(attData) ? attData.filter(att => att.trainingId && typeof att.trainingId === 'object' && 'title' in att.trainingId) : [];
+
+                    setNominations(validNoms);
+                    setAttendance(validAtt);
                 }
 
                 setError(null);
