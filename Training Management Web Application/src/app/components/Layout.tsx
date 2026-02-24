@@ -260,6 +260,16 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     i18n.changeLanguage(nextLang);
   };
 
+  const [globalSearchTerm, setGlobalSearchTerm] = useState('');
+
+  const handleGlobalSearch = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && globalSearchTerm.trim()) {
+      navigate(`/trainings?search=${encodeURIComponent(globalSearchTerm.trim())}`);
+      setGlobalSearchTerm('');
+      (e.target as HTMLInputElement).blur();
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background relative overflow-hidden flex flex-col">
       {/* Top Navigation */}
@@ -291,6 +301,9 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
               type="text"
               placeholder="Search trainings, users, reports"
               className="bg-transparent border-none outline-none text-foreground w-full placeholder:text-muted-foreground text-sm font-medium"
+              value={globalSearchTerm}
+              onChange={(e) => setGlobalSearchTerm(e.target.value)}
+              onKeyDown={handleGlobalSearch}
               onFocus={() => setSearchFocused(true)}
               onBlur={() => setSearchFocused(false)}
             />

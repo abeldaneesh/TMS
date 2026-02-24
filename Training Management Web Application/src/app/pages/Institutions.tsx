@@ -13,6 +13,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { Building2, MapPin, Activity, ShieldCheck, Plus, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
+import LoadingAnimation from '../components/LoadingAnimation';
 
 const Institutions: React.FC = () => {
     const { t } = useTranslation();
@@ -115,11 +116,7 @@ const Institutions: React.FC = () => {
                 <CardContent className="pt-6">
                     {loading ? (
                         <div className="flex flex-col items-center justify-center py-20">
-                            <div className="relative size-12 mb-4">
-                                <div className="absolute inset-0 border-t-2 border-primary rounded-full animate-spin" />
-                                <div className="absolute inset-0 border-r-2 border-secondary rounded-full animate-spin [animation-duration:1.5s]" />
-                            </div>
-                            <p className="text-primary font-mono text-xs tracking-widest animate-pulse">{t('institutions.loading', 'ACCESSING SECTOR DATABASE...')}</p>
+                            <LoadingAnimation text={t('institutions.loading', 'ACCESSING SECTOR DATABASE...')} />
                         </div>
                     ) : institutions.length === 0 ? (
                         <div className="text-center py-20 bg-primary/5 rounded-3xl border border-dashed border-primary/20">

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../contexts/AuthContext';
 import { analyticsApi, trainingsApi, institutionsApi } from '../../services/api';
 import { Training, Institution, TrainingAnalytics } from '../../types';
@@ -19,6 +20,7 @@ import {
 import LoadingScreen from '../components/LoadingScreen';
 
 const Analytics: React.FC = () => {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const [trainings, setTrainings] = useState<Training[]>([]);
   const [institutions, setInstitutions] = useState<Institution[]>([]);
@@ -95,20 +97,20 @@ const Analytics: React.FC = () => {
     <div className="pb-12 space-y-10 text-foreground">
       <div className="relative">
         <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-foreground flex items-center gap-3">
-          Platform Analytics
+          {t('analyticsPage.title')}
         </h1>
         <p className="text-muted-foreground mt-2 text-sm">
-          Overview of training programs and engagement
+          {t('analyticsPage.subtitle')}
         </p>
       </div>
 
       {/* Overview Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         {[
-          { label: 'Total Programs', value: programData.length, icon: BarChart3 },
-          { label: 'Total Trainings', value: safeTrainings.length, icon: Calendar },
-          { label: 'Total Institutions', value: safeInstitutions.length, icon: Users },
-          { label: 'Attendance Rate', value: trainingAnalytics ? `${trainingAnalytics.attendanceRate}%` : '-', icon: TrendingUp },
+          { label: t('analyticsPage.totalPrograms'), value: programData.length, icon: BarChart3 },
+          { label: t('analyticsPage.totalTrainings'), value: safeTrainings.length, icon: Calendar },
+          { label: t('analyticsPage.totalInstitutions'), value: safeInstitutions.length, icon: Users },
+          { label: t('analyticsPage.attendanceRate'), value: trainingAnalytics ? `${trainingAnalytics.attendanceRate}%` : '-', icon: TrendingUp },
         ].map((stat, i) => (
           <Card key={i} className="bg-white/5 border-white/10 overflow-hidden group hover:bg-white/10 transition-colors">
             <CardContent className="p-6">
@@ -130,8 +132,8 @@ const Analytics: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card className="bg-white/5 border-white/10">
           <CardHeader>
-            <CardTitle className="text-foreground text-lg font-semibold">Program Distribution</CardTitle>
-            <CardDescription className="text-muted-foreground text-sm">Trainings categorized by program</CardDescription>
+            <CardTitle className="text-foreground text-lg font-semibold">{t('analyticsPage.programDist')}</CardTitle>
+            <CardDescription className="text-muted-foreground text-sm">{t('analyticsPage.programDistDesc')}</CardDescription>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={320}>
@@ -151,8 +153,8 @@ const Analytics: React.FC = () => {
 
         <Card className="bg-white/5 border-white/10 text-center">
           <CardHeader>
-            <CardTitle className="text-foreground text-lg font-semibold text-left">Training Status</CardTitle>
-            <CardDescription className="text-muted-foreground text-sm text-left">Current status of all scheduled trainings</CardDescription>
+            <CardTitle className="text-foreground text-lg font-semibold text-left">{t('analyticsPage.trainingStatus')}</CardTitle>
+            <CardDescription className="text-muted-foreground text-sm text-left">{t('analyticsPage.trainingStatusDesc')}</CardDescription>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={320}>
@@ -185,15 +187,15 @@ const Analytics: React.FC = () => {
       {/* Training-Specific Analytics */}
       <Card className="bg-white/5 border-white/10">
         <CardHeader className="border-b border-border/50 pb-6 mb-6">
-          <CardTitle className="text-foreground text-xl font-bold">Training Specific Intel</CardTitle>
-          <CardDescription className="text-muted-foreground text-sm">Detailed telemetry for deep-dive analysis</CardDescription>
+          <CardTitle className="text-foreground text-xl font-bold">{t('analyticsPage.trainingIntel')}</CardTitle>
+          <CardDescription className="text-muted-foreground text-sm">{t('analyticsPage.trainingIntelDesc')}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-8">
           <div className="max-w-md">
-            <label className="text-sm font-medium text-muted-foreground mb-2 block">Select Training</label>
+            <label className="text-sm font-medium text-muted-foreground mb-2 block">{t('analyticsPage.selectTraining')}</label>
             <Select value={selectedTraining} onValueChange={setSelectedTraining}>
               <SelectTrigger className="bg-white/5 border-white/10 hover:border-white/20 transition-colors h-12 rounded-lg text-foreground">
-                <SelectValue placeholder="Choose a target training" />
+                <SelectValue placeholder={t('analyticsPage.chooseTraining')} />
               </SelectTrigger>
               <SelectContent className="glass border-primary/20">
                 {trainings.map((training) => (
@@ -209,10 +211,10 @@ const Analytics: React.FC = () => {
             <>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 {[
-                  { label: 'Nominated', value: trainingAnalytics.totalNominated },
-                  { label: 'Approved', value: trainingAnalytics.totalApproved },
-                  { label: 'Attended', value: trainingAnalytics.totalAttended },
-                  { label: 'Rate', value: `${trainingAnalytics.attendanceRate}%` },
+                  { label: t('analyticsPage.nominated'), value: trainingAnalytics.totalNominated },
+                  { label: t('analyticsPage.approved'), value: trainingAnalytics.totalApproved },
+                  { label: t('analyticsPage.attended'), value: trainingAnalytics.totalAttended },
+                  { label: t('analyticsPage.rate'), value: `${trainingAnalytics.attendanceRate}%` },
                 ].map((stat, i) => (
                   <div key={i} className="p-4 bg-white/5 rounded-xl border border-white/5 hover:bg-white/10 transition-colors">
                     <p className="text-sm font-medium text-muted-foreground">{stat.label}</p>
@@ -223,7 +225,7 @@ const Analytics: React.FC = () => {
 
               <div>
                 <h3 className="text-lg font-semibold text-foreground mb-6">
-                  Participation by Institution
+                  {t('analyticsPage.participationByInst')}
                 </h3>
                 <ResponsiveContainer width="100%" height={350}>
                   <BarChart data={trainingAnalytics.byInstitution}>

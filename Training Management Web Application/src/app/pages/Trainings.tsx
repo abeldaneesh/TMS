@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import api from '../../services/api';
 import { Training, Hall, User } from '../../types';
@@ -21,6 +21,7 @@ import LoadingScreen from '../components/LoadingScreen';
 const Trainings: React.FC = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [trainings, setTrainings] = useState<Training[]>([]);
   const [halls, setHalls] = useState<Hall[]>([]);
   const [trainers, setTrainers] = useState<User[]>([]);
@@ -69,7 +70,14 @@ const Trainings: React.FC = () => {
     };
 
     fetchData();
-  }, [user]);
+
+    // Check for search query param from Layout global search
+    const searchParams = new URLSearchParams(location.search);
+    const searchParam = searchParams.get('search');
+    if (searchParam) {
+      setSearchTerm(searchParam);
+    }
+  }, [user, location.search]);
 
   const getHallName = (hallId: string) => {
     return halls.find(h => h.id === hallId)?.name || 'Unknown Hall';

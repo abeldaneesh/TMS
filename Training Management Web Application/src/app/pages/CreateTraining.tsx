@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTranslation } from 'react-i18next';
+import LoadingAnimation from '../components/LoadingAnimation';
 import { trainingsApi, hallsApi, institutionsApi, hallRequestsApi } from '../../services/api';
 import api from '../../services/api';
 import { Hall, Institution, TrainingStatus } from '../../types';
@@ -335,7 +336,11 @@ const CreateTraining: React.FC = () => {
   ];
 
   if (initialLoading) {
-    return <div>Loading...</div>;
+    return (
+      <div className="flex items-center justify-center min-h-[50vh]">
+        <LoadingAnimation text={t('createTraining.saving', 'Loading...')} />
+      </div>
+    );
   }
 
   return (

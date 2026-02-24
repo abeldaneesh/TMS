@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
     Table,
@@ -14,9 +15,11 @@ import { Nomination, Training } from '../../types';
 import { Loader2, UserMinus, ArrowLeft, Users } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { toast } from 'sonner';
+import LoadingAnimation from '../components/LoadingAnimation';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../components/ui/card';
 
 const TrainingParticipants: React.FC = () => {
+    const { t } = useTranslation();
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
     const { user } = useAuth();
@@ -41,7 +44,7 @@ const TrainingParticipants: React.FC = () => {
             ]);
 
             if (!checkAuthorization(trainingData)) {
-                toast.error("Not authorized to manage participants for this training.");
+                toast.error(t('participantsManage.notAuth'));
                 navigate('/trainings');
                 return;
             }
@@ -55,7 +58,7 @@ const TrainingParticipants: React.FC = () => {
             setParticipants(activeParticipants);
         } catch (error) {
             console.error('Failed to fetch data:', error);
-            toast.error('Could not load participants');
+            toast.error(t('participantsManage.couldNotLoad'));
         } finally {
             setLoading(false);
         }
@@ -66,30 +69,30 @@ const TrainingParticipants: React.FC = () => {
     }, [id, user]);
 
     const handleRemoveParticipant = async (nominationId: string, participantName: string) => {
-        if (!window.confirm(`Are you sure you want to completely remove ${participantName} from this training? They will be notified that their status was rejected.`)) {
+        if (!window.confirm(t('participantsManage.confirmRemove', { name: participantName }))) {
             return;
         }
 
         try {
             await nominationsApi.updateStatus(nominationId, 'rejected', 'Removed from training by Administrator/Program Officer');
-            toast.success(`Removed ${participantName} from training`);
+            toast.success(t('participantsManage.removedSuccess', { name: participantName }));
             fetchData(); // Refresh list
         } catch (error) {
             console.error('Error removing participant:', error);
-            toast.error('Failed to remove participant');
+            toast.error(t('participantsManage.failedRemove'));
         }
     };
 
     if (loading) {
         return (
-            <div className="flex h-[50vh] items-center justify-center">
-                <Loader2 className="animate-spin size-8 text-primary" />
+            <div className="flex h-64 items-center justify-center">
+                <LoadingAnimation text={t('trainingParticipantsProps.loading')} />
             </div>
         );
     }
 
     if (!training) {
-        return <div>Training not found.</div>;
+        return <div>{t('participantsManage.notFound')}</div>;
     }
 
     return (
@@ -99,7 +102,7 @@ const TrainingParticipants: React.FC = () => {
                     <ArrowLeft className="size-4" />
                 </Button>
                 <div>
-                    <h1 className="text-3xl font-bold tracking-tight">Manage Participants</h1>
+                    <h1 className="text-3xl font-bold tracking-tight">{t('participantsManage.title')}</h1>
                     <p className="text-muted-foreground">{training.title}</p>
                 </div>
             </div>
@@ -108,62 +111,62 @@ const TrainingParticipants: React.FC = () => {
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                         <Users className="size-5" />
-                        Assigned Personnel
+                        {t('participantsManage.assignedPersonnel')}
                     </CardTitle>
                     <CardDescription>
-                        Total Assigned: {participants.length}
+                        {t('participantsManage.totalAssigned')}: {participants.length}
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
                     {participants.length === 0 ? (
                         <div className="text-center py-8 text-muted-foreground max-w-sm mx-auto">
                             <Users className="size-12 mx-auto mb-4 opacity-20" />
-                            <p>No participants are currently assigned to this training session.</p>
+                            <p>{t('participantsManage.noParticipants')}</p>
                         </div>
                     ) : (
                         <div className="rounded-md border">
                             <Table>
                                 <TableHeader>
                                     <TableRow>
-                                        <TableHead>Participant</TableHead>
-                                        <TableHead>Contact & Role</TableHead>
-                                        <TableHead>Institution</TableHead>
-                                        <TableHead>Status</TableHead>
-                                        <TableHead className="text-right">Actions</TableHead>
+                                        <TableHead>{t('participantsManage.colParticipant')}</TableHead>
+                                        <TableHead>{t('participantsManage.colContactRole')}</TableHead>
+                                        <TableHead>{t('participantsManage.colInstitution')}</TableHead>
+                                        <TableHead>{t('participantsManage.colStatus')}</TableHead>
+                                        <TableHead className="text-right">{t('participantsManage.colActions')}</TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
                                     {participants.map((nom) => (
                                         <TableRow key={nom.id}>
                                             <TableCell>
-                                                <div className="font-medium">{nom.participant?.name || 'Unknown'}</div>
+                                                <div className="font-medium">{nom.participant?.name || t('participantsManage.unknown')}</div>
                                             </TableCell>
                                             <TableCell>
                                                 <div className="text-sm text-muted-foreground">{nom.participant?.email}</div>
                                                 <div className="text-xs text-muted-foreground mt-0.5">{nom.participant?.designation}</div>
                                             </TableCell>
                                             <TableCell>
-                                                <div className="text-sm">{nom.institution?.name || 'N/A'}</div>
+                                                <div className="text-sm">{nom.institution?.name || t('participantsManage.na')}</div>
                                             </TableCell>
                                             <TableCell>
                                                 <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold
                                                     ${nom.status === 'attended' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300'
                                                         : 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300'}
                                                 `}>
-                                                    {nom.status.charAt(0).toUpperCase() + nom.status.slice(1)}
+                                                    {t(`common.statuses.${nom.status}`, { defaultValue: nom.status.charAt(0).toUpperCase() + nom.status.slice(1) })}
                                                 </span>
                                             </TableCell>
                                             <TableCell className="text-right">
                                                 <Button
                                                     variant="destructive"
                                                     size="sm"
-                                                    onClick={() => handleRemoveParticipant(nom.id, nom.participant?.name || 'Unknown')}
+                                                    onClick={() => handleRemoveParticipant(nom.id, nom.participant?.name || t('participantsManage.unknown'))}
                                                     className="h-8 gap-1.5"
                                                     disabled={nom.status === 'attended'}
-                                                    title={nom.status === 'attended' ? "Cannot remove someone who already attended" : "Remove user from training"}
+                                                    title={nom.status === 'attended' ? t('participantsManage.cannotRemoveAttended') : t('participantsManage.removeUser')}
                                                 >
                                                     <UserMinus className="size-3.5" />
-                                                    <span className="hidden sm:inline">Remove</span>
+                                                    <span className="hidden sm:inline">{t('participantsManage.remove')}</span>
                                                 </Button>
                                             </TableCell>
                                         </TableRow>

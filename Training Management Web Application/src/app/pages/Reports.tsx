@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../contexts/AuthContext';
 import {
   trainingsApi, analyticsApi, institutionsApi, nominationsApi,
@@ -25,6 +26,7 @@ import { toast } from 'sonner';
 import { downloadFile } from '../../utils/fileDownloader';
 
 const Reports: React.FC = () => {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const [trainings, setTrainings] = useState<Training[]>([]);
   const [institutions, setInstitutions] = useState<Institution[]>([]);
@@ -46,7 +48,7 @@ const Reports: React.FC = () => {
         setInstitutions(Array.isArray(institutionsData) ? institutionsData : []);
       } catch (error) {
         console.error('Error fetching data:', error);
-        toast.error('Failed to load report data');
+        toast.error(t('reportsPage.failLoad'));
       }
     };
     fetchData();
@@ -131,10 +133,10 @@ const Reports: React.FC = () => {
         `Training_Report_${training.title.replace(/\s+/g, '_')}_${safeFormatDate(new Date(), 'yyyy-MM-dd')}.pdf`,
         'application/pdf'
       );
-      toast.success('Report generation complete');
+      toast.success(t('reportsPage.reportReady'));
     } catch (error) {
       console.error('Error generating PDF:', error);
-      toast.error('Failed to generate report PDF');
+      toast.error(t('reportsPage.failPdf'));
     }
   };
 
@@ -180,10 +182,10 @@ const Reports: React.FC = () => {
         `Training_Data_${training.title.replace(/\s+/g, '_')}_${safeFormatDate(new Date(), 'yyyy-MM-dd')}.csv`,
         'text/csv'
       );
-      toast.success('Report data exported to CSV');
+      toast.success(t('reportsPage.exportedCsv'));
     } catch (error) {
       console.error('Error generating CSV:', error);
-      toast.error('Failed to export CSV');
+      toast.error(t('reportsPage.failCsv'));
     }
   };
 
@@ -242,10 +244,10 @@ const Reports: React.FC = () => {
         `Institution_Report_${institution.name.replace(/\s+/g, '_')}_${safeFormatDate(new Date(), 'yyyy-MM-dd')}.pdf`,
         'application/pdf'
       );
-      toast.success('Institution report ready');
+      toast.success(t('reportsPage.instReady'));
     } catch (error) {
       console.error('Error generating PDF:', error);
-      toast.error('Failed to generate institution report');
+      toast.error(t('reportsPage.failInst'));
     }
   };
 
@@ -340,16 +342,16 @@ const Reports: React.FC = () => {
         `Global_Summary_${safeFormatDate(new Date(), 'yyyy-MM-dd')}.pdf`,
         'application/pdf'
       );
-      toast.success('Global summary report generated');
+      toast.success(t('reportsPage.globalReady'));
     } catch (error) {
       console.error('Error generating PDF:', error);
-      toast.error('Failed to generate summary report');
+      toast.error(t('reportsPage.failGlobal'));
     }
   };
 
   const handleGenerateReport = async (format: 'pdf' | 'csv') => {
     if (!selectedReport) {
-      toast.error('Please select a report type');
+      toast.error(t('reportsPage.selectTypeError'));
       return;
     }
 
@@ -358,7 +360,7 @@ const Reports: React.FC = () => {
     try {
       if (selectedReport === 'training') {
         if (!selectedTraining) {
-          toast.error('Please select a training');
+          toast.error(t('reportsPage.selectTrainingError'));
           return;
         }
         if (format === 'pdf') {
@@ -368,7 +370,7 @@ const Reports: React.FC = () => {
         }
       } else if (selectedReport === 'institution') {
         if (!selectedInstitution) {
-          toast.error('Please select an institution');
+          toast.error(t('reportsPage.selectInstError'));
           return;
         }
         if (format === 'pdf') {
@@ -394,7 +396,7 @@ const Reports: React.FC = () => {
             <Activity className="size-8 text-primary" />
             Reports & Analytics
           </h1>
-          <p className="text-muted-foreground mt-1 text-sm uppercase tracking-wider opacity-70">Training Program Data & Institutional Metrics</p>
+          <p className="text-muted-foreground mt-1 text-sm uppercase tracking-wider opacity-70">{t('reportsPage.subtitle')}</p>
         </div>
       </div>
 
@@ -402,10 +404,10 @@ const Reports: React.FC = () => {
         <CardHeader className="border-b border-white/10 bg-white/5 pb-6">
           <CardTitle className="text-sm font-bold text-primary tracking-wider flex items-center gap-2 uppercase">
             <FileText className="size-4" />
-            Report Generator
+            {t('reportsPage.generator')}
           </CardTitle>
           <CardDescription className="text-muted-foreground text-xs uppercase tracking-wide">
-            Select parameters to generate training or institutional reports.
+            {t('reportsPage.generatorDesc')}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-8 pt-8 px-8">
@@ -421,13 +423,13 @@ const Reports: React.FC = () => {
                 setSelectedInstitution('');
               }}>
                 <SelectTrigger className="bg-white/5 border-white/10 text-foreground text-xs py-5">
-                  <SelectValue placeholder="Select Report Type..." />
+                  <SelectValue placeholder={t('reportsPage.selectType')} />
                 </SelectTrigger>
                 <SelectContent className="bg-background border-white/10 text-foreground text-xs">
-                  <SelectItem value="training">TRAINING REPORT</SelectItem>
-                  <SelectItem value="institution">INSTITUTION REPORT</SelectItem>
+                  <SelectItem value="training">{t('reportsPage.typeTraining')}</SelectItem>
+                  <SelectItem value="institution">{t('reportsPage.typeInstitution')}</SelectItem>
                   {(user?.role === 'master_admin' || user?.role === 'program_officer') && (
-                    <SelectItem value="district">DISTRICT SUMMARY</SelectItem>
+                    <SelectItem value="district">{t('reportsPage.typeDistrict')}</SelectItem>
                   )}
                 </SelectContent>
               </Select>
@@ -441,7 +443,7 @@ const Reports: React.FC = () => {
                 </Label>
                 <Select value={selectedTraining} onValueChange={setSelectedTraining}>
                   <SelectTrigger className="bg-white/5 border-white/10 text-foreground text-xs py-5">
-                    <SelectValue placeholder="Identify Training..." />
+                    <SelectValue placeholder={t('reportsPage.identifyTraining')} />
                   </SelectTrigger>
                   <SelectContent className="bg-background border-white/10 text-foreground text-xs">
                     {trainings.map((training) => (
@@ -462,7 +464,7 @@ const Reports: React.FC = () => {
                 </Label>
                 <Select value={selectedInstitution} onValueChange={setSelectedInstitution}>
                   <SelectTrigger className="bg-white/5 border-white/10 text-foreground text-xs py-5">
-                    <SelectValue placeholder="Identify Institution..." />
+                    <SelectValue placeholder={t('reportsPage.identifyInst')} />
                   </SelectTrigger>
                   <SelectContent className="bg-background border-white/10 text-foreground text-xs">
                     {institutions.map((institution) => (
@@ -487,7 +489,7 @@ const Reports: React.FC = () => {
               ) : (
                 <FileDown className="size-4 mr-2" />
               )}
-              GENERATE PDF REPORT
+              {t('reportsPage.generatePdf')}
             </Button>
             {selectedReport === 'training' && (
               <Button
@@ -497,7 +499,7 @@ const Reports: React.FC = () => {
                 className="flex-1 bg-white/5 border-white/10 hover:bg-white/10 text-foreground font-bold tracking-wider text-xs py-6 rounded-xl"
               >
                 <Download className="size-4 mr-2" />
-                EXPORT TO CSV
+                {t('reportsPage.exportCsv')}
               </Button>
             )}
           </div>
@@ -510,9 +512,9 @@ const Reports: React.FC = () => {
             <div className="bg-primary/10 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-6 border border-primary/20 group-hover:scale-110 transition-all">
               <Calendar className="size-8 text-primary" />
             </div>
-            <h3 className="text-sm font-bold text-foreground tracking-wider mb-3 uppercase">TRAINING ANALYTICS</h3>
+            <h3 className="text-sm font-bold text-foreground tracking-wider mb-3 uppercase">{t('reportsPage.trainingAnalytics')}</h3>
             <p className="text-xs text-muted-foreground leading-relaxed opacity-70 uppercase tracking-tight">
-              Detailed analysis of training sessions, participation rates, and attendance success metrics.
+              {t('reportsPage.trainingAnalyticsDesc')}
             </p>
           </CardContent>
         </div>
@@ -522,9 +524,9 @@ const Reports: React.FC = () => {
             <div className="bg-secondary/10 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-6 border border-secondary/20 group-hover:scale-110 transition-all">
               <Building2 className="size-8 text-secondary" />
             </div>
-            <h3 className="text-sm font-bold text-foreground tracking-wider mb-3 uppercase">INSTITUTION DATA</h3>
+            <h3 className="text-sm font-bold text-foreground tracking-wider mb-3 uppercase">{t('reportsPage.instData')}</h3>
             <p className="text-xs text-muted-foreground leading-relaxed opacity-70 uppercase tracking-tight">
-              Reports on staff training status, program coverage, and preparedness levels across sectors.
+              {t('reportsPage.instDataDesc')}
             </p>
           </CardContent>
         </div>
@@ -534,9 +536,9 @@ const Reports: React.FC = () => {
             <div className="bg-emerald-500/10 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-6 border border-emerald-500/20 group-hover:scale-110 transition-all">
               <ShieldCheck className="size-8 text-emerald-400" />
             </div>
-            <h3 className="text-sm font-bold text-foreground tracking-wider mb-3 uppercase">DISTRICT DATA</h3>
+            <h3 className="text-sm font-bold text-foreground tracking-wider mb-3 uppercase">{t('reportsPage.districtData')}</h3>
             <p className="text-xs text-muted-foreground leading-relaxed opacity-70 uppercase tracking-tight">
-              Consolidated overview of all training activities and professional readiness across the district.
+              {t('reportsPage.districtDataDesc')}
             </p>
           </CardContent>
         </div>

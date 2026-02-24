@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../contexts/AuthContext';
 import { nominationsApi, trainingsApi, usersApi, institutionsApi } from '../../services/api';
 import { Nomination, Training, User, Institution } from '../../types';
@@ -34,6 +35,7 @@ const safeFormatDate = (date: any, formatStr: string = 'MMM dd, yyyy') => {
 };
 
 const Nominations: React.FC = () => {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const [nominations, setNominations] = useState<Nomination[]>([]);
   const [trainings, setTrainings] = useState<Training[]>([]);
@@ -115,7 +117,7 @@ const Nominations: React.FC = () => {
       setInstitutions(Array.isArray(institutionsData) ? institutionsData : []);
     } catch (error) {
       console.error('[NOMINATIONS_SYNC] Fatal fetch error:', error);
-      toast.error('Sync failed. Checking mobile network connectivity...');
+      toast.error(t('nominationsProps.syncFailed'));
     } finally {
       setLoading(false);
     }
@@ -144,7 +146,7 @@ const Nominations: React.FC = () => {
           setSelectedParticipantIds(prev => prev.filter(id => !busyIds.includes(id)));
         } catch (error) {
           console.error('Failed to fetch busy participants:', error);
-          toast.error('Failed to check participant availability');
+          toast.error(t('nominationsProps.checkAvailFail'));
           setBusyParticipantIds([]);
         }
       } else {
@@ -159,10 +161,10 @@ const Nominations: React.FC = () => {
     if (!user) return;
     try {
       await nominationsApi.approve(nomination.id, user.id);
-      toast.success('Nomination approved');
+      toast.success(t('nominationsProps.nomApproved'));
       fetchData(); // Refresh UI smoothly
     } catch (error: any) {
-      toast.error(error.message || 'Error approving');
+      toast.error(error.message || t('nominationsProps.errorApproving'));
     }
   };
 
@@ -176,11 +178,11 @@ const Nominations: React.FC = () => {
     if (!user || !selectedNomination) return;
     try {
       await nominationsApi.reject(selectedNomination.id, user.id, rejectionReason);
-      toast.success('Nomination rejected');
+      toast.success(t('nominationsProps.nomRejected'));
       setShowRejectDialog(false);
       fetchData(); // Refresh UI smoothly
     } catch (error: any) {
-      toast.error(error.message || 'Error rejecting');
+      toast.error(error.message || t('nominationsProps.errorRejecting'));
     }
   };
 
@@ -223,17 +225,17 @@ const Nominations: React.FC = () => {
       }
 
       if (successCount > 0) {
-        toast.success(`${successCount} Personnel successfully nominated`);
+        toast.success(t('nominationsProps.nomSuccess', { count: successCount }));
         setShowNominateDialog(false);
         fetchData(); // Refresh UI smoothly
       } else if (failCount > 0) {
         // All failed
-        toast.error("MISSION ABORTED", {
-          description: "All selected personnel were already nominated or have conflicts."
+        toast.error(t('nominationsProps.missionAborted'), {
+          description: t('nominationsProps.missionAbortedDesc')
         });
       }
     } catch (error: any) {
-      toast.error('Global Nomination System Error');
+      toast.error(t('nominationsProps.globalError'));
     } finally {
       setLoading(false);
     }
@@ -244,29 +246,29 @@ const Nominations: React.FC = () => {
   }
 
   if (!user) {
-    return <div className="p-8 text-center text-muted-foreground">Access Denied: Please log in.</div>;
+    return <div className="p-8 text-center text-muted-foreground">{t('nominationsProps.accessDenied')}</div>;
   }
 
   // BAREBONES EMERGENCY VIEW FOR MOBILE DEBUGGING
   if (barebonesMode) {
     return (
       <div className="p-4 bg-muted text-foreground overflow-auto h-screen">
-        <h1 className="text-lg font-semibold border-b border-border pb-2 mb-4">Debug List</h1>
+        <h1 className="text-lg font-semibold border-b border-border pb-2 mb-4">{t('nominationsProps.debugList')}</h1>
         <button
           onClick={() => setBarebonesMode(false)}
           className="mb-4 p-2 border border-border rounded hover:bg-muted-foreground/10"
         >
-          Exit Debug
+          {t('nominationsProps.exitDebug')}
         </button>
         <div className="space-y-4">
-          <p>Personnel: {user.name} ({user.role})</p>
-          <p>Total Records: {nominations.length}</p>
+          <p>{t('nominationsProps.personnel')}: {user.name} ({user.role})</p>
+          <p>{t('nominationsProps.totalRecords')}: {nominations.length}</p>
           <div className="mt-4 border-t border-green-900 pt-4">
             {nominations.map(n => (
               <div key={n.id} className="mb-4 pb-4 border-b border-green-900">
-                <p>Participant: {getParticipantName(n.participantId)}</p>
-                <p>Training: {getTrainingName(n.trainingId)}</p>
-                <p>Status: {n.status}</p>
+                <p>{t('nominationsProps.participant')}: {getParticipantName(n.participantId)}</p>
+                <p>{t('nominationsProps.training')}: {getTrainingName(n.trainingId)}</p>
+                <p>{t('nominationsProps.status')}: {n.status}</p>
               </div>
             ))}
           </div>
@@ -305,7 +307,7 @@ const Nominations: React.FC = () => {
               onClick={() => setShowNominateDialog(true)}
               className="w-full md:w-auto font-medium"
             >
-              Nominate Personnel
+              {t('nominationsProps.nominatePersonnel')}
             </Button>
           )}
         </div>
@@ -315,7 +317,7 @@ const Nominations: React.FC = () => {
             <div className="relative">
               <Search className="absolute left-3 top-3.5 size-4 text-primary opacity-40" />
               <Input
-                placeholder="Search nominations..."
+                placeholder={t('nominationsProps.search')}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10 bg-background"
@@ -327,7 +329,7 @@ const Nominations: React.FC = () => {
         <div className="space-y-4">
           {filteredNominations.length === 0 ? (
             <div className="text-center py-20 text-muted-foreground">
-              No nominations found.
+              {t('nominationsProps.noNominations')}
             </div>
           ) : (
             filteredNominations.map((nomination) => (
@@ -337,24 +339,24 @@ const Nominations: React.FC = () => {
                     <div>
                       <h3 className="text-lg font-semibold text-foreground">{getParticipantName(nomination.participantId)}</h3>
                       <p className="text-sm text-muted-foreground">
-                        Institution: {getInstitutionName(nomination.institutionId)}
+                        {t('nominationsProps.institution')}: {getInstitutionName(nomination.institutionId)}
                       </p>
                     </div>
                     <Badge className={`font-medium capitalize ${nomination.status === 'approved' ? 'bg-emerald-100 text-emerald-700' :
                       nomination.status === 'rejected' ? 'bg-destructive/10 text-destructive' :
                         'bg-amber-100 text-amber-700'
                       }`}>
-                      {nomination.status}
+                      {t(`common.statuses.${nomination.status}`, { defaultValue: nomination.status })}
                     </Badge>
                   </div>
 
                   <div className="p-4 rounded-lg bg-muted/50 space-y-1">
                     <p className="font-semibold text-primary">
-                      Training: {getTrainingName(nomination.trainingId)}
+                      {t('nominationsProps.training')}: {getTrainingName(nomination.trainingId)}
                     </p>
                     {(nomination as any).training?.date && (
                       <p className="text-sm text-muted-foreground">
-                        Scheduled for: {safeFormatDate((nomination as any).training.date)}
+                        {t('nominationsProps.scheduledFor')}: {safeFormatDate((nomination as any).training.date)}
                       </p>
                     )}
                   </div>
@@ -381,7 +383,7 @@ const Nominations: React.FC = () => {
 
                   {nomination.rejectionReason && (
                     <p className="mt-3 p-3 bg-destructive/10 text-destructive text-sm rounded-md">
-                      Reason: {nomination.rejectionReason}
+                      {t('nominationsProps.reason')}: {nomination.rejectionReason}
                     </p>
                   )}
                 </CardContent>
@@ -394,16 +396,16 @@ const Nominations: React.FC = () => {
         {showRejectDialog && selectedNomination && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
             <div className="bg-background border border-border rounded-2xl w-full max-w-md p-6 shadow-2xl">
-              <h2 className="text-xl font-semibold mb-4">Reject Nomination</h2>
+              <h2 className="text-xl font-semibold mb-4">{t('nominationsProps.rejectNomination')}</h2>
               <textarea
                 className="w-full bg-background border border-border rounded-lg p-3 text-sm mb-4 h-32 focus:outline-none focus:ring-2 focus:ring-primary/50"
-                placeholder="Reason for rejection..."
+                placeholder={t('nominationsProps.reasonPlaceholder')}
                 value={rejectionReason}
                 onChange={(e) => setRejectionReason(e.target.value)}
               />
               <div className="flex gap-3">
-                <Button onClick={() => setShowRejectDialog(false)} variant="outline" className="flex-1">Cancel</Button>
-                <Button onClick={handleRejectConfirm} variant="destructive" className="flex-1">Confirm Rejection</Button>
+                <Button onClick={() => setShowRejectDialog(false)} variant="outline" className="flex-1">{t('nominationsProps.cancel')}</Button>
+                <Button onClick={handleRejectConfirm} variant="destructive" className="flex-1">{t('nominationsProps.confirmRejection')}</Button>
               </div>
             </div>
           </div>
@@ -412,17 +414,17 @@ const Nominations: React.FC = () => {
         {showNominateDialog && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm overflow-hidden">
             <div className="bg-background border border-border rounded-xl w-full max-w-lg p-6 shadow-xl max-h-[90vh] flex flex-col">
-              <h2 className="text-xl font-semibold mb-6">Nominate Personnel</h2>
+              <h2 className="text-xl font-semibold mb-6">{t('nominationsProps.nominatePersonnel')}</h2>
 
               <div className="flex-1 overflow-y-auto space-y-6 pr-2 custom-scrollbar">
                 <div>
-                  <Label className="text-sm font-medium text-foreground mb-2 block">1. Select Training Session</Label>
+                  <Label className="text-sm font-medium text-foreground mb-2 block">{t('nominationsProps.selectTraining')}</Label>
                   <select
                     className="w-full bg-background border border-input focus:ring-2 focus:ring-primary/50 rounded-lg p-2.5 text-sm"
                     value={selectedTrainingId}
                     onChange={(e) => setSelectedTrainingId(e.target.value)}
                   >
-                    <option value="">Select a training session...</option>
+                    <option value="">{t('nominationsProps.selectTrainingPlaceholder')}</option>
                     {trainings.filter(t => t.status !== 'cancelled').map(t => (
                       <option key={t.id} value={t.id}>{t.title}</option>
                     ))}
@@ -430,7 +432,7 @@ const Nominations: React.FC = () => {
                 </div>
 
                 <div>
-                  <Label className="text-sm font-medium text-foreground mb-2 block">2. Select Participants ({selectedParticipantIds.length})</Label>
+                  <Label className="text-sm font-medium text-foreground mb-2 block">{t('nominationsProps.selectParticipants')} ({selectedParticipantIds.length})</Label>
                   <div className="space-y-2">
                     {users.filter(u => u.role === 'participant').map(u => {
                       const isBusy = busyParticipantIds.includes(u.id);
@@ -463,11 +465,11 @@ const Nominations: React.FC = () => {
 
                           {isAlreadyAssigned ? (
                             <Badge variant="secondary" className="text-xs bg-primary/20 text-primary hover:bg-primary/20">
-                              Already Assigned
+                              {t('nominationsProps.alreadyAssigned')}
                             </Badge>
                           ) : isBusy ? (
                             <Badge variant="secondary" className="text-xs">
-                              Busy
+                              {t('nominationsProps.busy')}
                             </Badge>
                           ) : null}
                         </div>
@@ -478,13 +480,13 @@ const Nominations: React.FC = () => {
               </div>
 
               <div className="flex gap-3 pt-6 border-t border-border mt-6">
-                <Button onClick={() => setShowNominateDialog(false)} variant="outline" className="flex-1">Cancel</Button>
+                <Button onClick={() => setShowNominateDialog(false)} variant="outline" className="flex-1">{t('nominationsProps.cancel')}</Button>
                 <Button
                   onClick={handleNominate}
                   disabled={!selectedTrainingId || selectedParticipantIds.length === 0 || loading}
                   className="flex-1"
                 >
-                  {loading ? 'Submitting...' : 'Submit Nominations'}
+                  {loading ? t('nominationsProps.submitting') : t('nominationsProps.submitNominations')}
                 </Button>
               </div>
             </div>
@@ -496,9 +498,9 @@ const Nominations: React.FC = () => {
     return (
       <div className="p-8 text-center bg-destructive/5 m-6 rounded-xl border border-destructive/20">
         <XCircle className="size-12 mx-auto mb-4 text-destructive" />
-        <h2 className="text-lg font-semibold text-foreground">Error Loading Data</h2>
-        <p className="text-sm mt-2 text-muted-foreground">{err?.message || 'An unexpected error occurred.'}</p>
-        <Button onClick={fetchData} variant="outline" className="mt-6">Retry</Button>
+        <h2 className="text-lg font-semibold text-foreground">{t('nominationsProps.errorLoading')}</h2>
+        <p className="text-sm mt-2 text-muted-foreground">{err?.message || t('nominationsProps.unexpectedError')}</p>
+        <Button onClick={fetchData} variant="outline" className="mt-6">{t('nominationsProps.retry')}</Button>
       </div>
     );
   }

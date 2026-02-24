@@ -12,6 +12,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '../components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { format } from 'date-fns';
+import LoadingAnimation from '../components/LoadingAnimation';
 
 const HallAvailability: React.FC = () => {
   const [halls, setHalls] = useState<Hall[]>([]);
@@ -187,7 +188,7 @@ const HallAvailability: React.FC = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-96">
-        <div className="text-lg text-gray-500">Loading hall availability...</div>
+        <LoadingAnimation text={'Loading hall availability...'} />
       </div>
     );
   }

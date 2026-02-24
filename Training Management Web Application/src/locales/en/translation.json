@@ -1,485 +1,649 @@
 {
-    "nav": {
-        "home": "Home",
-        "explore": "Explore (Trainings)",
-        "nominations": "Nominations",
-        "liveSessions": "Live Sessions",
-        "reports": "Reports",
-        "halls": "Halls",
-        "institutions": "Institutions",
-        "personnel": "Personnel",
-        "userApprovals": "User Approvals",
-        "settings": "Settings",
-        "logout": "Logout",
-        "notifications": "Notifications",
-        "createTraining": "Create Training",
-        "hallAvailability": "Hall Availability",
-        "staff": "Staff",
-        "scanQr": "Scan QR",
-        "myLibrary": "My Library",
-        "officers": "Officers",
-        "participants": "Participants",
-        "analytics": "Analytics"
-    },
-    "auth": {
-        "signIn": "Sign In",
-        "signingIn": "Signing in...",
-        "invalidCredentials": "Invalid email or password",
-        "networkError": "Network Error: Cannot connect to server.",
-        "goBack": "GO BACK",
-        "email": "Email Address",
-        "password": "Password",
-        "noAccount": "Don't have an account?",
-        "requestAccess": "REQUEST ACCESS",
-        "tms": "Training Management System",
-        "title": "Please sign in to your account",
-        "register": {
-            "title": "Access Requested",
-            "subtitle": "YOUR OPERATIVE CREDENTIALS HAVE BEEN TRANSMITTED.",
-            "status": "STATUS:",
-            "pending": "PENDING_APPROVAL",
-            "desc": "YOU WILL GAIN SYSTEM CLEARANCE ONCE A COMMAND ADMINISTRATOR VALIDATES YOUR REQUEST.",
-            "return": "RETURN TO ENTRY",
-            "fullName": "Full Identity",
-            "email": "Direct Uplink (Email)",
-            "password": "Access Cipher",
-            "confirmPassword": "Verify Cipher",
-            "sector": "Sector / Station",
-            "designation": "Operational Rank",
-            "phone": "Comm Link (Phone)",
-            "department": "Division",
-            "initiate": "INITIATE REQUEST",
-            "transmitting": "TRANSMITTING...",
-            "existing": "EXISTING OPERATIVE?",
-            "authenticate": "AUTHENTICATE"
-        }
-    },
-    "dashboard": {
-        "filters": {
-            "all": "All Activity",
-            "upcoming": "Upcoming sessions",
-            "completed": "Past training",
-            "action": "Action required"
-        },
-        "systemOverview": "System Overview",
-        "stats": {
-            "totalTrainings": "Total Sessions",
-            "avgAttendance": "Avg Attendance",
-            "trainedStaff": "Trained Staff",
-            "pendingStaff": "Pending Staff"
-        },
-        "actions": {
-            "newTraining": {
-                "title": "New Training",
-                "subtitle": "Schedule a session"
-            },
-            "viewPersonnel": {
-                "title": "View Personnel",
-                "subtitle": "Manage staff"
-            },
-            "analytics": {
-                "title": "Analytics",
-                "subtitle": "System reports"
-            },
-            "settings": {
-                "title": "Settings",
-                "subtitle": "App configuration"
-            }
-        },
-        "sections": {
-            "quickActions": {
-                "title": "Quick Actions",
-                "subtitle": "Manage your tasks"
-            },
-            "ongoing": {
-                "title": "Ongoing Trainings",
-                "subtitle": "Currently active sessions"
-            },
-            "upcoming": {
-                "title": "Upcoming Trainings",
-                "subtitle": "Scheduled sessions"
-            },
-            "past": {
-                "title": "Past Trainings",
-                "subtitle": "Completed sessions"
-            }
-        }
-    },
-    "trainings": {
-        "exploreLibrary": "Explore Library",
-        "descOfficer": "Manage your operational deployments",
-        "descAdmin": "Discover and oversee all training missions",
-        "newMission": "New Mission",
-        "searchPlaceholder": "Search trainings, sectors, or programs...",
-        "filters": {
-            "all": "All Deployments",
-            "draft": "Drafts",
-            "scheduled": "Scheduled",
-            "ongoing": "Active",
-            "completed": "Completed",
-            "cancelled": "Aborted"
-        },
-        "noResults": "No matching results",
-        "adjustSearch": "Try adjusting your search terms or filters to find what you are looking for.",
-        "emptyLibrary": "There are no items in this library yet.",
-        "table": {
-            "title": "Title",
-            "dateTime": "Date & Time",
-            "status": "Status"
-        },
-        "actions": {
-            "details": "View Details",
-            "personnel": "Personnel",
-            "attendance": "Attendance",
-            "modify": "Modify",
-            "finish": "Finish",
-            "abort": "Abort"
-        },
-        "confirmComplete": "Mark completion?",
-        "completedSuccess": "Completed",
-        "confirmAbort": "Abort mission?",
-        "abortedSuccess": "Aborted"
-    },
-    "createTraining": {
-        "titleCreate": "Create Training",
-        "titleEdit": "Edit Training",
-        "descCreate": "Schedule a new training session",
-        "descEdit": "Update training details",
-        "back": "Back",
-        "sections": {
-            "basic": {
-                "title": "Basic Information",
-                "desc": "Enter the training details"
-            },
-            "schedule": {
-                "title": "Schedule & Venue",
-                "desc": "Set the date, time, and location"
-            },
-            "institutions": {
-                "title": "Required Institutions",
-                "desc": "Select institutions to nominate participants from"
-            }
-        },
-        "fields": {
-            "title": "Training Title *",
-            "titlePlaceholder": "e.g., Emergency Response & First Aid",
-            "desc": "Description *",
-            "descPlaceholder": "Detailed description of the training program",
-            "program": "Program *",
-            "programPlaceholder": "Select program",
-            "targetAudience": "Target Audience *",
-            "targetAudiencePlaceholder": "e.g., Nurses, Doctors, All Staff",
-            "date": "Date *",
-            "startTime": "Start Time *",
-            "endTime": "End Time *",
-            "hall": "Hall *",
-            "hallPlaceholder": "Select hall",
-            "capacity": "Training Capacity *",
-            "capacityPlaceholder": "Maximum participants"
-        },
-        "buttons": {
-            "create": "Create Training",
-            "update": "Update Training",
-            "saving": "Saving...",
-            "cancel": "Cancel",
-            "sendRequest": "Send Request",
-            "sending": "Sending...",
-            "requestHall": "Request Hall Approval"
-        },
-        "hallStatus": {
-            "checking": "Checking hall availability...",
-            "available": "hall(s) available for the selected time slot",
-            "none": "No halls available for the selected time slot.",
-            "notAvailable": "Hall Not Available",
-            "booked": "The selected hall is booked or blocked.",
-            "submitRequest": "You can submit a request to the Admin for approval.",
-            "availableOption": "(Available)",
-            "unavailableOption": "(Unavailable)"
-        },
-        "dialog": {
-            "title": "Request Hall Approval",
-            "desc": "Submit a request to the Admin for this hall booking.",
-            "requestedHall": "Requested Hall",
-            "timeSlot": "Time Slot",
-            "priority": "Priority",
-            "normal": "Normal",
-            "urgent": "Urgent",
-            "remarks": "Remarks (Optional)",
-            "remarksPlaceholder": "Reason for urgency or special requirements..."
-        }
-    },
-    "settings": {
-        "title": "Settings",
-        "subtitle": "Manage your account configuration and security",
-        "tabs": {
-            "profile": "Profile",
-            "security": "Security"
-        },
-        "profile": {
-            "title": "Personal Information",
-            "desc": "Update your personal details and profile picture URL.",
-            "fullName": "Full Name",
-            "email": "Email",
-            "phone": "Phone Number",
-            "designation": "Designation",
-            "department": "Department",
-            "role": "Role",
-            "save": "Save Changes"
-        },
-        "security": {
-            "title": "Change Password",
-            "desc": "Ensure your account is secure by using a strong password.",
-            "currentPassword": "Current Password",
-            "newPassword": "New Password",
-            "confirmPassword": "Confirm New Password",
-            "update": "Update Password"
-        }
-    },
-    "userApprovals": {
-        "title": "USER APPROVALS",
-        "subtitle": "Security Clearance & Personnel Verification",
-        "pendingRequestsTitle": "PENDING ACCESS REQUESTS",
-        "noActiveRequests": "NO ACTIVE REQUESTS IN BUFFER.",
-        "detectedRequests": "DETECTED {{count}} PENDING AUTHORIZATION REQUEST(S).",
-        "scanning": "SCANNING ENCRYPTED REQUESTS...",
-        "centralCommand": "CENTRAL COMMAND",
-        "initiated": "INITIATED:",
-        "rank": "RANK:",
-        "grantAccess": "GRANT ACCESS",
-        "reject": "REJECT",
-        "clearanceComplete": "CLEARANCE COMPLETE",
-        "noEntities": "No unauthorized entities detected in the perimeter.",
-        "confirmReject": "Are you sure you want to reject this registration? This will delete the request."
-    },
-    "personnel": {
-        "title": "Personnel Management",
-        "subtitle": "Manage platform users, roles, and access controls",
-        "tabs": {
-            "officers": "Program Officers",
-            "participants": "Participants"
-        },
-        "officers": {
-            "title": "Program Officers",
-            "active": "{{count}} active",
-            "loading": "Loading personnel...",
-            "networkError": "Network Error",
-            "noOfficers": "No Officers Found",
-            "noOfficersDesc": "There are no program officers assigned to this sector.",
-            "search": "Search by name, email, or department...",
-            "table": {
-                "details": "Officer Details",
-                "contact": "Contact Info",
-                "department": "Department",
-                "status": "Status"
-            },
-            "status": {
-                "verified": "Verified",
-                "pending": "Pending",
-                "active": "Active"
-            },
-            "misc": {
-                "id": "ID:",
-                "noPhone": "No phone",
-                "noPhoneNumber": "No phone number",
-                "general": "General",
-                "unknown": "Unknown"
-            }
-        },
-        "participants": {
-            "title": "Participants",
-            "active": "{{count}} active",
-            "loading": "Loading participants...",
-            "networkError": "Network Error",
-            "noParticipants": "No Participants Found",
-            "noParticipantsDesc": "There are no participants registered in the system yet.",
-            "search": "Search by name, email, or department...",
-            "table": {
-                "details": "Participant Details",
-                "contact": "Contact Info",
-                "department": "Department",
-                "status": "Status"
-            }
-        },
-        "alerts": {
-            "removeOfficerConfirm": "Are you sure you want to remove Program Officer \"{{name}}\"?",
-            "removeParticipantConfirm": "Are you sure you want to remove participant \"{{name}}\"? All associated training data for this user will remain in history but they will lose access.",
-            "removeSuccess": "User removed successfully",
-            "removeFail": "Failed to remove user"
-        }
-    },
-    "institutions": {
-        "title": "INSTITUTIONS",
-        "subtitle": "Sector Registry & Organizational Matrix",
-        "registerNew": "REGISTER NEW INSTITUTION",
-        "verified": "VERIFIED SECTORS",
-        "loading": "ACCESSING SECTOR DATABASE...",
-        "noSectors": "No Sectors Detected",
-        "noSectorsDesc": "The institutional grid is currently offline.",
-        "table": {
-            "name": "SECTOR / NAME",
-            "classification": "CLASSIFICATION",
-            "location": "COORDINATES / LOCATION",
-            "actions": "ACTIONS"
-        },
-        "dialog": {
-            "title": "REGISTER INSTITUTION",
-            "desc": "Establish a new organizational entity.",
-            "name": "Institution Name",
-            "namePlaceholder": "E.g. City General Hospital",
-            "classification": "Classification",
-            "classificationPlaceholder": "Select type",
-            "location": "Coordinates / Location",
-            "locationPlaceholder": "E.g. Sector 5, North",
-            "types": {
-                "medicalCollege": "Medical College",
-                "hospital": "Hospital",
-                "researchCenter": "Research Center",
-                "other": "Other"
-            },
-            "saving": "UPLOADING INTEL...",
-            "submit": "COMMIT TO REGISTRY"
-        },
-        "alerts": {
-            "nameLocationRequired": "Institution name and location are required",
-            "createSuccess": "Institution registered successfully",
-            "createFail": "Failed to create institution",
-            "deleteConfirm": "Are you sure you want to terminate institution {{name}}? This cannot be undone.",
-            "deleteSuccess": "Institution removed from registry",
-            "deleteFail": "Failed to delete institution",
-            "loadFail": "Failed to load institutions"
-        }
-    },
-    "halls": {
-        "title": "DEPLOYMENT HALLS",
-        "subtitle": "Physical Training Sectors & Capacity Oversight",
-        "registerNew": "REGISTER NEW SECTOR",
-        "activeSectors": "ACTIVE SECTORS",
-        "loading": "MAP SCAN IN PROGRESS...",
-        "noSectors": "No Sectors Detected",
-        "noSectorsDesc": "Global sector grid is currently void.",
-        "table": {
-            "name": "SECTOR NAME",
-            "location": "COORDINATES / LOCATION",
-            "capacity": "CAPACITY",
-            "actions": "ACTIONS"
-        },
-        "manageAvailability": "MANAGE AVAILABILITY",
-        "manageTitle": "MANAGE AVAILABILITY: {{name}}",
-        "manageDesc": "Define weekly operating protocols or specific overrides.",
-        "tabs": {
-            "weekly": "Weekly Recurring",
-            "date": "Specific Date"
-        },
-        "actions": {
-            "setOpen": "Set Open",
-            "blockClose": "Block / Close"
-        },
-        "form": {
-            "dayOfWeek": "Day of Week",
-            "dayPlaceholder": "Select day",
-            "missionDate": "Mission Date",
-            "startTime": "Start Time",
-            "endTime": "End Time",
-            "abortionReason": "Abortion Reason",
-            "reasonPlaceholder": "Select reason",
-            "specifyIntel": "SPECIFY INTEL...",
-            "defineNew": "DEFINE NEW OPERATIONAL WINDOWS FOR THIS SECTOR."
-        },
-        "buttons": {
-            "abortSector": "ABORT SECTOR OPERATION",
-            "commitDeployment": "COMMIT DEPLOYMENT SLOT"
-        },
-        "availability": {
-            "recurringTitle": "Recurring Operational Protocol",
-            "noRecurring": "Zero recurring windows defined.",
-            "dateTitle": "Deployment Intel Log",
-            "noDate": "No mission logs for specific dates.",
-            "open": "OPEN",
-            "blocked": "BLOCKED"
-        },
-        "dialog": {
-            "title": "REGISTER NEW SECTOR",
-            "desc": "Establish a new geographical training zone.",
-            "name": "Sector Name",
-            "namePlaceholder": "E.g. Alpha Wing Conference Hall",
-            "location": "Coordinates / Location",
-            "locationPlaceholder": "E.g. Level 3, Section B",
-            "capacity": "Maximum Capacity",
-            "saving": "SYCHRONIZING...",
-            "submit": "COMMIT TO GRID"
-        },
-        "days": {
-            "Sunday": "Sunday",
-            "Monday": "Monday",
-            "Tuesday": "Tuesday",
-            "Wednesday": "Wednesday",
-            "Thursday": "Thursday",
-            "Friday": "Friday",
-            "Saturday": "Saturday"
-        },
-        "reasons": {
-            "booked": "Hall Booked",
-            "maintenance": "Maintenance / Repair",
-            "cleaning": "Cleaning / Sanitization",
-            "inspection": "Inspection / Audit",
-            "other": "Other"
-        },
-        "alerts": {
-            "nameLocationRequired": "Sector name and location are required",
-            "createSuccess": "Sector registered successfully",
-            "createFail": "Failed to create sector",
-            "deleteConfirm": "Are you sure you want to terminate sector {{name}}? This cannot be undone.",
-            "deleteSuccess": "Sector terminated from registry",
-            "deleteFail": "Failed to delete sector",
-            "loadFail": "Failed to load sectors",
-            "fetchAvailFail": "Failed to fetch availability details",
-            "selectDate": "Please select a date",
-            "specifyReason": "Please specify a reason",
-            "slotAdded": "Availability slot added",
-            "hallBlocked": "Hall blocked successfully",
-            "updateFail": "Failed to update availability",
-            "removeSuccess": "Removed successfully",
-            "removeFail": "Failed to remove"
-        }
-    },
-    "portalSelection": {
-        "adminTitle": "Administrator",
-        "adminDesc": "System settings & oversight",
-        "officerTitle": "Program Officer",
-        "officerDesc": "Manage training programs",
-        "participantTitle": "Participant",
-        "participantDesc": "Access your training records",
-        "title": "Select Portal",
-        "desc": "Choose your role to access the training management portal.",
-        "footerText": "All rights reserved."
-    },
-    "myAttendance": {
-        "title": "My Attendance",
-        "subtitle": "History of trainings you have attended",
-        "cardTitle": "Attended Trainings",
-        "noRecords": "No attendance records found.",
-        "table": {
-            "training": "Training",
-            "dateTime": "Date & Time",
-            "venue": "Venue",
-            "method": "Method",
-            "actions": "Actions"
-        },
-        "unknownTraining": "Unknown Training",
-        "unknownHall": "Unknown Hall",
-        "notAvailable": "N/A",
-        "methods": {
-            "qr": "QR Scan",
-            "manual": "Manual"
-        },
-        "viewDetails": "View Details",
-        "loadError": "Failed to load attendance history"
-    },
-    "common": {
-        "loading": "Loading content...",
-        "error": "Error occurred",
-        "language": "Language",
-        "english": "English",
-        "malayalam": "മലയാളം (Malayalam)"
+  "nav": {
+    "home": "Home",
+    "explore": "Explore (Trainings)",
+    "nominations": "Nominations",
+    "liveSessions": "Live Sessions",
+    "reports": "Reports",
+    "halls": "Halls",
+    "institutions": "Institutions",
+    "personnel": "Personnel",
+    "userApprovals": "User Approvals",
+    "settings": "Settings",
+    "logout": "Logout",
+    "notifications": "Notifications",
+    "createTraining": "Create Training",
+    "hallAvailability": "Hall Availability",
+    "staff": "Staff",
+    "scanQr": "Scan QR",
+    "myLibrary": "My Library",
+    "officers": "Officers",
+    "participants": "Participants",
+    "analytics": "Analytics"
+  },
+  "auth": {
+    "signIn": "Sign In",
+    "signingIn": "Signing in...",
+    "invalidCredentials": "Invalid email or password",
+    "networkError": "Network Error: Cannot connect to server.",
+    "goBack": "GO BACK",
+    "email": "Email Address",
+    "password": "Password",
+    "noAccount": "Don't have an account?",
+    "requestAccess": "REQUEST ACCESS",
+    "tms": "Training Management System",
+    "title": "Please sign in to your account",
+    "register": {
+      "title": "Access Requested",
+      "subtitle": "YOUR OPERATIVE CREDENTIALS HAVE BEEN TRANSMITTED.",
+      "status": "STATUS:",
+      "pending": "PENDING_APPROVAL",
+      "desc": "YOU WILL GAIN SYSTEM CLEARANCE ONCE A COMMAND ADMINISTRATOR VALIDATES YOUR REQUEST.",
+      "return": "RETURN TO ENTRY",
+      "fullName": "Full Identity",
+      "email": "Direct Uplink (Email)",
+      "password": "Access Cipher",
+      "confirmPassword": "Verify Cipher",
+      "sector": "Sector / Station",
+      "designation": "Operational Rank",
+      "phone": "Comm Link (Phone)",
+      "department": "Division",
+      "initiate": "INITIATE REQUEST",
+      "transmitting": "TRANSMITTING...",
+      "existing": "EXISTING OPERATIVE?",
+      "authenticate": "AUTHENTICATE"
     }
+  },
+  "dashboard": {
+    "filters": {
+      "all": "All Activity",
+      "upcoming": "Upcoming sessions",
+      "completed": "Past training",
+      "action": "Action required"
+    },
+    "systemOverview": "System Overview",
+    "stats": {
+      "totalTrainings": "Total Sessions",
+      "avgAttendance": "Avg Attendance",
+      "trainedStaff": "Trained Staff",
+      "pendingStaff": "Pending Staff"
+    },
+    "actions": {
+      "newTraining": {
+        "title": "New Training",
+        "subtitle": "Schedule a session"
+      },
+      "viewPersonnel": {
+        "title": "View Personnel",
+        "subtitle": "Manage staff"
+      },
+      "analytics": {
+        "title": "Analytics",
+        "subtitle": "System reports"
+      },
+      "settings": {
+        "title": "Settings",
+        "subtitle": "App configuration"
+      }
+    },
+    "sections": {
+      "quickActions": {
+        "title": "Quick Actions",
+        "subtitle": "Manage your tasks"
+      },
+      "ongoing": {
+        "title": "Ongoing Trainings",
+        "subtitle": "Currently active sessions"
+      },
+      "upcoming": {
+        "title": "Upcoming Trainings",
+        "subtitle": "Scheduled sessions"
+      },
+      "past": {
+        "title": "Past Trainings",
+        "subtitle": "Completed sessions"
+      }
+    }
+  },
+  "trainings": {
+    "exploreLibrary": "Explore Library",
+    "descOfficer": "Manage your operational deployments",
+    "descAdmin": "Discover and oversee all training missions",
+    "newMission": "New Mission",
+    "searchPlaceholder": "Search trainings, sectors, or programs...",
+    "filters": {
+      "all": "All Deployments",
+      "draft": "Drafts",
+      "scheduled": "Scheduled",
+      "ongoing": "Active",
+      "completed": "Completed",
+      "cancelled": "Aborted"
+    },
+    "noResults": "No matching results",
+    "adjustSearch": "Try adjusting your search terms or filters to find what you are looking for.",
+    "emptyLibrary": "There are no items in this library yet.",
+    "table": {
+      "title": "Title",
+      "dateTime": "Date & Time",
+      "status": "Status"
+    },
+    "actions": {
+      "details": "View Details",
+      "personnel": "Personnel",
+      "attendance": "Attendance",
+      "modify": "Modify",
+      "finish": "Finish",
+      "abort": "Abort"
+    },
+    "confirmComplete": "Mark completion?",
+    "completedSuccess": "Completed",
+    "confirmAbort": "Abort mission?",
+    "abortedSuccess": "Aborted"
+  },
+  "createTraining": {
+    "titleCreate": "Create Training",
+    "titleEdit": "Edit Training",
+    "descCreate": "Schedule a new training session",
+    "descEdit": "Update training details",
+    "back": "Back",
+    "sections": {
+      "basic": {
+        "title": "Basic Information",
+        "desc": "Enter the training details"
+      },
+      "schedule": {
+        "title": "Schedule & Venue",
+        "desc": "Set the date, time, and location"
+      },
+      "institutions": {
+        "title": "Required Institutions",
+        "desc": "Select institutions to nominate participants from"
+      }
+    },
+    "fields": {
+      "title": "Training Title *",
+      "titlePlaceholder": "e.g., Emergency Response & First Aid",
+      "desc": "Description *",
+      "descPlaceholder": "Detailed description of the training program",
+      "program": "Program *",
+      "programPlaceholder": "Select program",
+      "targetAudience": "Target Audience *",
+      "targetAudiencePlaceholder": "e.g., Nurses, Doctors, All Staff",
+      "date": "Date *",
+      "startTime": "Start Time *",
+      "endTime": "End Time *",
+      "hall": "Hall *",
+      "hallPlaceholder": "Select hall",
+      "capacity": "Training Capacity *",
+      "capacityPlaceholder": "Maximum participants"
+    },
+    "buttons": {
+      "create": "Create Training",
+      "update": "Update Training",
+      "saving": "Saving...",
+      "cancel": "Cancel",
+      "sendRequest": "Send Request",
+      "sending": "Sending...",
+      "requestHall": "Request Hall Approval"
+    },
+    "hallStatus": {
+      "checking": "Checking hall availability...",
+      "available": "hall(s) available for the selected time slot",
+      "none": "No halls available for the selected time slot.",
+      "notAvailable": "Hall Not Available",
+      "booked": "The selected hall is booked or blocked.",
+      "submitRequest": "You can submit a request to the Admin for approval.",
+      "availableOption": "(Available)",
+      "unavailableOption": "(Unavailable)"
+    },
+    "dialog": {
+      "title": "Request Hall Approval",
+      "desc": "Submit a request to the Admin for this hall booking.",
+      "requestedHall": "Requested Hall",
+      "timeSlot": "Time Slot",
+      "priority": "Priority",
+      "normal": "Normal",
+      "urgent": "Urgent",
+      "remarks": "Remarks (Optional)",
+      "remarksPlaceholder": "Reason for urgency or special requirements..."
+    }
+  },
+  "settings": {
+    "title": "Settings",
+    "subtitle": "Manage your account configuration and security",
+    "tabs": {
+      "profile": "Profile",
+      "security": "Security"
+    },
+    "profile": {
+      "title": "Personal Information",
+      "desc": "Update your personal details and profile picture URL.",
+      "fullName": "Full Name",
+      "email": "Email",
+      "phone": "Phone Number",
+      "designation": "Designation",
+      "department": "Department",
+      "role": "Role",
+      "save": "Save Changes"
+    },
+    "security": {
+      "title": "Change Password",
+      "desc": "Ensure your account is secure by using a strong password.",
+      "currentPassword": "Current Password",
+      "newPassword": "New Password",
+      "confirmPassword": "Confirm New Password",
+      "update": "Update Password"
+    }
+  },
+  "userApprovals": {
+    "title": "USER APPROVALS",
+    "subtitle": "Security Clearance & Personnel Verification",
+    "pendingRequestsTitle": "PENDING ACCESS REQUESTS",
+    "noActiveRequests": "NO ACTIVE REQUESTS IN BUFFER.",
+    "detectedRequests": "DETECTED {{count}} PENDING AUTHORIZATION REQUEST(S).",
+    "scanning": "SCANNING ENCRYPTED REQUESTS...",
+    "centralCommand": "CENTRAL COMMAND",
+    "initiated": "INITIATED:",
+    "rank": "RANK:",
+    "grantAccess": "GRANT ACCESS",
+    "reject": "REJECT",
+    "clearanceComplete": "CLEARANCE COMPLETE",
+    "noEntities": "No unauthorized entities detected in the perimeter.",
+    "confirmReject": "Are you sure you want to reject this registration? This will delete the request."
+  },
+  "personnel": {
+    "title": "Personnel Management",
+    "subtitle": "Manage platform users, roles, and access controls",
+    "tabs": {
+      "officers": "Program Officers",
+      "participants": "Participants"
+    },
+    "officers": {
+      "title": "Program Officers",
+      "active": "{{count}} active",
+      "loading": "Loading personnel...",
+      "networkError": "Network Error",
+      "noOfficers": "No Officers Found",
+      "noOfficersDesc": "There are no program officers assigned to this sector.",
+      "search": "Search by name, email, or department...",
+      "table": {
+        "details": "Officer Details",
+        "contact": "Contact Info",
+        "department": "Department",
+        "status": "Status"
+      },
+      "status": {
+        "verified": "Verified",
+        "pending": "Pending",
+        "active": "Active"
+      },
+      "misc": {
+        "id": "ID:",
+        "noPhone": "No phone",
+        "noPhoneNumber": "No phone number",
+        "general": "General",
+        "unknown": "Unknown"
+      }
+    },
+    "participants": {
+      "title": "Participants",
+      "active": "{{count}} active",
+      "loading": "Loading participants...",
+      "networkError": "Network Error",
+      "noParticipants": "No Participants Found",
+      "noParticipantsDesc": "There are no participants registered in the system yet.",
+      "search": "Search by name, email, or department...",
+      "table": {
+        "details": "Participant Details",
+        "contact": "Contact Info",
+        "department": "Department",
+        "status": "Status"
+      }
+    },
+    "alerts": {
+      "removeOfficerConfirm": "Are you sure you want to remove Program Officer \"{{name}}\"?",
+      "removeParticipantConfirm": "Are you sure you want to remove participant \"{{name}}\"? All associated training data for this user will remain in history but they will lose access.",
+      "removeSuccess": "User removed successfully",
+      "removeFail": "Failed to remove user"
+    }
+  },
+  "institutions": {
+    "title": "INSTITUTIONS",
+    "subtitle": "Sector Registry & Organizational Matrix",
+    "registerNew": "REGISTER NEW INSTITUTION",
+    "verified": "VERIFIED SECTORS",
+    "loading": "ACCESSING SECTOR DATABASE...",
+    "noSectors": "No Sectors Detected",
+    "noSectorsDesc": "The institutional grid is currently offline.",
+    "table": {
+      "name": "SECTOR / NAME",
+      "classification": "CLASSIFICATION",
+      "location": "COORDINATES / LOCATION",
+      "actions": "ACTIONS"
+    },
+    "dialog": {
+      "title": "REGISTER INSTITUTION",
+      "desc": "Establish a new organizational entity.",
+      "name": "Institution Name",
+      "namePlaceholder": "E.g. City General Hospital",
+      "classification": "Classification",
+      "classificationPlaceholder": "Select type",
+      "location": "Coordinates / Location",
+      "locationPlaceholder": "E.g. Sector 5, North",
+      "types": {
+        "medicalCollege": "Medical College",
+        "hospital": "Hospital",
+        "researchCenter": "Research Center",
+        "other": "Other"
+      },
+      "saving": "UPLOADING INTEL...",
+      "submit": "COMMIT TO REGISTRY"
+    },
+    "alerts": {
+      "nameLocationRequired": "Institution name and location are required",
+      "createSuccess": "Institution registered successfully",
+      "createFail": "Failed to create institution",
+      "deleteConfirm": "Are you sure you want to terminate institution {{name}}? This cannot be undone.",
+      "deleteSuccess": "Institution removed from registry",
+      "deleteFail": "Failed to delete institution",
+      "loadFail": "Failed to load institutions"
+    }
+  },
+  "halls": {
+    "title": "DEPLOYMENT HALLS",
+    "subtitle": "Physical Training Sectors & Capacity Oversight",
+    "registerNew": "REGISTER NEW SECTOR",
+    "activeSectors": "ACTIVE SECTORS",
+    "loading": "MAP SCAN IN PROGRESS...",
+    "noSectors": "No Sectors Detected",
+    "noSectorsDesc": "Global sector grid is currently void.",
+    "table": {
+      "name": "SECTOR NAME",
+      "location": "COORDINATES / LOCATION",
+      "capacity": "CAPACITY",
+      "actions": "ACTIONS"
+    },
+    "manageAvailability": "MANAGE AVAILABILITY",
+    "manageTitle": "MANAGE AVAILABILITY: {{name}}",
+    "manageDesc": "Define weekly operating protocols or specific overrides.",
+    "tabs": {
+      "weekly": "Weekly Recurring",
+      "date": "Specific Date"
+    },
+    "actions": {
+      "setOpen": "Set Open",
+      "blockClose": "Block / Close"
+    },
+    "form": {
+      "dayOfWeek": "Day of Week",
+      "dayPlaceholder": "Select day",
+      "missionDate": "Mission Date",
+      "startTime": "Start Time",
+      "endTime": "End Time",
+      "abortionReason": "Abortion Reason",
+      "reasonPlaceholder": "Select reason",
+      "specifyIntel": "SPECIFY INTEL...",
+      "defineNew": "DEFINE NEW OPERATIONAL WINDOWS FOR THIS SECTOR."
+    },
+    "buttons": {
+      "abortSector": "ABORT SECTOR OPERATION",
+      "commitDeployment": "COMMIT DEPLOYMENT SLOT"
+    },
+    "availability": {
+      "recurringTitle": "Recurring Operational Protocol",
+      "noRecurring": "Zero recurring windows defined.",
+      "dateTitle": "Deployment Intel Log",
+      "noDate": "No mission logs for specific dates.",
+      "open": "OPEN",
+      "blocked": "BLOCKED"
+    },
+    "dialog": {
+      "title": "REGISTER NEW SECTOR",
+      "desc": "Establish a new geographical training zone.",
+      "name": "Sector Name",
+      "namePlaceholder": "E.g. Alpha Wing Conference Hall",
+      "location": "Coordinates / Location",
+      "locationPlaceholder": "E.g. Level 3, Section B",
+      "capacity": "Maximum Capacity",
+      "saving": "SYCHRONIZING...",
+      "submit": "COMMIT TO GRID"
+    },
+    "days": {
+      "Sunday": "Sunday",
+      "Monday": "Monday",
+      "Tuesday": "Tuesday",
+      "Wednesday": "Wednesday",
+      "Thursday": "Thursday",
+      "Friday": "Friday",
+      "Saturday": "Saturday"
+    },
+    "reasons": {
+      "booked": "Hall Booked",
+      "maintenance": "Maintenance / Repair",
+      "cleaning": "Cleaning / Sanitization",
+      "inspection": "Inspection / Audit",
+      "other": "Other"
+    },
+    "alerts": {
+      "nameLocationRequired": "Sector name and location are required",
+      "createSuccess": "Sector registered successfully",
+      "createFail": "Failed to create sector",
+      "deleteConfirm": "Are you sure you want to terminate sector {{name}}? This cannot be undone.",
+      "deleteSuccess": "Sector terminated from registry",
+      "deleteFail": "Failed to delete sector",
+      "loadFail": "Failed to load sectors",
+      "fetchAvailFail": "Failed to fetch availability details",
+      "selectDate": "Please select a date",
+      "specifyReason": "Please specify a reason",
+      "slotAdded": "Availability slot added",
+      "hallBlocked": "Hall blocked successfully",
+      "updateFail": "Failed to update availability",
+      "removeSuccess": "Removed successfully",
+      "removeFail": "Failed to remove"
+    }
+  },
+  "portalSelection": {
+    "adminTitle": "Administrator",
+    "adminDesc": "System settings & oversight",
+    "officerTitle": "Program Officer",
+    "officerDesc": "Manage training programs",
+    "participantTitle": "Participant",
+    "participantDesc": "Access your training records",
+    "title": "Select Portal",
+    "desc": "Choose your role to access the training management portal.",
+    "footerText": "All rights reserved."
+  },
+  "myAttendance": {
+    "title": "My Attendance",
+    "subtitle": "History of trainings you have attended",
+    "cardTitle": "Attended Trainings",
+    "noRecords": "No attendance records found.",
+    "table": {
+      "training": "Training",
+      "dateTime": "Date & Time",
+      "venue": "Venue",
+      "method": "Method",
+      "actions": "Actions"
+    },
+    "unknownTraining": "Unknown Training",
+    "unknownHall": "Unknown Hall",
+    "notAvailable": "N/A",
+    "methods": {
+      "qr": "QR Scan",
+      "manual": "Manual"
+    },
+    "viewDetails": "View Details",
+    "loadError": "Failed to load attendance history"
+  },
+  "common": {
+    "loading": "Loading content...",
+    "error": "Error occurred",
+    "language": "Language",
+    "english": "English",
+    "malayalam": "മലയാളം (Malayalam)",
+    "statuses": {
+      "pending": "Pending",
+      "approved": "Approved",
+      "rejected": "Rejected",
+      "attended": "Attended",
+      "active": "Active",
+      "completed": "Completed",
+      "scheduled": "Scheduled",
+      "cancelled": "Cancelled",
+      "draft": "Draft"
+    }
+  },
+  "hallAvailability": {
+    "title": "Hall Availability",
+    "subtitle": "Check venue availability for training sessions",
+    "checkTitle": "Check Availability",
+    "checkDesc": "Select date and time to check which halls are available",
+    "date": "Date",
+    "startTime": "Start Time",
+    "endTime": "End Time",
+    "checking": "Checking...",
+    "checkAvail": "Check Availability",
+    "capacity": "Capacity",
+    "people": "people",
+    "facilities": "Facilities",
+    "status": "Status",
+    "available": "Available",
+    "booked": "Booked",
+    "scheduleOn": "Schedule on",
+    "blocked": "Blocked",
+    "blockHall": "Block Hall",
+    "totalHalls": "Total Halls",
+    "markUnavailable": "Mark this hall as unavailable for a specific period.",
+    "reason": "Reason",
+    "selectReason": "Select reason",
+    "customReason": "Custom Reason",
+    "enterReason": "Enter reason...",
+    "cancel": "Cancel",
+    "blocking": "Blocking...",
+    "specifyReason": "Please specify a reason",
+    "blockSuccess": "Hall blocked successfully",
+    "blockFail": "Failed to block hall",
+    "loading": "Loading hall availability..."
+  },
+  "nominationsProps": {
+    "syncFailed": "Sync failed. Checking mobile network connectivity...",
+    "checkAvailFail": "Failed to check participant availability",
+    "nomApproved": "Nomination approved",
+    "errorApproving": "Error approving",
+    "nomRejected": "Nomination rejected",
+    "errorRejecting": "Error rejecting",
+    "nomSuccess": "{{count}} Personnel successfully nominated",
+    "missionAborted": "MISSION ABORTED",
+    "missionAbortedDesc": "All selected personnel were already nominated or have conflicts.",
+    "globalError": "Global Nomination System Error",
+    "accessDenied": "Access Denied: Please log in.",
+    "debugList": "Debug List",
+    "exitDebug": "Exit Debug",
+    "personnel": "Personnel",
+    "totalRecords": "Total Records",
+    "participant": "Participant",
+    "training": "Training",
+    "status": "Status",
+    "title": "Nominations",
+    "nominatePersonnel": "Nominate Personnel",
+    "search": "Search nominations...",
+    "noNominations": "No nominations found.",
+    "institution": "Institution",
+    "scheduledFor": "Scheduled for",
+    "approve": "Approve",
+    "reject": "Reject",
+    "reason": "Reason",
+    "rejectNomination": "Reject Nomination",
+    "reasonPlaceholder": "Reason for rejection...",
+    "cancel": "Cancel",
+    "confirmRejection": "Confirm Rejection",
+    "selectTraining": "1. Select Training Session",
+    "selectTrainingPlaceholder": "Select a training session...",
+    "selectParticipants": "2. Select Participants",
+    "alreadyAssigned": "Already Assigned",
+    "busy": "Busy",
+    "submitting": "Submitting...",
+    "submitNominations": "Submit Nominations",
+    "errorLoading": "Error Loading Data",
+    "unexpectedError": "An unexpected error occurred.",
+    "retry": "Retry"
+  },
+  "analyticsPage": {
+    "title": "Platform Analytics",
+    "subtitle": "Overview of training programs and engagement",
+    "totalPrograms": "Total Programs",
+    "totalTrainings": "Total Trainings",
+    "totalInstitutions": "Total Institutions",
+    "attendanceRate": "Attendance Rate",
+    "programDist": "Program Distribution",
+    "programDistDesc": "Trainings categorized by program",
+    "trainingStatus": "Training Status",
+    "trainingStatusDesc": "Current status of all scheduled trainings",
+    "trainingIntel": "Training Specific Intel",
+    "trainingIntelDesc": "Detailed telemetry for deep-dive analysis",
+    "selectTraining": "Select Training",
+    "chooseTraining": "Choose a target training",
+    "nominated": "Nominated",
+    "approved": "Approved",
+    "attended": "Attended",
+    "rate": "Rate",
+    "participationByInst": "Participation by Institution"
+  },
+  "reportsPage": {
+    "title": "Reports & Analytics",
+    "subtitle": "Training Program Data & Institutional Metrics",
+    "generator": "Report Generator",
+    "generatorDesc": "Select parameters to generate training or institutional reports.",
+    "reportType": "Report Type",
+    "selectType": "Select Report Type...",
+    "typeTraining": "TRAINING REPORT",
+    "typeInstitution": "INSTITUTION REPORT",
+    "typeDistrict": "DISTRICT SUMMARY",
+    "selectTraining": "Select Training",
+    "identifyTraining": "Identify Training...",
+    "selectInst": "Select Institution",
+    "identifyInst": "Identify Institution...",
+    "generatePdf": "GENERATE PDF REPORT",
+    "exportCsv": "EXPORT TO CSV",
+    "trainingAnalytics": "TRAINING ANALYTICS",
+    "trainingAnalyticsDesc": "Detailed analysis of training sessions, participation rates, and attendance success metrics.",
+    "instData": "INSTITUTION DATA",
+    "instDataDesc": "Reports on staff training status, program coverage, and preparedness levels across sectors.",
+    "districtData": "DISTRICT DATA",
+    "districtDataDesc": "Consolidated overview of all training activities and professional readiness across the district.",
+    "failLoad": "Failed to load report data",
+    "reportReady": "Report generation complete",
+    "failPdf": "Failed to generate report PDF",
+    "exportedCsv": "Report data exported to CSV",
+    "failCsv": "Failed to export CSV",
+    "instReady": "Institution report ready",
+    "failInst": "Failed to generate institution report",
+    "globalReady": "Global summary report generated",
+    "failGlobal": "Failed to generate summary report",
+    "selectTypeError": "Please select a report type",
+    "selectTrainingError": "Please select a training",
+    "selectInstError": "Please select an institution"
+  },
+  "participantsManage": {
+    "notAuth": "Not authorized to manage participants for this training.",
+    "couldNotLoad": "Could not load participants",
+    "confirmRemove": "Are you sure you want to completely remove {{name}} from this training? They will be notified that their status was rejected.",
+    "removedSuccess": "Removed {{name}} from training",
+    "failedRemove": "Failed to remove participant",
+    "notFound": "Training not found.",
+    "title": "Manage Participants",
+    "assignedPersonnel": "Assigned Personnel",
+    "totalAssigned": "Total Assigned",
+    "noParticipants": "No participants are currently assigned to this training session.",
+    "colParticipant": "Participant",
+    "colContactRole": "Contact & Role",
+    "colInstitution": "Institution",
+    "colStatus": "Status",
+    "colActions": "Actions",
+    "unknown": "Unknown",
+    "na": "N/A",
+    "cannotRemoveAttended": "Cannot remove someone who already attended",
+    "removeUser": "Remove user from training",
+    "remove": "Remove"
+  }
 }

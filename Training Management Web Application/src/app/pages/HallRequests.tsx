@@ -7,6 +7,7 @@ import { Button } from '../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
 import { toast } from 'sonner';
+import LoadingAnimation from '../components/LoadingAnimation';
 
 const HallRequests: React.FC = () => {
     const { user } = useAuth();
@@ -40,7 +41,7 @@ const HallRequests: React.FC = () => {
         }
     };
 
-    if (loading) return <div>Loading...</div>;
+    if (loading) return <div className="flex items-center justify-center min-h-[50vh]"><LoadingAnimation text="Loading Requests..." /></div>;
 
     return (
         <div className="space-y-6">

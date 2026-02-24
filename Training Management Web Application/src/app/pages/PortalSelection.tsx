@@ -33,6 +33,12 @@ const PortalSelection: React.FC = () => {
         },
     ];
 
+    const handlePortalClick = (path: string) => {
+        setTimeout(() => {
+            navigate(path);
+        }, 150); // slight delay to allow the tap animation to be visible
+    };
+
     return (
         <div className="min-h-screen flex flex-col md:flex-row bg-background text-foreground transition-colors duration-300">
             {/* Left Column: Background Image (Desktop only) */}
@@ -93,7 +99,7 @@ const PortalSelection: React.FC = () => {
                             >
                                 <Card
                                     className="border bg-card hover:bg-accent transition-all cursor-pointer overflow-hidden shadow-sm hover:shadow-md"
-                                    onClick={() => navigate(portal.path)}
+                                    onClick={() => handlePortalClick(portal.path)}
                                 >
                                     <div className="flex items-center p-5">
                                         <div className={`p-4 rounded-xl ${portal.color} transition-colors`}>
