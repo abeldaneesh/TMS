@@ -17,6 +17,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { toast } from 'sonner';
 import LoadingAnimation from '../components/LoadingAnimation';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../components/ui/card';
+import { Checkbox } from '../components/ui/checkbox';
 
 const TrainingParticipants: React.FC = () => {
     const { t } = useTranslation();
@@ -26,6 +27,7 @@ const TrainingParticipants: React.FC = () => {
 
     const [training, setTraining] = useState<Training | null>(null);
     const [participants, setParticipants] = useState<Nomination[]>([]);
+    const [selectedParticipantIds, setSelectedParticipantIds] = useState<string[]>([]);
     const [loading, setLoading] = useState(true);
 
     const checkAuthorization = (t: Training) => {
@@ -83,6 +85,44 @@ const TrainingParticipants: React.FC = () => {
         }
     };
 
+    const handleBulkRemove = async () => {
+        if (!window.confirm(t('participantsManage.bulkRemoveConfirm', { count: selectedParticipantIds.length }))) {
+            return;
+        }
+
+        setLoading(true);
+        try {
+            const result = await nominationsApi.bulkReject(selectedParticipantIds, user?.id || '', 'Removed from training by Administrator/Program Officer');
+            if (result.failed === 0) {
+                toast.success(t('participantsManage.bulkRemoveSuccess', { count: result.success }));
+            } else {
+                toast.warning(t('participantsManage.bulkRemovePartial', { success: result.success, failed: result.failed }));
+            }
+            setSelectedParticipantIds([]);
+            fetchData();
+        } catch (error) {
+            console.error('Error in bulk remove:', error);
+            toast.error(t('participantsManage.failedRemove'));
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const toggleParticipantSelection = (id: string) => {
+        setSelectedParticipantIds(prev =>
+            prev.includes(id) ? prev.filter(nomId => nomId !== id) : [...prev, id]
+        );
+    };
+
+    const toggleSelectAll = () => {
+        const removableParticipants = participants.filter(nom => nom.status !== 'attended');
+        if (selectedParticipantIds.length === removableParticipants.length) {
+            setSelectedParticipantIds([]);
+        } else {
+            setSelectedParticipantIds(removableParticipants.map(nom => nom.id));
+        }
+    };
+
     if (loading) {
         return (
             <div className="flex h-64 items-center justify-center">
@@ -109,13 +149,27 @@ const TrainingParticipants: React.FC = () => {
 
             <Card>
                 <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                        <Users className="size-5" />
-                        {t('participantsManage.assignedPersonnel')}
-                    </CardTitle>
-                    <CardDescription>
-                        {t('participantsManage.totalAssigned')}: {participants.length}
-                    </CardDescription>
+                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                        <div>
+                            <CardTitle className="flex items-center gap-2">
+                                <Users className="size-5" />
+                                {t('participantsManage.assignedPersonnel')}
+                            </CardTitle>
+                            <CardDescription>
+                                {t('participantsManage.totalAssigned')}: {participants.length}
+                            </CardDescription>
+                        </div>
+                        {selectedParticipantIds.length > 0 && (
+                            <Button
+                                variant="destructive"
+                                onClick={handleBulkRemove}
+                                className="font-medium"
+                                disabled={loading}
+                            >
+                                {t('participantsManage.bulkRemove', { count: selectedParticipantIds.length })}
+                            </Button>
+                        )}
+                    </div>
                 </CardHeader>
                 <CardContent>
                     {participants.length === 0 ? (
@@ -128,6 +182,16 @@ const TrainingParticipants: React.FC = () => {
                             <Table>
                                 <TableHeader>
                                     <TableRow>
+                                        <TableHead className="w-[50px]">
+                                            <Checkbox
+                                                checked={
+                                                    participants.filter(nom => nom.status !== 'attended').length > 0 &&
+                                                    selectedParticipantIds.length === participants.filter(nom => nom.status !== 'attended').length
+                                                }
+                                                onCheckedChange={toggleSelectAll}
+                                                aria-label={t('participantsManage.selectAll')}
+                                            />
+                                        </TableHead>
                                         <TableHead>{t('participantsManage.colParticipant')}</TableHead>
                                         <TableHead>{t('participantsManage.colContactRole')}</TableHead>
                                         <TableHead>{t('participantsManage.colInstitution')}</TableHead>
@@ -137,7 +201,15 @@ const TrainingParticipants: React.FC = () => {
                                 </TableHeader>
                                 <TableBody>
                                     {participants.map((nom) => (
-                                        <TableRow key={nom.id}>
+                                        <TableRow key={nom.id} className={selectedParticipantIds.includes(nom.id) ? "bg-muted/50" : ""}>
+                                            <TableCell>
+                                                <Checkbox
+                                                    checked={selectedParticipantIds.includes(nom.id)}
+                                                    onCheckedChange={() => toggleParticipantSelection(nom.id)}
+                                                    disabled={nom.status === 'attended'}
+                                                    aria-label={`Select ${nom.participant?.name}`}
+                                                />
+                                            </TableCell>
                                             <TableCell>
                                                 <div className="font-medium">{nom.participant?.name || t('participantsManage.unknown')}</div>
                                             </TableCell>

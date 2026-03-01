@@ -383,6 +383,16 @@ export const nominationsApi = {
         return { success, failed };
     },
 
+    bulkReject: async (ids: string[], approvedBy: string, reason: string): Promise<{ success: number, failed: number }> => {
+        const promises = ids.map(id => api.patch(`/nominations/${id}/status`, { status: 'rejected', rejectionReason: reason }));
+        const results = await Promise.allSettled(promises);
+
+        const success = results.filter(r => r.status === 'fulfilled').length;
+        const failed = results.filter(r => r.status === 'rejected').length;
+
+        return { success, failed };
+    },
+
     reject: async (id: string, approvedBy: string, reason: string): Promise<Nomination> => {
         const response = await api.patch(`/nominations/${id}/status`, { status: 'rejected', rejectionReason: reason });
         return response.data;

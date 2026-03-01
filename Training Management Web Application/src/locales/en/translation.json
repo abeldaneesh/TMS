@@ -650,7 +650,12 @@
     "na": "N/A",
     "cannotRemoveAttended": "Cannot remove someone who already attended",
     "removeUser": "Remove user from training",
-    "remove": "Remove"
+    "remove": "Remove",
+    "selectAll": "Select All",
+    "bulkRemove": "Remove Selected ({{count}})",
+    "bulkRemoveConfirm": "Are you sure you want to remove {{count}} participants from this training?",
+    "bulkRemoveSuccess": "Successfully removed {{count}} participants.",
+    "bulkRemovePartial": "Removed {{success}} participants, but {{failed}} failed."
   },
   "notificationsPage": {
     "title": "Alerts",
