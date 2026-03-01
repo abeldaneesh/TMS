@@ -279,7 +279,7 @@ const Trainings: React.FC = () => {
                       <ClipboardList className="size-4" />
                     </Button>
 
-                    {((user?.role === 'program_officer' && training.createdById === user.id) || user?.role === 'master_admin') && (
+                    {((user?.role === 'program_officer' && training.createdById === user.id) || user?.role === 'master_admin') && training.status !== 'completed' && training.status !== 'cancelled' && (
                       <Button variant="ghost" size="icon" onClick={() => navigate(`/trainings/${training.id}/edit`)} className="text-muted-foreground hover:text-white hover:bg-white/10 rounded-full size-9" title={t('trainings.actions.modify', 'Modify')}>
                         <Edit className="size-4" />
                       </Button>

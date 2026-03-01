@@ -326,9 +326,11 @@ const TrainingDetails: React.FC = () => {
                                             </Button>
                                         )}
 
-                                        <Button variant="outline" className="w-full justify-start border-white/10 hover:bg-white/10" onClick={() => navigate(`/trainings/${id}/edit`)}>
-                                            <Edit className="size-4 mr-3" /> Edit Training
-                                        </Button>
+                                        {training.status !== 'completed' && training.status !== 'cancelled' && (
+                                            <Button variant="outline" className="w-full justify-start border-white/10 hover:bg-white/10" onClick={() => navigate(`/trainings/${id}/edit`)}>
+                                                <Edit className="size-4 mr-3" /> Edit Training
+                                            </Button>
+                                        )}
 
                                         {(training.status === 'scheduled' || training.status === 'ongoing') && (
                                             <>
