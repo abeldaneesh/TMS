@@ -143,6 +143,7 @@ export const markAttendance = async (req: AuthRequest, res: Response): Promise<v
                         title: 'Attendance Marked',
                         message: notificationMessage,
                         type: 'info',
+                        actionUrl: `/trainings/${trainingId}`
                     });
                     console.log(`[DEBUG] Notification created for ${userId}: ${n._id}`);
                     return n;
@@ -344,6 +345,7 @@ export const startAttendanceSession = async (req: AuthRequest, res: Response): P
                         title: 'Attendance Session Started',
                         message: message,
                         type: 'info',
+                        actionUrl: `/scan-qr`
                     })
                 ));
                 console.log(`[DEBUG] Sent notifications to ${participantIds.length} participants for training ${trainingId}`);

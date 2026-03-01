@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import api from '../../services/api';
 import { Bell, CheckCircle2 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 
@@ -23,10 +24,15 @@ const NotificationsMobile: React.FC = () => {
         fetchNotifications();
     }, []);
 
-    const handleMarkAsRead = async (id: string) => {
+    const navigate = useNavigate();
+
+    const handleMarkAsRead = async (notification: any) => {
         try {
-            await api.patch(`/notifications/${id}/read`);
-            setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
+            await api.patch(`/notifications/${notification.id}/read`);
+            setNotifications(prev => prev.map(n => n.id === notification.id ? { ...n, read: true } : n));
+            if (notification.actionUrl) {
+                navigate(notification.actionUrl);
+            }
         } catch (error) {
             console.error('Failed to mark as read', error);
         }
@@ -72,7 +78,7 @@ const NotificationsMobile: React.FC = () => {
                         <Card
                             key={notification.id}
                             className={`border transition-colors cursor-pointer ${!notification.read ? 'border-primary shadow-sm bg-primary/5' : 'bg-card'}`}
-                            onClick={() => handleMarkAsRead(notification.id)}
+                            onClick={() => handleMarkAsRead(notification)}
                         >
                             <CardContent className="p-4 flex gap-4">
                                 <div className={`p-2 rounded-full h-fit flex-shrink-0 ${!notification.read ? 'bg-primary/20 text-primary' : 'bg-muted text-muted-foreground'}`}>

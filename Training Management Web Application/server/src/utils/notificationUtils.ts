@@ -8,6 +8,7 @@ interface CreateNotificationParams {
     message: string;
     type: string;
     relatedId?: string;
+    actionUrl?: string; // Add actionUrl
 }
 
 export const createAndSendNotification = async (params: CreateNotificationParams) => {
@@ -19,6 +20,7 @@ export const createAndSendNotification = async (params: CreateNotificationParams
             message: params.message,
             type: params.type,
             read: false,
+            actionUrl: params.actionUrl, // Save actionUrl
         });
 
         // 2. Fetch the user's FCM device token
@@ -46,6 +48,7 @@ export const createAndSendNotification = async (params: CreateNotificationParams
                     relatedId: params.relatedId || '',
                     title: params.title, // Also send in data for foreground handling
                     message: params.message,
+                    actionUrl: params.actionUrl || '', // Pass to native FCM
                 },
                 token: user.fcmToken,
             };

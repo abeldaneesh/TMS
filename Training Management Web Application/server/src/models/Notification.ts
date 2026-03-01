@@ -10,6 +10,7 @@ export interface INotification extends Omit<Document, '_id'> {
     read: boolean;
     type: string;
     createdAt: Date;
+    actionUrl?: string;
 }
 
 const NotificationSchema: Schema = new Schema({
@@ -19,7 +20,8 @@ const NotificationSchema: Schema = new Schema({
     message: { type: String, required: true },
     read: { type: Boolean, default: false },
     type: { type: String, default: 'info' }, // info, success, warning, error
-    createdAt: { type: Date, default: Date.now }
+    createdAt: { type: Date, default: Date.now },
+    actionUrl: { type: String, required: false }, // Store url ref
 });
 
 export default mongoose.model<INotification>('Notification', NotificationSchema);

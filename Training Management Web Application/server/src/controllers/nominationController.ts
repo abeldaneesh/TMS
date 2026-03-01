@@ -115,10 +115,11 @@ export const nominateParticipant = async (req: AuthRequest, res: Response): Prom
         try {
             await createAndSendNotification({
                 userId: participantId,
-                title: 'New Training Appointment',
-                message: `You have been appointed for training: ${training.title}`,
-                type: 'training_nomination',
-                relatedId: nomination._id.toString()
+                title: 'New Training Assigned',
+                message: `You have been nominated for a new training: "${training.title}".`,
+                type: 'info',
+                relatedId: trainingId,
+                actionUrl: `/trainings/${trainingId}`
             });
         } catch (notifErr) {
             console.error('Failed to send nomination notification:', notifErr);
@@ -248,13 +249,29 @@ export const updateNominationStatus = async (req: AuthRequest, res: Response): P
             const trainingTitle = (updatedNomination.trainingId as any)?.title || 'Training';
             const action = status === 'approved' ? 'approved' : 'rejected';
 
-            await createAndSendNotification({
-                userId: updatedNomination.participantId.toString(),
-                title: `Nomination ${status.charAt(0).toUpperCase() + status.slice(1)}`,
-                message: `Your nomination for "${trainingTitle}" has been ${action}.`,
-                type: 'nomination_status',
-                relatedId: updatedNomination._id.toString()
-            });
+            // The instruction provides a specific payload for 'approved' status.
+            // If the status is 'approved', use the provided payload.
+            // Otherwise, use the existing dynamic logic for other statuses (e.g., 'rejected').
+            if (status === 'approved') {
+                await createAndSendNotification({
+                    userId: nomination.participantId.toString(),
+                    title: 'Nomination Approved',
+                    message: `Your nomination for "${(nomination.trainingId as any).title}" has been approved.`,
+                    type: 'success',
+                    relatedId: (nomination.trainingId as any)._id.toString(),
+                    actionUrl: `/my-attendance`
+                });
+            } else {
+                // Existing logic for other statuses like 'rejected'
+                await createAndSendNotification({
+                    userId: updatedNomination.participantId.toString(),
+                    title: `Nomination ${status.charAt(0).toUpperCase() + status.slice(1)}`,
+                    message: `Your nomination for "${trainingTitle}" has been ${action}.`,
+                    type: 'nomination_status',
+                    relatedId: updatedNomination._id.toString(),
+                    actionUrl: `/nominations`
+                });
+            }
         } catch (notifErr) {
             console.error('Failed to send nomination status notification:', notifErr);
         }

@@ -343,7 +343,12 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                   <DropdownMenuItem
                     key={notification.id}
                     className={`flex flex-col items-start gap-1 p-3 cursor-pointer transition-colors focus:bg-accent focus:text-accent-foreground ${!notification.read ? 'bg-muted/50 border-l-2 border-primary' : ''}`}
-                    onClick={() => handleMarkAsRead(notification.id)}
+                    onClick={() => {
+                      handleMarkAsRead(notification.id);
+                      if (notification.actionUrl) {
+                        navigate(notification.actionUrl);
+                      }
+                    }}
                   >
                     <div className="font-medium text-sm flex justify-between w-full text-foreground">
                       <span>{notification.title}</span>

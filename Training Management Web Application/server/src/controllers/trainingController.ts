@@ -477,7 +477,8 @@ export const generateCertificates = async (req: AuthRequest, res: Response): Pro
                 title: 'Certificate Ready',
                 message: `Your certificate for "${training.title}" is now available for download.`,
                 type: 'success',
-                relatedId: training._id
+                relatedId: training._id,
+                actionUrl: `/trainings/${training._id}`
             });
         });
 

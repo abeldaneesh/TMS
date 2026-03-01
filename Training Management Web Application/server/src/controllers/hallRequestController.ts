@@ -127,6 +127,7 @@ export const updateRequestStatus = async (req: AuthRequest, res: Response): Prom
                     title: 'Hall Request Approved',
                     message: `Your request for hall "${(request.hallId as any).name}" for training "${training.title}" has been approved.`,
                     type: 'success',
+                    actionUrl: `/trainings/${training._id}`
                 });
             } catch (err) {
                 console.error("Error sending notification", err);
@@ -144,6 +145,7 @@ export const updateRequestStatus = async (req: AuthRequest, res: Response): Prom
                     title: 'Hall Request Rejected',
                     message: `Your request for hall "${(request.hallId as any).name}" for training "${training.title}" has been rejected.`,
                     type: 'error',
+                    actionUrl: `/hall-availability`
                 });
             } catch (err) {
                 console.error("Error sending notification", err);
