@@ -40,9 +40,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     initAuth();
   }, []);
 
-  const login = async (email: string, password: string): Promise<User> => {
+  const login = async (email: string, password: string, allowedRoles?: string[]): Promise<User> => {
     try {
-      const loggedInUser = await authApi.login(email, password);
+      const { user: loggedInUser, token } = await authApi.login(email, password);
+
+      if (allowedRoles && !allowedRoles.includes(loggedInUser.role)) {
+        throw new Error('UNAUTHORIZED_ROLE');
+      }
+
+      if (token) {
+        localStorage.setItem('token', token);
+      }
       setUser(loggedInUser);
       localStorage.setItem('dmo_user', JSON.stringify(loggedInUser));
       return loggedInUser;

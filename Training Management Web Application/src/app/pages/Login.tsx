@@ -33,19 +33,13 @@ const Login: React.FC<LoginProps> = ({ roleTitle = 'Sign In', allowedRoles }) =>
     setLoading(true);
 
     try {
-      const loggedInUser = await login(email, password);
-
-      // Role Verification
-      if (allowedRoles && loggedInUser && !allowedRoles.includes(loggedInUser.role)) {
-        logout(); // Logout immediately
-        setError(`Access Denied: You are not authorized to access the ${roleTitle} portal.`);
-        return;
-      }
-
+      await login(email, password, allowedRoles);
       navigate('/dashboard');
     } catch (err: any) {
       let message = t('auth.invalidCredentials', 'Invalid email or password');
-      if (err.response?.data?.message) {
+      if (err.message === 'UNAUTHORIZED_ROLE') {
+        message = `Access Denied: You are not authorized to access the ${roleTitle} portal.`;
+      } else if (err.response?.data?.message) {
         message = err.response.data.message;
       } else if (err.message === 'Network Error') {
         message = t('auth.networkError', 'Network Error: Cannot connect to server. Check IP and Wifi.');

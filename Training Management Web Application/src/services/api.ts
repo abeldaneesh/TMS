@@ -47,12 +47,9 @@ api.interceptors.response.use(
 );
 
 export const authApi = {
-    login: async (email: string, password: string): Promise<User> => {
+    login: async (email: string, password: string): Promise<{ user: User; token: string }> => {
         const response = await api.post('/auth/login', { email, password });
-        if (response.data.token) {
-            localStorage.setItem('token', response.data.token);
-        }
-        return response.data.user;
+        return { user: response.data.user, token: response.data.token };
     },
 
     register(userData: any): Promise<{ message: string; requireVerification?: boolean }> {
