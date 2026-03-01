@@ -259,7 +259,7 @@ export const updateNominationStatus = async (req: AuthRequest, res: Response): P
                     message: `Your nomination for "${(nomination.trainingId as any).title}" has been approved.`,
                     type: 'success',
                     relatedId: (nomination.trainingId as any)._id.toString(),
-                    actionUrl: `/my-attendance`
+                    actionUrl: `/trainings/${(nomination.trainingId as any)._id.toString()}`
                 });
             } else {
                 // Existing logic for other statuses like 'rejected'
