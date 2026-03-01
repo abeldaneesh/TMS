@@ -117,9 +117,10 @@ const CreateTraining: React.FC = () => {
     setCheckingAvailability(true);
     try {
       const available = await hallsApi.getAvailableHalls(
-        new Date(formData.date),
+        formData.date, // Pass the string directly
         formData.startTime,
-        formData.endTime
+        formData.endTime,
+        isEditMode ? id : undefined
       );
       setAvailableHalls(available);
 
@@ -150,25 +151,26 @@ const CreateTraining: React.FC = () => {
       try {
         const details = await hallsApi.getAvailabilityDetails(
           formData.hallId,
-          new Date(formData.date),
+          formData.date, // Pass the string directly
           formData.startTime,
-          formData.endTime
+          formData.endTime,
+          isEditMode ? id : undefined
         );
 
         if (!details.isAvailable) {
-          setUnavailableReason(details.reason || 'Unavailable');
+          setUnavailableReason(details.reason || 'Hall is not available for this time slot');
         } else {
           setUnavailableReason(null);
         }
       } catch (error) {
-        console.error(error);
+        console.error('Error checking hall details:', error);
       }
     };
 
     if (formData.hallId && formData.date && formData.startTime && formData.endTime) {
       checkDetails();
     }
-  }, [formData.hallId, formData.date, formData.startTime, formData.endTime]);
+  }, [formData.hallId, formData.date, formData.startTime, formData.endTime, isEditMode, id]);
 
   useEffect(() => {
     if (formData.date && formData.startTime && formData.endTime) {

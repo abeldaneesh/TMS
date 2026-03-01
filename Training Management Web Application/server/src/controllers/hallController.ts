@@ -42,7 +42,7 @@ export const createHall = async (req: Request, res: Response): Promise<void> => 
 
 export const getAvailableHalls = async (req: Request, res: Response): Promise<void> => {
     try {
-        const { date, startTime, endTime } = req.query;
+        const { date, startTime, endTime, excludeTrainingId } = req.query;
 
         if (!date || !startTime || !endTime) {
             res.status(400).json({ message: 'Date, start time, and end time are required' });
@@ -51,13 +51,14 @@ export const getAvailableHalls = async (req: Request, res: Response): Promise<vo
 
         const checkDate = new Date(date as string);
         const dayOfWeek = checkDate.getDay();
-        const startOfDay = new Date(checkDate);
-        startOfDay.setHours(0, 0, 0, 0);
-        const endOfDay = new Date(checkDate);
-        endOfDay.setHours(23, 59, 59, 999);
+
+        // Define start and end of day in UTC to be robust against local timezone shifts
+        const dateStr = date as string;
+        const startOfDay = new Date(`${dateStr}T00:00:00.000Z`);
+        const endOfDay = new Date(`${dateStr}T23:59:59.999Z`);
 
         // 1. Find conflicting trainings
-        const conflictingTrainings = await Training.find({
+        const trainingQuery: any = {
             date: { $gte: startOfDay, $lte: endOfDay },
             $or: [
                 {
@@ -68,7 +69,13 @@ export const getAvailableHalls = async (req: Request, res: Response): Promise<vo
                 }
             ],
             status: { $in: ['scheduled', 'ongoing', 'completed'] } // Exclude drafts from blocking
-        }).select('hallId');
+        };
+
+        if (excludeTrainingId) {
+            trainingQuery._id = { $ne: excludeTrainingId as string };
+        }
+
+        const conflictingTrainings = await Training.find(trainingQuery).select('hallId');
 
         // 2. Find conflicting blocks
         const conflictingBlocks = await HallBlock.find({
@@ -221,7 +228,7 @@ export const getAvailability = async (req: Request, res: Response): Promise<void
 export const getHallAvailabilityDetails = async (req: Request, res: Response): Promise<void> => {
     try {
         const hallId = req.params.hallId;
-        const { date, startTime, endTime } = req.query;
+        const { date, startTime, endTime, excludeTrainingId } = req.query;
 
         if (!date || !startTime || !endTime) {
             res.status(400).json({ message: 'Date, start time, and end time are required' });
@@ -230,10 +237,9 @@ export const getHallAvailabilityDetails = async (req: Request, res: Response): P
 
         const checkDate = new Date(date as string);
         const dayOfWeek = checkDate.getDay();
-        const startOfDay = new Date(checkDate);
-        startOfDay.setHours(0, 0, 0, 0);
-        const endOfDay = new Date(checkDate);
-        endOfDay.setHours(23, 59, 59, 999);
+        const dateStr = date as string; // Expecting YYYY-MM-DD from frontend now
+        const startOfDay = new Date(`${dateStr}T00:00:00.000Z`);
+        const endOfDay = new Date(`${dateStr}T23:59:59.999Z`);
 
         // 1. Check Admin Blocks
         const conflictingBlock = await HallBlock.findOne({
@@ -259,7 +265,7 @@ export const getHallAvailabilityDetails = async (req: Request, res: Response): P
         }
 
         // 2. Check Confirmed Trainings
-        const conflictingTraining = await Training.findOne({
+        const trainingQuery: any = {
             hallId,
             date: { $gte: startOfDay, $lte: endOfDay },
             $or: [
@@ -271,7 +277,13 @@ export const getHallAvailabilityDetails = async (req: Request, res: Response): P
                 }
             ],
             status: { $in: ['scheduled', 'ongoing', 'completed'] }
-        }).populate('createdById', 'name');
+        };
+
+        if (excludeTrainingId) {
+            trainingQuery._id = { $ne: excludeTrainingId as string };
+        }
+
+        const conflictingTraining = await Training.findOne(trainingQuery).populate('createdById', 'name');
 
         if (conflictingTraining) {
             res.json({

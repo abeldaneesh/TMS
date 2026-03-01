@@ -190,23 +190,27 @@ export const hallsApi = {
         await api.delete(`/halls/${id}`);
     },
 
-    checkAvailability: async (hallId: string, date: Date, startTime: string, endTime: string): Promise<boolean> => {
+    checkAvailability: async (hallId: string, date: Date | string, startTime: string, endTime: string, excludeTrainingId?: string): Promise<boolean> => {
+        const dateStr = date instanceof Date ? date.toISOString().split('T')[0] : date;
         const params = new URLSearchParams({
-            date: date instanceof Date ? date.toISOString() : date,
+            date: dateStr,
             startTime,
             endTime
         });
+        if (excludeTrainingId) params.append('excludeTrainingId', excludeTrainingId);
         const response = await api.get(`/halls/available?${params.toString()}`);
         const availableHalls = response.data;
         return availableHalls.some((h: any) => h._id === hallId || h.id === hallId);
     },
 
-    getAvailableHalls: async (date: Date, startTime: string, endTime: string): Promise<Hall[]> => {
+    getAvailableHalls: async (date: Date | string, startTime: string, endTime: string, excludeTrainingId?: string): Promise<Hall[]> => {
+        const dateStr = date instanceof Date ? date.toISOString().split('T')[0] : date;
         const params = new URLSearchParams({
-            date: date instanceof Date ? date.toISOString() : date,
+            date: dateStr,
             startTime,
             endTime
         });
+        if (excludeTrainingId) params.append('excludeTrainingId', excludeTrainingId);
         const response = await api.get(`/halls/available?${params.toString()}`);
         return response.data;
     },
@@ -225,15 +229,17 @@ export const hallsApi = {
         await api.delete(`/halls/availability/${availabilityId}`);
     },
 
-    getAvailabilityDetails: async (hallId: string, date: Date, startTime: string, endTime: string): Promise<{ isAvailable: boolean, reason?: string, type?: string }> => {
+    getAvailabilityDetails: async (hallId: string, date: Date | string, startTime: string, endTime: string, excludeTrainingId?: string): Promise<{ isAvailable: boolean, reason?: string, type?: string }> => {
+        const dateStr = date instanceof Date ? date.toISOString().split('T')[0] : date;
         const params = new URLSearchParams({
-            date: date instanceof Date ? date.toISOString() : date,
+            date: dateStr,
             startTime,
             endTime
         });
+        if (excludeTrainingId) params.append('excludeTrainingId', excludeTrainingId);
         const response = await api.get(`/halls/${hallId}/details?${params.toString()}`);
         return response.data;
-    },
+    }
 };
 
 export const hallBlocksApi = {
