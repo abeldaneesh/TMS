@@ -44,6 +44,7 @@ const Nominations: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedNomination, setSelectedNomination] = useState<Nomination | null>(null);
+  const [selectedNominationIds, setSelectedNominationIds] = useState<string[]>([]);
   const [showRejectDialog, setShowRejectDialog] = useState(false);
   const [rejectionReason, setRejectionReason] = useState('');
   const [showNominateDialog, setShowNominateDialog] = useState(false);
@@ -165,6 +166,42 @@ const Nominations: React.FC = () => {
       fetchData(); // Refresh UI smoothly
     } catch (error: any) {
       toast.error(error.message || t('nominationsProps.errorApproving'));
+    }
+  };
+
+  const handleBulkApprove = async () => {
+    if (!user || selectedNominationIds.length === 0) return;
+    setLoading(true);
+    try {
+      const result = await nominationsApi.bulkApprove(selectedNominationIds, user.id);
+      if (result.failed === 0) {
+        toast.success(t('nominationsProps.bulkApproveSuccess', { count: result.success }));
+      } else {
+        toast.warning(t('nominationsProps.bulkApprovePartial', { success: result.success, failed: result.failed }));
+      }
+      setSelectedNominationIds([]);
+      fetchData();
+    } catch (error: any) {
+      toast.error(t('nominationsProps.errorApproving'));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const toggleNominationSelection = (id: string) => {
+    setSelectedNominationIds(prev =>
+      prev.includes(id) ? prev.filter(nomId => nomId !== id) : [...prev, id]
+    );
+  };
+
+  const toggleSelectAll = (filteredNominations: Nomination[]) => {
+    const pendingNominations = filteredNominations.filter(nom => nom.status === 'nominated');
+    if (selectedNominationIds.length === pendingNominations.length) {
+      // Deselect all
+      setSelectedNominationIds([]);
+    } else {
+      // Select all pending
+      setSelectedNominationIds(pendingNominations.map(nom => nom.id));
     }
   };
 
@@ -296,15 +333,42 @@ const Nominations: React.FC = () => {
             <Users className="size-6 text-primary" />
             Nominations
           </h1>
-          {(user.role === 'program_officer' || user.role === 'master_admin') && (
-            <Button
-              onClick={() => setShowNominateDialog(true)}
-              className="w-full md:w-auto font-medium"
-            >
-              {t('nominationsProps.nominatePersonnel')}
-            </Button>
-          )}
+          <div className="flex w-full md:w-auto gap-2">
+            {selectedNominationIds.length > 0 && user.role === 'master_admin' && (
+              <Button
+                onClick={handleBulkApprove}
+                className="w-full md:w-auto font-medium bg-emerald-600 hover:bg-emerald-700 text-white"
+                disabled={loading}
+              >
+                {t('nominationsProps.bulkApprove', { count: selectedNominationIds.length })}
+              </Button>
+            )}
+            {(user.role === 'program_officer' || user.role === 'master_admin') && (
+              <Button
+                onClick={() => setShowNominateDialog(true)}
+                className="w-full md:w-auto font-medium"
+              >
+                {t('nominationsProps.nominatePersonnel')}
+              </Button>
+            )}
+          </div>
         </div>
+
+        {user.role === 'master_admin' && nominations.some(nom => nom.status === 'nominated') && (
+          <div className="flex items-center gap-2 px-1">
+            <Checkbox
+              id="selectAllNominations"
+              checked={
+                filteredNominations.filter(nom => nom.status === 'nominated').length > 0 &&
+                selectedNominationIds.length === filteredNominations.filter(nom => nom.status === 'nominated').length
+              }
+              onCheckedChange={() => toggleSelectAll(filteredNominations)}
+            />
+            <label htmlFor="selectAllNominations" className="text-sm font-medium leading-none cursor-pointer">
+              {t('nominationsProps.selectAll')}
+            </label>
+          </div>
+        )}
 
         <Card className="glass">
           <CardContent className="p-3">
@@ -329,19 +393,31 @@ const Nominations: React.FC = () => {
             filteredNominations.map((nomination) => (
               <Card key={nomination.id} className="glass overflow-hidden border-white/5 hover:border-primary/20 transition-all">
                 <CardContent className="p-4">
-                  <div className="flex justify-between items-start mb-4">
-                    <div>
-                      <h3 className="text-lg font-semibold text-foreground">{getParticipantName(nomination.participantId)}</h3>
-                      <p className="text-sm text-muted-foreground">
-                        {t('nominationsProps.institution')}: {getInstitutionName(nomination.institutionId)}
-                      </p>
+                  <div className="flex items-start gap-4 mb-4">
+                    {user.role === 'master_admin' && nomination.status === 'nominated' && (
+                      <div className="mt-1">
+                        <Checkbox
+                          checked={selectedNominationIds.includes(nomination.id)}
+                          onCheckedChange={() => toggleNominationSelection(nomination.id)}
+                        />
+                      </div>
+                    )}
+                    <div className="flex-1">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <h3 className="text-lg font-semibold text-foreground">{getParticipantName(nomination.participantId)}</h3>
+                          <p className="text-sm text-muted-foreground">
+                            {t('nominationsProps.institution')}: {getInstitutionName(nomination.institutionId)}
+                          </p>
+                        </div>
+                        <Badge className={`font-medium capitalize whitespace-nowrap ${nomination.status === 'approved' ? 'bg-emerald-100 text-emerald-700' :
+                          nomination.status === 'rejected' ? 'bg-destructive/10 text-destructive' :
+                            'bg-amber-100 text-amber-700'
+                          }`}>
+                          {t(`common.statuses.${nomination.status}`, { defaultValue: nomination.status })}
+                        </Badge>
+                      </div>
                     </div>
-                    <Badge className={`font-medium capitalize ${nomination.status === 'approved' ? 'bg-emerald-100 text-emerald-700' :
-                      nomination.status === 'rejected' ? 'bg-destructive/10 text-destructive' :
-                        'bg-amber-100 text-amber-700'
-                      }`}>
-                      {t(`common.statuses.${nomination.status}`, { defaultValue: nomination.status })}
-                    </Badge>
                   </div>
 
                   <div className="p-4 rounded-lg bg-muted/50 space-y-1">

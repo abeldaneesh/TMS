@@ -568,7 +568,11 @@
     "submitNominations": "Submit Nominations",
     "errorLoading": "Error Loading Data",
     "unexpectedError": "An unexpected error occurred.",
-    "retry": "Retry"
+    "retry": "Retry",
+    "selectAll": "Select All",
+    "bulkApprove": "Approve Selected ({{count}})",
+    "bulkApproveSuccess": "Successfully approved {{count}} nominations.",
+    "bulkApprovePartial": "Approved {{success}} nominations, but {{failed}} failed."
   },
   "analyticsPage": {
     "title": "Platform Analytics",
