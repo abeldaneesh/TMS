@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { Building2, ShieldCheck, UserCog, Users, Database, Cpu, Activity } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../components/ui/card';
 import { motion } from 'framer-motion';
+import DoctorLogo from '../components/DoctorLogo';
 
 const PortalSelection: React.FC = () => {
     const navigate = useNavigate();
@@ -51,7 +52,7 @@ const PortalSelection: React.FC = () => {
                 <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" />
                 <div className="relative z-10 flex flex-col items-center justify-center w-full p-12 text-white">
                     <div className="bg-white/10 backdrop-blur-md p-6 rounded-2xl mb-8 border border-white/20 shadow-2xl">
-                        <Building2 className="size-20 text-white" />
+                        <DoctorLogo className="size-20 text-white" />
                     </div>
                     <h1 className="text-4xl font-semibold tracking-tight text-center text-white">
                         DMO TMS
@@ -68,7 +69,7 @@ const PortalSelection: React.FC = () => {
                 {/* Mobile Header */}
                 <div className="flex md:hidden flex-col items-center mb-10 relative z-10">
                     <div className="bg-primary/10 text-primary p-5 rounded-2xl mb-4 border border-primary/20 shadow-sm">
-                        <Building2 className="size-10" />
+                        <DoctorLogo className="size-10" />
                     </div>
                     <h1 className="text-3xl font-bold text-foreground text-center tracking-tight">DMO TMS</h1>
                     <p className="text-sm text-muted-foreground mt-1 text-center font-medium">Training Management System</p>

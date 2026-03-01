@@ -99,7 +99,7 @@ const Login: React.FC<LoginProps> = ({ roleTitle = 'Sign In', allowedRoles }) =>
             <CardHeader className="space-y-1 text-center pb-6 pt-8">
               <div className="flex justify-center mb-2">
                 <div className="bg-primary/10 text-primary p-3 rounded-full">
-                  <ShieldCheck className="size-8" />
+                  <DoctorLogo className="size-8" />
                 </div>
               </div>
               <CardTitle className="text-2xl font-bold tracking-tight">{roleTitle}</CardTitle>
