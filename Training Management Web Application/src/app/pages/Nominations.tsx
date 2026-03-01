@@ -224,11 +224,30 @@ const Nominations: React.FC = () => {
   };
 
   const toggleParticipantSelection = (participantId: string) => {
-    setSelectedParticipantIds(prev =>
-      prev.includes(participantId)
-        ? prev.filter(id => id !== participantId)
-        : [...prev, participantId]
-    );
+    setSelectedParticipantIds(prev => {
+      // If we are unselecting, always allow it
+      if (prev.includes(participantId)) {
+        return prev.filter(id => id !== participantId);
+      }
+
+      // If we are selecting, check capacity
+      const training = trainings.find(t => t.id === selectedTrainingId);
+      if (training) {
+        // Count how many people are already nominated (excluding rejected)
+        const currentValidNominationsCount = nominations.filter(
+          n => n.trainingId === selectedTrainingId && n.status !== 'rejected'
+        ).length;
+
+        const allowedNew = training.capacity - currentValidNominationsCount;
+
+        if (prev.length >= allowedNew) {
+          toast.warning(t('nominationsProps.capacityReached', { capacity: training.capacity }));
+          return prev; // Do not add the new participant
+        }
+      }
+
+      return [...prev, participantId];
+    });
   };
 
   const handleNominate = async () => {

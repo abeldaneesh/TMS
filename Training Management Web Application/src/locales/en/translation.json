@@ -564,6 +564,7 @@
     "selectParticipants": "2. Select Participants",
     "alreadyAssigned": "Already Assigned",
     "busy": "Busy",
+    "capacityReached": "Cannot nominate more participants. Maximum capacity of {{capacity}} reached for this training.",
     "submitting": "Submitting...",
     "submitNominations": "Submit Nominations",
     "errorLoading": "Error Loading Data",
