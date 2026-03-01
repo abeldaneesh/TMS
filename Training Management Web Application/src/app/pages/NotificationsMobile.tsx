@@ -26,12 +26,35 @@ const NotificationsMobile: React.FC = () => {
 
     const navigate = useNavigate();
 
+    const getActionUrl = (notification: any) => {
+        if (notification.actionUrl) return notification.actionUrl;
+
+        // Fallback for older notifications
+        const title = notification.title || '';
+
+        if (title.includes('Certificate Ready') || title.includes('New Training') || title.includes('Attendance Marked') || title.includes('Hall Request Approved')) {
+            return `/trainings/${notification.relatedId}`;
+        } else if (title.includes('Nomination Approved')) {
+            return '/trainings/${notification.relatedId}'; // Note: For legacy, relatedId was nominationId, this might fail, let's point to /my-attendance
+        } else if (title.includes('Nomination Rejected')) {
+            return '/nominations';
+        } else if (title.includes('Session Started')) {
+            return `/scan-qr`;
+        } else if (title.includes('Hall Request Rejected')) {
+            return `/hall-availability`;
+        }
+
+        return `/dashboard`;
+    };
+
     const handleMarkAsRead = async (notification: any) => {
         try {
             await api.patch(`/notifications/${notification.id}/read`);
             setNotifications(prev => prev.map(n => n.id === notification.id ? { ...n, read: true } : n));
-            if (notification.actionUrl) {
-                navigate(notification.actionUrl);
+
+            const targetUrl = getActionUrl(notification);
+            if (targetUrl) {
+                navigate(targetUrl);
             }
         } catch (error) {
             console.error('Failed to mark as read', error);

@@ -143,6 +143,27 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     }
   }, []);
 
+  const getActionUrl = (notification: any) => {
+    if (notification.actionUrl) return notification.actionUrl;
+
+    // Fallback for older notifications
+    const title = notification.title || '';
+
+    if (title.includes('Certificate Ready') || title.includes('New Training') || title.includes('Attendance Marked') || title.includes('Hall Request Approved')) {
+      return `/trainings/${notification.relatedId}`;
+    } else if (title.includes('Nomination Approved')) {
+      return '/my-attendance';
+    } else if (title.includes('Nomination Rejected')) {
+      return '/nominations';
+    } else if (title.includes('Session Started')) {
+      return `/scan-qr`;
+    } else if (title.includes('Hall Request Rejected')) {
+      return `/hall-availability`;
+    }
+
+    return `/dashboard`;
+  };
+
   const fetchNotifications = async () => {
     try {
       const { data } = await api.get('/notifications');
@@ -345,8 +366,9 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                     className={`flex flex-col items-start gap-1 p-3 cursor-pointer transition-colors focus:bg-accent focus:text-accent-foreground ${!notification.read ? 'bg-muted/50 border-l-2 border-primary' : ''}`}
                     onClick={() => {
                       handleMarkAsRead(notification.id);
-                      if (notification.actionUrl) {
-                        navigate(notification.actionUrl);
+                      const targetUrl = getActionUrl(notification);
+                      if (targetUrl) {
+                        navigate(targetUrl);
                       }
                     }}
                   >
