@@ -36,17 +36,15 @@ const TrainingDetails: React.FC = () => {
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const [trainingRes, instsRes, usersRes] = await Promise.all([
-                    api.get(`/trainings/${id}`),
-                    institutionsApi.getAll(),
-                    usersApi.getAll()
-                ]);
+                const trainingRes = await api.get(`/trainings/${id}`);
                 setTraining(trainingRes.data);
-                setInstitutions(instsRes);
-                setAllUsers(usersRes);
-            } catch (error) {
+            } catch (error: any) {
                 console.error('Failed to fetch training details:', error);
-                toast.error('Failed to load training details');
+                if (error.response?.status === 404) {
+                    toast.error('This training session no longer exists or was deleted.');
+                } else {
+                    toast.error('Failed to load training details');
+                }
                 navigate('/trainings');
             } finally {
                 setLoading(false);

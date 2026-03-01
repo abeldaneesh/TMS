@@ -110,21 +110,23 @@ export const getTrainingById = async (req: Request, res: Response): Promise<void
         // Enforcement: If PO, check ownership
         const authReq = req as AuthRequest;
         // Handle populated createdById
-        const creatorId = (training.createdById as any)._id || training.createdById;
-
-        if (authReq.user?.role === 'program_officer' && creatorId.toString() !== authReq.user.userId) {
-            res.status(403).json({ message: 'Not authorized to view this training' });
-            return;
-        }
+        const creatorId = training.createdById ? ((training.createdById as any)._id || training.createdById) : null;
 
         let userStatus = null;
-        if (authReq.user?.role === 'participant') {
+        if (authReq.user) {
             const Nomination = require('../models/Nomination').default;
             const nomination = await Nomination.findOne({
                 trainingId: id,
                 participantId: authReq.user.userId
             });
             userStatus = nomination?.status || null;
+        }
+
+        if (authReq.user?.role === 'program_officer' && creatorId && creatorId.toString() !== authReq.user.userId) {
+            if (!userStatus || !['nominated', 'approved', 'attended'].includes(userStatus)) {
+                res.status(403).json({ message: 'Not authorized to view this training' });
+                return;
+            }
         }
 
         const transformedTraining = {

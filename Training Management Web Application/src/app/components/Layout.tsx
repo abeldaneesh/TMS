@@ -148,9 +148,10 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
     // Fallback for older notifications
     const title = notification.title || '';
+    const relatedId = notification.relatedId || notification.trainingId || '';
 
     if (title.includes('Certificate Ready') || title.includes('New Training') || title.includes('Attendance Marked') || title.includes('Hall Request Approved')) {
-      return `/trainings/${notification.relatedId}`;
+      return relatedId ? `/trainings/${relatedId}` : `/trainings`;
     } else if (title.includes('Nomination Approved')) {
       return '/my-attendance';
     } else if (title.includes('Nomination Rejected')) {
