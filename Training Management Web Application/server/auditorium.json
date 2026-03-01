@@ -1,0 +1,11 @@
+[
+  {
+    "_id": "hall-4",
+    "name": "Auditorium",
+    "location": "District Hospital Campus",
+    "capacity": 200,
+    "availability": [],
+    "createdAt": "2026-02-14T15:30:01.088Z",
+    "__v": 10
+  }
+]

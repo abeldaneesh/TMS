@@ -1,0 +1,13 @@
+[
+  {
+    "_id": "b40b3820-54ea-498d-b4b1-a6c8f59271ec",
+    "hallId": "hall-4",
+    "date": "2026-03-14T00:00:00.000Z",
+    "startTime": "09:00",
+    "endTime": "17:00",
+    "reason": "Cleaning / Sanitization",
+    "createdBy": "user-1",
+    "createdAt": "2026-02-14T17:25:20.273Z",
+    "__v": 0
+  }
+]

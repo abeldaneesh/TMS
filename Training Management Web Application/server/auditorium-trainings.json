@@ -1,0 +1,48 @@
+[
+  {
+    "_id": "train-3",
+    "title": "Maternal & Child Health Care",
+    "description": "Best practices in maternal and child healthcare.",
+    "program": "MCH Program",
+    "date": "2026-02-10T00:00:00.000Z",
+    "startTime": "09:30",
+    "endTime": "15:30",
+    "hallId": "hall-4",
+    "capacity": 150,
+    "trainerId": "user-2",
+    "createdById": "user-2",
+    "status": "completed",
+    "requiredInstitutions": [],
+    "createdAt": "2026-02-14T15:30:01.298Z",
+    "__v": 0,
+    "attendanceSession": {
+      "isActive": false,
+      "startTime": "2026-02-15T08:16:20.345Z",
+      "endTime": "2026-02-15T08:46:20.345Z",
+      "startedBy": "user-2",
+      "qrCodeToken": "1d46e65b-90df-4060-a1c0-fbe910186fb2"
+    }
+  },
+  {
+    "_id": "1aee272a-8818-4f9a-b834-88031026870d",
+    "title": "Men's Health Awareness",
+    "description": "To educate the public on men's health",
+    "program": "Digital Health",
+    "date": "2026-02-16T00:00:00.000Z",
+    "startTime": "10:00",
+    "endTime": "15:00",
+    "hallId": "hall-4",
+    "capacity": 3,
+    "trainerId": "user-2",
+    "createdById": "user-2",
+    "status": "scheduled",
+    "requiredInstitutions": [
+      "inst-2"
+    ],
+    "attendanceSession": {
+      "isActive": false
+    },
+    "createdAt": "2026-02-15T07:06:18.330Z",
+    "__v": 0
+  }
+]
