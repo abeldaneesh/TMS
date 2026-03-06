@@ -53,6 +53,16 @@ const Nominations: React.FC = () => {
   const [busyParticipantIds, setBusyParticipantIds] = useState<string[]>([]);
   const [barebonesMode, setBarebonesMode] = useState(false);
 
+  // Manual Add State
+  const [showAddParticipantDialog, setShowAddParticipantDialog] = useState(false);
+  const [newParticipant, setNewParticipant] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    designation: '',
+    department: '',
+  });
+
   // Helper functions with extra safety, memoized with useCallback
   const getTrainingName = useCallback((trainingId: any) => {
     const id = typeof trainingId === 'object' ? trainingId?.id || trainingId?._id : trainingId;
@@ -297,6 +307,26 @@ const Nominations: React.FC = () => {
     }
   };
 
+  const handleManualAddSubmit = async () => {
+    if (!newParticipant.name || !newParticipant.email) {
+      toast.error(t('nominationsProps.nameEmailRequired', { defaultValue: 'Name and Email are required' }));
+      return;
+    }
+    setLoading(true);
+    try {
+      await usersApi.createManualParticipant(newParticipant);
+      toast.success(t('nominationsProps.participantAdded', { defaultValue: 'Participant added successfully' }));
+      setShowAddParticipantDialog(false);
+      setNewParticipant({ name: '', email: '', phone: '', designation: '', department: '' });
+      fetchData(); // Refresh list to show new user immediately
+    } catch (error: any) {
+      const errorMsg = error.response?.data?.message || t('nominationsProps.addError', { defaultValue: 'Failed to add participant' });
+      toast.error(errorMsg);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   if (loading) {
     return <LoadingScreen />;
   }
@@ -363,12 +393,23 @@ const Nominations: React.FC = () => {
               </Button>
             )}
             {(user.role === 'program_officer' || user.role === 'master_admin' || user.role === 'medical_officer' || user.role === 'institutional_admin') && (
-              <Button
-                onClick={() => setShowNominateDialog(true)}
-                className="w-full md:w-auto font-medium"
-              >
-                {t('nominationsProps.nominatePersonnel')}
-              </Button>
+              <div className="flex w-full md:w-auto gap-2 flex-col sm:flex-row">
+                <Button
+                  onClick={() => setShowNominateDialog(true)}
+                  className="w-full md:w-auto font-medium"
+                >
+                  {t('nominationsProps.nominatePersonnel')}
+                </Button>
+                {(user.role === 'medical_officer' || user.role === 'institutional_admin') && (
+                  <Button
+                    onClick={() => setShowAddParticipantDialog(true)}
+                    variant="outline"
+                    className="w-full md:w-auto font-medium border-primary/20 hover:bg-primary/5 text-primary"
+                  >
+                    {t('nominationsProps.addParticipantManually', { defaultValue: '+ Add Participant' })}
+                  </Button>
+                )}
+              </div>
             )}
           </div>
         </div>
@@ -601,6 +642,69 @@ const Nominations: React.FC = () => {
                   className="flex-1"
                 >
                   {loading ? t('nominationsProps.submitting') : t('nominationsProps.submitNominations')}
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {showAddParticipantDialog && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm overflow-hidden">
+            <div className="bg-background border border-border rounded-xl w-full max-w-md p-6 shadow-xl max-h-[90vh] flex flex-col">
+              <h2 className="text-xl font-semibold mb-6">{t('nominationsProps.addNewPersonnel', { defaultValue: 'Add New Personnel' })}</h2>
+
+              <div className="flex-1 overflow-y-auto space-y-4 pr-2 custom-scrollbar">
+                <div>
+                  <Label className="text-sm font-medium text-foreground mb-1 block">Full Name *</Label>
+                  <Input
+                    placeholder="e.g. Dr. John Doe"
+                    value={newParticipant.name}
+                    onChange={(e) => setNewParticipant({ ...newParticipant, name: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-foreground mb-1 block">Email Address *</Label>
+                  <Input
+                    type="email"
+                    placeholder="john@example.com"
+                    value={newParticipant.email}
+                    onChange={(e) => setNewParticipant({ ...newParticipant, email: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-foreground mb-1 block">Phone Number</Label>
+                  <Input
+                    placeholder="+1 234 567 890"
+                    value={newParticipant.phone}
+                    onChange={(e) => setNewParticipant({ ...newParticipant, phone: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-foreground mb-1 block">Designation</Label>
+                  <Input
+                    placeholder="e.g. Senior Medical Officer"
+                    value={newParticipant.designation}
+                    onChange={(e) => setNewParticipant({ ...newParticipant, designation: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-foreground mb-1 block">Department</Label>
+                  <Input
+                    placeholder="e.g. Cardiology"
+                    value={newParticipant.department}
+                    onChange={(e) => setNewParticipant({ ...newParticipant, department: e.target.value })}
+                  />
+                </div>
+              </div>
+
+              <div className="flex gap-3 pt-6 border-t border-border mt-6">
+                <Button onClick={() => setShowAddParticipantDialog(false)} variant="outline" className="flex-1">{t('nominationsProps.cancel')}</Button>
+                <Button
+                  onClick={handleManualAddSubmit}
+                  disabled={!newParticipant.name || !newParticipant.email || loading}
+                  className="flex-1"
+                >
+                  {loading ? t('nominationsProps.submitting', { defaultValue: 'Saving...' }) : t('nominationsProps.saveParticipant', { defaultValue: 'Save Participant' })}
                 </Button>
               </div>
             </div>

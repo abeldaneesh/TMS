@@ -115,24 +115,6 @@ export const usersApi = {
         await api.delete(`/users/${id}`); // Assumes backend supports delete
     },
 
-    getPending: async (): Promise<User[]> => {
-        const response = await api.get('/users/pending');
-        return response.data; // pending users endpoint returns array
-    },
-
-    approve: async (userId: string): Promise<void> => {
-        await api.post(`/users/${userId}/approve`);
-    },
-
-    reject: async (userId: string): Promise<void> => {
-        await api.post(`/users/${userId}/reject`);
-    },
-
-    updateProfile: async (userId: string, data: any) => {
-        const response = await api.put(`/users/${userId}/profile`, data);
-        return response.data;
-    },
-
     changePassword: async (userId: string, data: any) => {
         const response = await api.put(`/users/${userId}/change-password`, data);
         return response.data;

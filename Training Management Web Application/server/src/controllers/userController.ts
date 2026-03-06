@@ -197,3 +197,58 @@ export const deleteUser = async (req: Request, res: Response): Promise<void> => 
         res.status(500).json({ message: 'Error deleting user' });
     }
 };
+
+export const addManualParticipant = async (req: AuthRequest, res: Response): Promise<void> => {
+    try {
+        const { name, email, phone, designation, department } = req.body;
+
+        if (!name || !email) {
+            res.status(400).json({ message: 'Name and email are required' });
+            return;
+        }
+
+        const institutionId = req.user?.institutionId;
+        if (!institutionId) {
+            res.status(403).json({ message: 'Not authorized: No institution associated with your account' });
+            return;
+        }
+
+        const existingUser = await User.findOne({ email: email.toLowerCase() });
+        if (existingUser) {
+            res.status(400).json({ message: 'A user with this email already exists' });
+            return;
+        }
+
+        // Generate a random secure password for manual accounts
+        const tempPassword = Math.random().toString(36).slice(-8) + Math.random().toString(36).slice(-8);
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(tempPassword, salt);
+
+        const newUser = await User.create({
+            name,
+            email: email.toLowerCase(),
+            password: hashedPassword,
+            phone,
+            designation,
+            department,
+            role: 'participant',
+            institutionId,
+            isApproved: true, // Auto-approve manual creations by MO/Admin
+        });
+
+        // Exclude password from response
+        const userObj = newUser.toObject();
+        delete (userObj as any).password;
+
+        res.status(201).json({
+            message: 'Participant added successfully',
+            user: {
+                ...userObj,
+                id: (userObj as any)._id
+            }
+        });
+    } catch (error) {
+        console.error('Error manually adding participant:', error);
+        res.status(500).json({ message: 'Error manually adding participant' });
+    }
+};
