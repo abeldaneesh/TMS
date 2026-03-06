@@ -90,10 +90,10 @@ export const getAvailableHalls = async (req: Request, res: Response): Promise<vo
             ]
         }).select('hallId');
 
-        const occupiedHallIds = [
+        const occupiedHallIds = new Set([
             ...conflictingTrainings.map(t => t.hallId),
             ...conflictingBlocks.map(b => b.hallId)
-        ];
+        ].map(id => id?.toString()));
 
         // 3. Find ALL halls
         const allHalls = await Hall.find();
@@ -101,7 +101,7 @@ export const getAvailableHalls = async (req: Request, res: Response): Promise<vo
         // 4. Filter by Availability Whitelist AND Occupation
         const availableHalls = allHalls.filter(hall => {
             // Check if occupied
-            if (occupiedHallIds.includes(hall._id)) return false;
+            if (occupiedHallIds.has(hall._id.toString())) return false;
 
             // Check if hall has ANY availability defined
             if (hall.availability && hall.availability.length > 0) {
@@ -362,3 +362,5 @@ export const deleteHall = async (req: Request, res: Response): Promise<void> => 
         res.status(500).json({ message: 'Error deleting hall' });
     }
 };
+
+

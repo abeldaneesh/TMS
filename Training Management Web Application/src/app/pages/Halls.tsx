@@ -13,6 +13,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
 import LoadingAnimation from '../components/LoadingAnimation';
+import { ClockTimePicker } from '../components/ui/clock-time-picker';
 
 const Halls: React.FC = () => {
     const { t } = useTranslation();
@@ -395,20 +396,16 @@ const Halls: React.FC = () => {
                                 <div className="grid grid-cols-2 gap-3">
                                     <div className="space-y-2">
                                         <Label className="text-[10px] font-bold tracking-widest text-primary/70 uppercase">Start Time</Label>
-                                        <Input
-                                            type="time"
+                                        <ClockTimePicker
                                             value={newSlot.startTime}
-                                            onChange={(e) => setNewSlot({ ...newSlot, startTime: e.target.value })}
-                                            className="bg-input/50 border-input text-foreground font-mono text-xs"
+                                            onChange={(val) => setNewSlot({ ...newSlot, startTime: val })}
                                         />
                                     </div>
                                     <div className="space-y-2">
                                         <Label className="text-[10px] font-bold tracking-widest text-primary/70 uppercase">End Time</Label>
-                                        <Input
-                                            type="time"
+                                        <ClockTimePicker
                                             value={newSlot.endTime}
-                                            onChange={(e) => setNewSlot({ ...newSlot, endTime: e.target.value })}
-                                            className="bg-input/50 border-input text-foreground font-mono text-xs"
+                                            onChange={(val) => setNewSlot({ ...newSlot, endTime: val })}
                                         />
                                     </div>
                                 </div>

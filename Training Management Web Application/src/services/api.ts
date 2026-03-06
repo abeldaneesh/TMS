@@ -7,6 +7,15 @@ import {
 const API_URL = (import.meta as any).env.VITE_API_URL || '/api';
 export const BASE_URL = API_URL.replace(/\/api\/?$/, '');
 console.log('Active API URL:', API_URL, 'Base URL:', BASE_URL);
+const toDateParam = (date: Date | string): string => {
+    if (date instanceof Date) {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    }
+    return date;
+};
 
 const api = axios.create({
     baseURL: API_URL,
@@ -191,7 +200,7 @@ export const hallsApi = {
     },
 
     checkAvailability: async (hallId: string, date: Date | string, startTime: string, endTime: string, excludeTrainingId?: string): Promise<boolean> => {
-        const dateStr = date instanceof Date ? date.toISOString().split('T')[0] : date;
+        const dateStr = toDateParam(date);
         const params = new URLSearchParams({
             date: dateStr,
             startTime,
@@ -204,7 +213,7 @@ export const hallsApi = {
     },
 
     getAvailableHalls: async (date: Date | string, startTime: string, endTime: string, excludeTrainingId?: string): Promise<Hall[]> => {
-        const dateStr = date instanceof Date ? date.toISOString().split('T')[0] : date;
+        const dateStr = toDateParam(date);
         const params = new URLSearchParams({
             date: dateStr,
             startTime,
@@ -230,7 +239,7 @@ export const hallsApi = {
     },
 
     getAvailabilityDetails: async (hallId: string, date: Date | string, startTime: string, endTime: string, excludeTrainingId?: string): Promise<{ isAvailable: boolean, reason?: string, type?: string }> => {
-        const dateStr = date instanceof Date ? date.toISOString().split('T')[0] : date;
+        const dateStr = toDateParam(date);
         const params = new URLSearchParams({
             date: dateStr,
             startTime,
@@ -500,3 +509,5 @@ export const qrApi = {
 };
 
 export default api;
+
+

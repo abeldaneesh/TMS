@@ -17,7 +17,9 @@ import { toast } from 'sonner';
 const Register: React.FC = () => {
     const [searchParams] = useSearchParams();
     const roleParam = searchParams.get('role') || 'participant';
-    const displayRole = roleParam === 'program_officer' ? 'Program Officer' : 'Field Personnel';
+    const displayRole = roleParam === 'program_officer' ? 'Program Officer'
+        : roleParam === 'medical_officer' ? 'Medical Officer'
+            : 'Field Personnel';
     const { t, i18n } = useTranslation();
     const { theme, toggleTheme } = useTheme();
 

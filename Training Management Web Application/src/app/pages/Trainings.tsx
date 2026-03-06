@@ -6,7 +6,8 @@ import { Training, Hall, User } from '../../types';
 import { useTranslation } from 'react-i18next';
 import {
   Calendar, Clock, Users, MapPin, Plus, Search,
-  Edit, Eye, AppWindowMac, PlayCircle, ClipboardList, CheckCircle2, XCircle
+  Edit, Eye, AppWindowMac, PlayCircle, ClipboardList, CheckCircle2, XCircle,
+  ArrowUpDown, ArrowUp, ArrowDown, CalendarPlus
 } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
@@ -30,6 +31,8 @@ const Trainings: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [dateFilter, setDateFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [sortField, setSortField] = useState<'title' | 'hall' | 'date' | 'status'>('date');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
 
   // Modal state
   const [attendanceModalOpen, setAttendanceModalOpen] = useState(false);
@@ -43,9 +46,7 @@ const Trainings: React.FC = () => {
       try {
         const [trainingsRes, hallsRes, usersRes] = await Promise.all([
           api.get('/trainings', {
-            params: user.role === 'program_officer' ? { createdById: user.id } :
-              user.role === 'institutional_admin' && user.institutionId ? { institutionId: user.institutionId } :
-                {}
+            params: user.role === 'institutional_admin' && user.institutionId ? { institutionId: user.institutionId } : {}
           }),
           api.get('/halls'),
           api.get('/users'),
@@ -117,6 +118,37 @@ const Trainings: React.FC = () => {
 
     return matchesSearch && matchesStatus && matchesDate;
   });
+
+  const sortedTrainings = [...filteredTrainings].sort((a, b) => {
+    let comparison = 0;
+    switch (sortField) {
+      case 'title':
+        comparison = a.title.localeCompare(b.title);
+        break;
+      case 'hall':
+        comparison = getHallName(a.hallId).localeCompare(getHallName(b.hallId));
+        break;
+      case 'date':
+        // sort by date then time
+        const dateA = new Date(`${a.date}T${a.startTime || '00:00'}`);
+        const dateB = new Date(`${b.date}T${b.startTime || '00:00'}`);
+        comparison = dateA.getTime() - dateB.getTime();
+        break;
+      case 'status':
+        comparison = a.status.localeCompare(b.status);
+        break;
+    }
+    return sortDirection === 'asc' ? comparison : -comparison;
+  });
+
+  const handleSort = (field: 'title' | 'hall' | 'date' | 'status') => {
+    if (field === sortField) {
+      setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortDirection('asc');
+    }
+  };
 
   const handleViewAttendance = (training: Training) => {
     setSelectedTrainingId(training.id);
@@ -203,7 +235,7 @@ const Trainings: React.FC = () => {
       </div>
 
       {/* Trainings List */}
-      {filteredTrainings.length === 0 ? (
+      {sortedTrainings.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 text-center">
           <div className="bg-secondary/20 size-24 rounded-full flex items-center justify-center mb-6">
             <Calendar className="size-10 text-muted-foreground opacity-50" />
@@ -219,13 +251,26 @@ const Trainings: React.FC = () => {
         <div className="flex flex-col">
           <div className="hidden md:flex items-center px-4 py-2 text-sm text-muted-foreground border-b border-border/50 uppercase tracking-wider font-medium">
             <div className="w-8 mr-4 text-center">#</div>
-            <div className="flex-1 min-w-0 pr-4">{t('trainings.table.title', 'Title')}</div>
-            <div className="w-48 shrink-0 px-4 text-right">{t('trainings.table.dateTime', 'Date & Time')}</div>
-            <div className="w-32 shrink-0 px-4">{t('trainings.table.status', 'Status')}</div>
+            <div className="flex-1 min-w-0 pr-4 cursor-pointer hover:text-foreground flex items-center gap-1 group/header" onClick={() => handleSort('title')}>
+              {t('trainings.table.title', 'Title')}
+              {sortField === 'title' ? (sortDirection === 'asc' ? <ArrowUp className="size-3" /> : <ArrowDown className="size-3" />) : <ArrowUpDown className="size-3 opacity-0 group-hover/header:opacity-50 transition-opacity" />}
+            </div>
+            <div className="w-48 shrink-0 px-4 cursor-pointer hover:text-foreground flex items-center gap-1 group/header" onClick={() => handleSort('hall')}>
+              <span>Hall / Venue</span>
+              {sortField === 'hall' ? (sortDirection === 'asc' ? <ArrowUp className="size-3" /> : <ArrowDown className="size-3" />) : <ArrowUpDown className="size-3 opacity-0 group-hover/header:opacity-50 transition-opacity" />}
+            </div>
+            <div className="w-48 shrink-0 px-4 text-right flex justify-end cursor-pointer hover:text-foreground gap-1 group/header" onClick={() => handleSort('date')}>
+              {sortField === 'date' ? (sortDirection === 'asc' ? <ArrowUp className="size-3" /> : <ArrowDown className="size-3" />) : <ArrowUpDown className="size-3 opacity-0 group-hover/header:opacity-50 transition-opacity" />}
+              <span>{t('trainings.table.dateTime', 'Date & Time')}</span>
+            </div>
+            <div className="w-32 shrink-0 px-4 cursor-pointer hover:text-foreground flex items-center gap-1 group/header" onClick={() => handleSort('status')}>
+              {t('trainings.table.status', 'Status')}
+              {sortField === 'status' ? (sortDirection === 'asc' ? <ArrowUp className="size-3" /> : <ArrowDown className="size-3" />) : <ArrowUpDown className="size-3 opacity-0 group-hover/header:opacity-50 transition-opacity" />}
+            </div>
             <div className="w-48 shrink-0"></div>
           </div>
 
-          {filteredTrainings.map((training, index) => (
+          {sortedTrainings.map((training, index) => (
             <div
               key={training.id}
               className="group flex flex-col sm:flex-row sm:items-center py-3 px-2 sm:px-4 hover:bg-white/5 rounded-lg transition-colors border-b border-border/30 cursor-pointer"
@@ -248,9 +293,15 @@ const Trainings: React.FC = () => {
                     {training.title}
                   </h3>
                   <p className="text-sm text-muted-foreground truncate mt-0.5">
-                    {training.program} • {getHallName(training.hallId)} • {getTrainerName(training.trainerId)}
+                    {training.program} • {getTrainerName(training.trainerId)}
                   </p>
                 </div>
+              </div>
+
+              <div className="hidden md:flex items-center px-4 w-48 shrink-0">
+                <span className="text-sm font-medium text-foreground/90 truncate" title={getHallName(training.hallId)}>
+                  {getHallName(training.hallId)}
+                </span>
               </div>
 
               <div className="hidden md:flex flex-col items-end px-4 w-48 shrink-0">
@@ -272,6 +323,16 @@ const Trainings: React.FC = () => {
 
                 {(user?.role === 'program_officer' || user?.role === 'master_admin') && (
                   <>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => navigate('/trainings/create', { state: { prefilledTraining: training } })}
+                      className="text-muted-foreground hover:text-white hover:bg-white/10 rounded-full size-9"
+                      title={t('trainings.actions.schedule', 'Schedule Program')}
+                    >
+                      <CalendarPlus className="size-4" />
+                    </Button>
+
                     <Button variant="ghost" size="icon" onClick={() => handleViewParticipants(training)} className="text-muted-foreground hover:text-white hover:bg-white/10 rounded-full size-9" title={t('trainings.actions.personnel', 'Personnel')}>
                       <Users className="size-4" />
                     </Button>

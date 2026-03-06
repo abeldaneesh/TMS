@@ -15,8 +15,8 @@ const UserApprovals: React.FC = () => {
     const [pendingUsers, setPendingUsers] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
 
-    // Only master_admin can access this
-    if (currentUser?.role !== 'master_admin') {
+    // master_admin and medical_officer can access this
+    if (currentUser?.role !== 'master_admin' && currentUser?.role !== 'medical_officer') {
         return <Navigate to="/dashboard" replace />;
     }
 

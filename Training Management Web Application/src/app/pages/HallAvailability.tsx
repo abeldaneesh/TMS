@@ -13,6 +13,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { format } from 'date-fns';
 import LoadingAnimation from '../components/LoadingAnimation';
+import { ClockTimePicker } from '../components/ui/clock-time-picker';
 
 const HallAvailability: React.FC = () => {
   const [halls, setHalls] = useState<Hall[]>([]);
@@ -225,20 +226,16 @@ const HallAvailability: React.FC = () => {
             </div>
             <div>
               <Label htmlFor="startTime">Start Time</Label>
-              <Input
-                id="startTime"
-                type="time"
+              <ClockTimePicker
                 value={startTime}
-                onChange={(e) => setStartTime(e.target.value)}
+                onChange={setStartTime}
               />
             </div>
             <div>
               <Label htmlFor="endTime">End Time</Label>
-              <Input
-                id="endTime"
-                type="time"
+              <ClockTimePicker
                 value={endTime}
-                onChange={(e) => setEndTime(e.target.value)}
+                onChange={setEndTime}
               />
             </div>
           </div>
@@ -396,11 +393,11 @@ const HallAvailability: React.FC = () => {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label>Start Time</Label>
-                <Input type="time" value={blockStartTime} onChange={(e) => setBlockStartTime(e.target.value)} />
+                <ClockTimePicker value={blockStartTime} onChange={setBlockStartTime} />
               </div>
               <div>
                 <Label>End Time</Label>
-                <Input type="time" value={blockEndTime} onChange={(e) => setBlockEndTime(e.target.value)} />
+                <ClockTimePicker value={blockEndTime} onChange={setBlockEndTime} />
               </div>
             </div>
             <div>

@@ -362,7 +362,7 @@ const Nominations: React.FC = () => {
                 {t('nominationsProps.bulkApprove', { count: selectedNominationIds.length })}
               </Button>
             )}
-            {(user.role === 'program_officer' || user.role === 'master_admin') && (
+            {(user.role === 'program_officer' || user.role === 'master_admin' || user.role === 'medical_officer' || user.role === 'institutional_admin') && (
               <Button
                 onClick={() => setShowNominateDialog(true)}
                 className="w-full md:w-auto font-medium"
@@ -541,7 +541,14 @@ const Nominations: React.FC = () => {
                 <div>
                   <Label className="text-sm font-medium text-foreground mb-2 block">{t('nominationsProps.selectParticipants')} ({selectedParticipantIds.length})</Label>
                   <div className="space-y-2">
-                    {users.filter(u => u.role === 'participant').map(u => {
+                    {users.filter(u => {
+                      if (u.role !== 'participant') return false;
+                      // Medical Officers and Institutional Admins can only nominate their own staff
+                      if ((user.role === 'medical_officer' || user.role === 'institutional_admin') && u.institutionId !== user.institutionId) {
+                        return false;
+                      }
+                      return true;
+                    }).map(u => {
                       const isBusy = busyParticipantIds.includes(u.id);
                       const isAlreadyAssigned = nominations.some(n => n.trainingId === selectedTrainingId && n.participantId === u.id && n.status !== 'rejected');
                       const isDisabled = isBusy || isAlreadyAssigned;

@@ -16,12 +16,6 @@ export const getTrainings = async (req: Request, res: Response): Promise<void> =
         if (createdById) {
             whereClause.createdById = createdById as string;
         }
-
-        // Enforcement: If PO, they can only see their own trainings
-        if (authReq.user?.role === 'program_officer') {
-            whereClause.createdById = authReq.user.userId;
-        }
-
         // Apply filtering by institutionId directly in query if possible, or filter locally
         // Mongoose: if institutionId provided, find documents where requiredInstitutions array contains it OR is empty/null?
         // Logic below: "checking if ID is in requiredInstitutions JSON array"
@@ -121,13 +115,12 @@ export const getTrainingById = async (req: Request, res: Response): Promise<void
             });
             userStatus = nomination?.status || null;
         }
-
-        if (authReq.user?.role === 'program_officer' && creatorId && creatorId.toString() !== authReq.user.userId) {
-            if (!userStatus || !['nominated', 'approved', 'attended'].includes(userStatus)) {
-                res.status(403).json({ message: 'Not authorized to view this training' });
-                return;
-            }
-        }
+        // Fetch assigned participants count
+        const Nomination = require('../models/Nomination').default;
+        const assignedParticipantsCount = await Nomination.countDocuments({
+            trainingId: id,
+            status: { $in: ['nominated', 'approved', 'attended'] }
+        });
 
         const transformedTraining = {
             ...training,
@@ -137,7 +130,9 @@ export const getTrainingById = async (req: Request, res: Response): Promise<void
             creator: training.createdById,
             // @ts-ignore
             createdById: training.createdById?._id || training.createdById,
-            userStatus
+            userStatus,
+            assignedParticipantsCount,
+            remainingCapacity: Math.max(0, training.capacity - assignedParticipantsCount)
         };
 
         res.json(transformedTraining);
@@ -259,6 +254,20 @@ export const updateTraining = async (req: AuthRequest, res: Response): Promise<v
         // Authorization check: Only creator or master_admin can update this training
         if (training.createdById.toString() !== userId && userRole !== 'master_admin') {
             res.status(403).json({ message: 'Not authorized to update this training' });
+            return;
+        }
+
+        // Capacity check
+        const Nomination = require('../models/Nomination').default;
+        const assignedParticipantsCount = await Nomination.countDocuments({
+            trainingId: id,
+            status: { $in: ['nominated', 'approved', 'attended'] }
+        });
+
+        const newCapacity = capacity !== undefined ? capacity : training.capacity;
+
+        if (newCapacity < assignedParticipantsCount) {
+            res.status(400).json({ message: `Cannot update: Assigned participants (${assignedParticipantsCount}) exceed the new capacity (${newCapacity}).` });
             return;
         }
 

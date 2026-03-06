@@ -32,6 +32,13 @@ const PortalSelection: React.FC = () => {
             color: 'text-emerald-600 bg-emerald-500/10',
             path: '/login/participant',
         },
+        {
+            title: t('portalSelection.moTitle', 'Medical Officer'),
+            description: t('portalSelection.moDesc', 'Verify and manage institution personnel'),
+            icon: Database,
+            color: 'text-purple-600 bg-purple-500/10',
+            path: '/login/medical_officer',
+        },
     ];
 
     const handlePortalClick = (path: string) => {

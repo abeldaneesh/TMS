@@ -18,7 +18,7 @@ export const nominateParticipant = async (req: AuthRequest, res: Response): Prom
         let institutionId = bodyInstitutionId;
 
         // If not provided in body or forced by role logic
-        if (req.user?.role === 'institutional_admin') {
+        if (req.user?.role === 'institutional_admin' || req.user?.role === 'medical_officer') {
             institutionId = req.user.institutionId;
         }
 
@@ -55,6 +55,16 @@ export const nominateParticipant = async (req: AuthRequest, res: Response): Prom
 
         if (!training) {
             res.status(404).json({ message: 'Training not found' });
+            return;
+        }
+
+        const assignedParticipantsCount = await Nomination.countDocuments({
+            trainingId,
+            status: { $in: ['nominated', 'approved', 'attended'] }
+        });
+
+        if (assignedParticipantsCount >= training.capacity) {
+            res.status(400).json({ message: 'Training has reached its maximum capacity. Cannot assign more participants.' });
             return;
         }
 
@@ -202,6 +212,12 @@ export const updateNominationStatus = async (req: AuthRequest, res: Response): P
         const id = req.params.id as string;
         const { status, rejectionReason } = req.body;
 
+        const validStatuses = Object.values(NominationStatus);
+        if (!status || !validStatuses.includes(status)) {
+            res.status(400).json({ message: 'Invalid nomination status' });
+            return;
+        }
+
         // Only master_admin or the program_officer who created the training can approve/reject
         let isAuthorized = false;
 
@@ -236,7 +252,7 @@ export const updateNominationStatus = async (req: AuthRequest, res: Response): P
         const updatedNomination = await Nomination.findByIdAndUpdate(
             id,
             updateData,
-            { new: true }
+            { new: true, runValidators: true }
         ).populate('trainingId', 'title');
 
         if (!updatedNomination) {
@@ -341,3 +357,4 @@ export const getBusyParticipants = async (req: AuthRequest, res: Response): Prom
         res.status(500).json({ message: 'Error fetching availability data' });
     }
 };
+

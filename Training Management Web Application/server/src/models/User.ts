@@ -5,7 +5,8 @@ export enum UserRole {
     MASTER_ADMIN = 'master_admin',
     PROGRAM_OFFICER = 'program_officer',
     INSTITUTIONAL_ADMIN = 'institutional_admin',
-    PARTICIPANT = 'participant'
+    PARTICIPANT = 'participant',
+    MEDICAL_OFFICER = 'medical_officer'
 }
 
 export interface IUser extends Omit<Document, '_id'> {

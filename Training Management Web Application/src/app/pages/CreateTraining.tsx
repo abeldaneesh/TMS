@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTranslation } from 'react-i18next';
 import LoadingAnimation from '../components/LoadingAnimation';
@@ -23,10 +23,25 @@ import {
 } from '../components/ui/select';
 import { Checkbox } from '../components/ui/checkbox';
 import { toast } from 'sonner';
+import { MultiSelect } from '../components/ui/multi-select';
+import { ClockTimePicker } from '../components/ui/clock-time-picker';
+
+const programs = [
+  'Emergency Medicine',
+  'Infection Control',
+  'MCH Program',
+  'Digital Health',
+  'TB Control Program',
+  'Mental Health',
+  'Immunization',
+  'AYUSH',
+  'Other',
+];
 
 const CreateTraining: React.FC = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const { id } = useParams<{ id: string }>();
   const isEditMode = !!id;
   const { t } = useTranslation();
@@ -48,7 +63,8 @@ const CreateTraining: React.FC = () => {
     title: '',
     description: '',
     program: '',
-    targetAudience: '',
+    customProgram: '',
+    targetAudience: [] as string[],
     date: '',
     startTime: '',
     endTime: '',
@@ -70,21 +86,20 @@ const CreateTraining: React.FC = () => {
         setInstitutions(institutionsData);
 
         if (isEditMode && id) {
-          // Fetch training details to edit
-          // Note: MockApi might need getById. Checking api usage elsewhere.
-          // Usually api.get(`/trainings/${id}`)
           try {
-            // Using the direct axios instance if mockApi doesn't expose getById explicitly yet
-            // Or assuming trainingsApi.getAll() returns all and filtering (less efficient but works for mock)
-            // Let's rely on api call pattern seen in Trainings.tsx
             const response = await api.get(`/trainings/${id}`);
             const training = response.data;
+
+            const isCustomProgram = !programs.includes(training.program);
 
             setFormData({
               title: training.title,
               description: training.description,
-              program: training.program,
-              targetAudience: training.targetAudience,
+              program: isCustomProgram ? 'Other' : training.program,
+              customProgram: isCustomProgram ? training.program : '',
+              targetAudience: Array.isArray(training.targetAudience)
+                ? training.targetAudience
+                : (training.targetAudience ? [training.targetAudience] : []),
               date: new Date(training.date).toISOString().split('T')[0],
               startTime: training.startTime,
               endTime: training.endTime,
@@ -97,6 +112,24 @@ const CreateTraining: React.FC = () => {
             toast.error("Failed to load training details");
             navigate('/trainings');
           }
+        } else if (location.state?.prefilledTraining) {
+          const training = location.state.prefilledTraining;
+          const isCustomProgram = !programs.includes(training.program);
+          setFormData(prev => ({
+            ...prev,
+            title: training.title,
+            description: training.description,
+            program: isCustomProgram ? 'Other' : training.program,
+            customProgram: isCustomProgram ? training.program : '',
+            targetAudience: Array.isArray(training.targetAudience)
+              ? training.targetAudience
+              : (training.targetAudience ? [training.targetAudience] : []),
+            capacity: training.capacity?.toString() || '',
+            requiredInstitutions: training.requiredInstitutions || [],
+          }));
+
+          // Clear location state to prevent re-filling if user navigates away and back via back button
+          window.history.replaceState({}, document.title)
         }
 
       } catch (error) {
@@ -106,7 +139,7 @@ const CreateTraining: React.FC = () => {
       }
     };
     fetchData();
-  }, [id, isEditMode, navigate]);
+  }, [id, isEditMode, navigate, location.state]);
 
   const checkHallAvailability = async () => {
     if (!formData.date || !formData.startTime || !formData.endTime) {
@@ -117,7 +150,7 @@ const CreateTraining: React.FC = () => {
     setCheckingAvailability(true);
     try {
       const available = await hallsApi.getAvailableHalls(
-        formData.date, // Pass the string directly
+        formData.date,
         formData.startTime,
         formData.endTime,
         isEditMode ? id : undefined
@@ -139,19 +172,14 @@ const CreateTraining: React.FC = () => {
 
   const [unavailableReason, setUnavailableReason] = useState<string | null>(null);
 
-  // Check details if selected hall is unavailable
   useEffect(() => {
     const checkDetails = async () => {
       if (!formData.hallId || !formData.date || !formData.startTime || !formData.endTime) return;
 
-      // Only check if we know it's unavailable or just to be sure when selecting a hall
-      // If hallId is selected, and it's NOT in availableHalls (if availableHalls is populated)
-      // Or we can just ALWAYS fetch details for the selected hall to get the reason if ANY.
-
       try {
         const details = await hallsApi.getAvailabilityDetails(
           formData.hallId,
-          formData.date, // Pass the string directly
+          formData.date,
           formData.startTime,
           formData.endTime,
           isEditMode ? id : undefined
@@ -200,7 +228,10 @@ const CreateTraining: React.FC = () => {
     if (!formData.title.trim()) newErrors.title = 'Title is required';
     if (!formData.description.trim()) newErrors.description = 'Description is required';
     if (!formData.program.trim()) newErrors.program = 'Program is required';
-    if (!formData.targetAudience.trim()) newErrors.targetAudience = 'Target audience is required';
+    if (formData.program === 'Other' && (!formData.customProgram || !formData.customProgram.trim())) {
+      newErrors.customProgram = 'Custom program name is required';
+    }
+    if (formData.targetAudience.length === 0) newErrors.targetAudience = 'Select at least one target audience';
     if (!formData.date) newErrors.date = 'Date is required';
     if (!formData.startTime) newErrors.startTime = 'Start time is required';
     if (!formData.endTime) newErrors.endTime = 'End time is required';
@@ -231,7 +262,7 @@ const CreateTraining: React.FC = () => {
       const payload = {
         title: formData.title,
         description: formData.description,
-        program: formData.program,
+        program: formData.program === 'Other' ? formData.customProgram : formData.program,
         targetAudience: formData.targetAudience,
         date: new Date(formData.date),
         startTime: formData.startTime,
@@ -274,12 +305,11 @@ const CreateTraining: React.FC = () => {
     try {
       let trainingId = id;
 
-      // If not in edit mode (new training), creates a draft first
       if (!trainingId) {
         const payload = {
           title: formData.title,
           description: formData.description,
-          program: formData.program,
+          program: formData.program === 'Other' ? formData.customProgram : formData.program,
           targetAudience: formData.targetAudience,
           date: new Date(formData.date),
           startTime: formData.startTime,
@@ -290,8 +320,6 @@ const CreateTraining: React.FC = () => {
           status: 'draft' as TrainingStatus
         };
 
-        // Validate minimal fields for draft? 
-        // At least title and hall/date are needed for the request context.
         if (!formData.title) {
           toast.error("Please enter a title");
           setRequestLoading(false);
@@ -325,17 +353,7 @@ const CreateTraining: React.FC = () => {
     }
   };
 
-  const programs = [
-    'Emergency Medicine',
-    'Infection Control',
-    'MCH Program',
-    'Digital Health',
-    'TB Control Program',
-    'Mental Health',
-    'Immunization',
-    'AYUSH',
-    'Other',
-  ];
+
 
   if (initialLoading) {
     return (
@@ -454,16 +472,33 @@ const CreateTraining: React.FC = () => {
                     ))}
                   </SelectContent>
                 </Select>
+                {formData.program === 'Other' && (
+                  <div className="mt-3">
+                    <Input
+                      value={formData.customProgram}
+                      onChange={(e) => handleChange('customProgram', e.target.value)}
+                      placeholder={t('createTraining.fields.customProgramPlaceholder', 'Enter custom program name')}
+                    />
+                    {errors.customProgram && <p className="text-sm text-red-600 mt-1">{errors.customProgram}</p>}
+                  </div>
+                )}
                 {errors.program && <p className="text-sm text-red-600 mt-1">{errors.program}</p>}
               </div>
 
               <div>
                 <Label htmlFor="targetAudience">{t('createTraining.fields.targetAudience', 'Target Audience *')}</Label>
-                <Input
-                  id="targetAudience"
-                  value={formData.targetAudience}
-                  onChange={(e) => handleChange('targetAudience', e.target.value)}
-                  placeholder={t('createTraining.fields.targetAudiencePlaceholder', 'e.g., Nurses, Doctors, All Staff')}
+                <MultiSelect
+                  options={[
+                    { label: 'Doctors', value: 'Doctors' },
+                    { label: 'Nurses', value: 'Nurses' },
+                    { label: 'Lab Technicians', value: 'Lab Technicians' },
+                    { label: 'Health Inspectors', value: 'Health Inspectors' },
+                    { label: 'Administrative Staff', value: 'Administrative Staff' },
+                    { label: 'Other', value: 'Other' },
+                  ]}
+                  selected={formData.targetAudience}
+                  onChange={(value) => handleChange('targetAudience', value)}
+                  placeholder={t('createTraining.fields.targetAudiencePlaceholder', 'Select target audience')}
                 />
                 {errors.targetAudience && <p className="text-sm text-red-600 mt-1">{errors.targetAudience}</p>}
               </div>
@@ -492,22 +527,20 @@ const CreateTraining: React.FC = () => {
 
               <div>
                 <Label htmlFor="startTime">{t('createTraining.fields.startTime', 'Start Time *')}</Label>
-                <Input
-                  id="startTime"
-                  type="time"
+                <ClockTimePicker
                   value={formData.startTime}
-                  onChange={(e) => handleChange('startTime', e.target.value)}
+                  onChange={(val) => handleChange('startTime', val)}
+                  className={errors.startTime ? "border-red-500" : ""}
                 />
                 {errors.startTime && <p className="text-sm text-red-600 mt-1">{errors.startTime}</p>}
               </div>
 
               <div>
                 <Label htmlFor="endTime">{t('createTraining.fields.endTime', 'End Time *')}</Label>
-                <Input
-                  id="endTime"
-                  type="time"
+                <ClockTimePicker
                   value={formData.endTime}
-                  onChange={(e) => handleChange('endTime', e.target.value)}
+                  onChange={(val) => handleChange('endTime', val)}
+                  className={errors.endTime ? "border-red-500" : ""}
                 />
                 {errors.endTime && <p className="text-sm text-red-600 mt-1">{errors.endTime}</p>}
               </div>
@@ -528,7 +561,6 @@ const CreateTraining: React.FC = () => {
                   </AlertDescription>
                 </Alert>
 
-                {/* Show Request Button if NO halls available, OR if selected hall is NOT in available list */}
                 {!checkingAvailability && (availableHalls.length === 0 || (formData.hallId && !availableHalls.find(h => h.id === formData.hallId))) && (
                   <div className="p-4 border rounded-md bg-yellow-50 border-yellow-200">
                     <h4 className="font-semibold text-yellow-800 flex items-center gap-2">
@@ -638,57 +670,6 @@ const CreateTraining: React.FC = () => {
           </Button>
         </div>
       </form>
-
-      <Dialog open={showRequestDialog} onOpenChange={setShowRequestDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{t('createTraining.dialog.title', 'Request Hall Approval')}</DialogTitle>
-            <DialogDescription>
-              {t('createTraining.dialog.desc', 'Submit a request to the Admin for this hall booking.')}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-2">
-            <div>
-              <Label>{t('createTraining.fields.title', 'Training Title *')}</Label>
-              <Input value={formData.title} disabled className="bg-gray-100" />
-            </div>
-            <div>
-              <Label>{t('createTraining.dialog.requestedHall', 'Requested Hall')}</Label>
-              <Input value={halls.find(h => h.id === formData.hallId)?.name || ''} disabled className="bg-gray-100" />
-            </div>
-            <div>
-              <Label>{t('createTraining.dialog.timeSlot', 'Time Slot')}</Label>
-              <Input value={`${new Date(formData.date).toLocaleDateString()} | ${formData.startTime} - ${formData.endTime}`} disabled className="bg-gray-100" />
-            </div>
-            <div>
-              <Label>{t('createTraining.dialog.priority', 'Priority')}</Label>
-              <Select value={requestPriority} onValueChange={(val: any) => setRequestPriority(val)}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="normal">{t('createTraining.dialog.normal', 'Normal')}</SelectItem>
-                  <SelectItem value="urgent">{t('createTraining.dialog.urgent', 'Urgent')}</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label>{t('createTraining.dialog.remarks', 'Remarks (Optional)')}</Label>
-              <Textarea
-                value={requestRemarks}
-                onChange={(e) => setRequestRemarks(e.target.value)}
-                placeholder={t('createTraining.dialog.remarksPlaceholder', 'Reason for urgency or special requirements...')}
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowRequestDialog(false)}>{t('createTraining.buttons.cancel', 'Cancel')}</Button>
-            <Button onClick={handleRequestHall} disabled={requestLoading}>
-              {requestLoading ? t('createTraining.buttons.sending', 'Sending...') : t('createTraining.buttons.sendRequest', 'Send Request')}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 };

@@ -46,6 +46,10 @@ const Reports: React.FC = () => {
         ]);
         setTrainings(Array.isArray(trainingsData) ? trainingsData : []);
         setInstitutions(Array.isArray(institutionsData) ? institutionsData : []);
+
+        if ((user.role === 'institutional_admin' || user.role === 'medical_officer') && user.institutionId) {
+          setSelectedInstitution(user.institutionId);
+        }
       } catch (error) {
         console.error('Error fetching data:', error);
         toast.error(t('reportsPage.failLoad'));
@@ -462,7 +466,11 @@ const Reports: React.FC = () => {
                   <Building2 className="size-3" />
                   Select Institution
                 </Label>
-                <Select value={selectedInstitution} onValueChange={setSelectedInstitution}>
+                <Select
+                  value={selectedInstitution}
+                  onValueChange={setSelectedInstitution}
+                  disabled={user?.role === 'institutional_admin' || user?.role === 'medical_officer'}
+                >
                   <SelectTrigger className="bg-white/5 border-white/10 text-foreground text-xs py-5">
                     <SelectValue placeholder={t('reportsPage.identifyInst')} />
                   </SelectTrigger>

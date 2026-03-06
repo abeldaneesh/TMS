@@ -6,9 +6,9 @@ import { Training, Hall, User } from '../../types';
 import {
     Calendar, Clock, Users, MapPin, ArrowLeft, Edit, Trash2, CheckCircle, XCircle
 } from 'lucide-react';
+import { Badge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
-import { Badge } from '../components/ui/badge';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 import AttendanceListModal from '../components/AttendanceListModal';
@@ -252,9 +252,24 @@ const TrainingDetails: React.FC = () => {
                                 <div className="p-2 bg-secondary/20 rounded-lg text-primary">
                                     <Users className="size-5" />
                                 </div>
-                                <div>
-                                    <p className="text-xs font-semibold text-muted-foreground uppercase">Capacity</p>
-                                    <p className="font-medium text-sm mt-0.5">{training.capacity} Participants</p>
+                                <div className="w-full">
+                                    <p className="text-xs font-semibold text-muted-foreground uppercase mb-1">Capacity</p>
+                                    <div className="flex justify-between items-center bg-white/5 rounded p-2">
+                                        <div className="text-center px-2 border-r border-white/10 w-1/3">
+                                            <p className="text-xs text-muted-foreground">Total</p>
+                                            <p className="font-bold text-sm">{training.capacity}</p>
+                                        </div>
+                                        <div className="text-center px-2 border-r border-white/10 w-1/3">
+                                            <p className="text-xs text-muted-foreground">Assigned</p>
+                                            <p className="font-bold text-sm text-blue-400">{training.assignedParticipantsCount || 0}</p>
+                                        </div>
+                                        <div className="text-center px-2 w-1/3">
+                                            <p className="text-xs text-muted-foreground">Remaining</p>
+                                            <p className={`font-bold text-sm ${training.remainingCapacity === 0 ? 'text-red-400' : 'text-emerald-400'}`}>
+                                                {training.remainingCapacity !== undefined ? training.remainingCapacity : training.capacity}
+                                            </p>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </CardContent>

@@ -1,6 +1,6 @@
 // Type definitions for the Training Management System
 
-export type UserRole = 'master_admin' | 'program_officer' | 'institutional_admin' | 'participant';
+export type UserRole = 'master_admin' | 'program_officer' | 'institutional_admin' | 'participant' | 'medical_officer';
 
 export interface User {
   id: string;
@@ -67,7 +67,7 @@ export interface Training {
   title: string;
   description: string;
   program: string;
-  targetAudience: string;
+  targetAudience: string[];
   date: Date;
   startTime: string;
   endTime: string;
@@ -86,6 +86,8 @@ export interface Training {
   };
   userStatus?: string | null;
   certificatesGenerated?: boolean;
+  assignedParticipantsCount?: number;
+  remainingCapacity?: number;
   createdAt: Date;
   updatedAt: Date;
 }
