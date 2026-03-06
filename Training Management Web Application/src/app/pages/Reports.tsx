@@ -71,11 +71,20 @@ const Reports: React.FC = () => {
         hallsApi.getAll().catch(() => []),
       ]);
 
-      const analytics = analyticsRes || { totalNominated: 0, totalApproved: 0, totalAttended: 0, attendanceRate: 0 };
-      const nominations = Array.isArray(nominationsRes) ? nominationsRes : [];
-      const attendanceRecords = Array.isArray(attendanceRes) ? attendanceRes : [];
+      const analyticsResObj = analyticsRes || { totalNominated: 0, totalApproved: 0, totalAttended: 0, attendanceRate: 0 };
+      let nominations = Array.isArray(nominationsRes) ? nominationsRes : [];
+      let attendanceRecords = Array.isArray(attendanceRes) ? attendanceRes : [];
       const allUsers = Array.isArray(usersRes) ? usersRes : [];
       const halls = Array.isArray(hallsRes) ? hallsRes : [];
+
+      // Filter data for Institution Admins and Medical Officers
+      if ((user?.role === 'institutional_admin' || user?.role === 'medical_officer') && user.institutionId) {
+        nominations = nominations.filter(n => n.institutionId === user.institutionId);
+        const institutionalParticipantIds = nominations.map(n => n.participantId);
+        attendanceRecords = attendanceRecords.filter(a => institutionalParticipantIds.includes(a.participantId));
+      }
+
+      const analytics = analyticsResObj;
 
       const hall = halls.find(h => h.id === training.hallId || (h as any)._id === training.hallId);
       const trainer = allUsers.find(u => u.id === training.trainerId || (u as any)._id === training.trainerId);
@@ -155,9 +164,16 @@ const Reports: React.FC = () => {
         usersApi.getAll().catch(() => []),
       ]);
 
-      const nominations = Array.isArray(nominationsRes) ? nominationsRes : [];
-      const attendanceRecords = Array.isArray(attendanceRes) ? attendanceRes : [];
+      let nominations = Array.isArray(nominationsRes) ? nominationsRes : [];
+      let attendanceRecords = Array.isArray(attendanceRes) ? attendanceRes : [];
       const allUsers = Array.isArray(usersRes) ? usersRes : [];
+
+      // Filter data for Institution Admins and Medical Officers
+      if ((user?.role === 'institutional_admin' || user?.role === 'medical_officer') && user.institutionId) {
+        nominations = nominations.filter(n => n.institutionId === user.institutionId);
+        const institutionalParticipantIds = nominations.map(n => n.participantId);
+        attendanceRecords = attendanceRecords.filter(a => institutionalParticipantIds.includes(a.participantId));
+      }
 
       const csvData = nominations.map(nom => {
         const participant = allUsers.find(u => u.id === nom.participantId);

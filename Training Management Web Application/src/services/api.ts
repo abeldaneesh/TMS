@@ -103,7 +103,7 @@ export const usersApi = {
 
     create: async (userData: any): Promise<User> => {
         // In this system, creating a user is same as registering
-        return authApi.register(userData);
+        return authApi.register(userData) as any;
     },
 
     update: async (id: string, userData: Partial<User>): Promise<User> => {
@@ -126,6 +126,24 @@ export const usersApi = {
                 'Content-Type': 'multipart/form-data'
             }
         });
+        return response.data;
+    },
+
+    getPending: async (): Promise<User[]> => {
+        const response = await api.get('/users/pending');
+        return response.data;
+    },
+
+    approve: async (userId: string): Promise<void> => {
+        await api.post(`/users/${userId}/approve`);
+    },
+
+    reject: async (userId: string): Promise<void> => {
+        await api.post(`/users/${userId}/reject`);
+    },
+
+    createManualParticipant: async (userData: any): Promise<any> => {
+        const response = await api.post('/users/manual-participant', userData);
         return response.data;
     }
 };

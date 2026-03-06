@@ -90,7 +90,7 @@ const Nominations: React.FC = () => {
       console.log('[NOMINATIONS_SYNC] Starting data fetch...');
       const [nominationsData, trainingsData, usersData, institutionsData] = await Promise.all([
         nominationsApi.getAll(
-          user.role === 'institutional_admin' && user.institutionId
+          (user.role === 'institutional_admin' || user.role === 'medical_officer') && user.institutionId
             ? { institutionId: user.institutionId }
             : user.role === 'participant'
               ? { participantId: user.id }
