@@ -8,7 +8,7 @@ export const getHalls = async (req: Request, res: Response): Promise<void> => {
     try {
         const halls = await Hall.find().sort({ name: 1 });
 
-        const formattedHalls = halls.map(hall => ({
+        const formattedHalls = halls.map((hall: any) => ({
             ...hall.toObject(),
             id: hall._id
         }));
@@ -91,9 +91,9 @@ export const getAvailableHalls = async (req: Request, res: Response): Promise<vo
         }).select('hallId');
 
         const occupiedHallIds = new Set([
-            ...conflictingTrainings.map(t => t.hallId),
-            ...conflictingBlocks.map(b => b.hallId)
-        ].map(id => id?.toString()));
+            ...conflictingTrainings.map((t: any) => t.hallId),
+            ...conflictingBlocks.map((b: any) => b.hallId)
+        ].map((id: any) => id?.toString()));
 
         // 3. Find ALL halls
         const allHalls = await Hall.find();
@@ -138,7 +138,7 @@ export const getAvailableHalls = async (req: Request, res: Response): Promise<vo
         // Sort by name
         availableHalls.sort((a, b) => a.name.localeCompare(b.name));
 
-        const formattedAvailableHalls = availableHalls.map(hall => ({
+        const formattedAvailableHalls = availableHalls.map((hall: any) => ({
             ...hall.toObject(),
             id: hall._id
         }));

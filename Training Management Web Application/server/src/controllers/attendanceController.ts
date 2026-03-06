@@ -136,7 +136,7 @@ export const markAttendance = async (req: AuthRequest, res: Response): Promise<v
             console.log(`[DEBUG] Sending notifications to ${recipients.size} recipients:`, Array.from(recipients));
 
             // Create notifications
-            await Promise.all(Array.from(recipients).map(async (userId) => {
+            await Promise.all(Array.from(recipients).map(async (userId: any) => {
                 try {
                     const n = await createAndSendNotification({
                         userId,
@@ -190,7 +190,7 @@ export const getAttendance = async (req: AuthRequest, res: Response): Promise<vo
             }
         }
 
-        const formattedAttendance = attendance.map(att => ({
+        const formattedAttendance = attendance.map((att: any) => ({
             id: att._id,
             ...att,
             participantId: att.participantId?._id || att.participantId,
@@ -223,7 +223,7 @@ export const getMyAttendance = async (req: AuthRequest, res: Response): Promise<
             .sort({ createdAt: -1 })
             .lean() as any[];
 
-        const formattedAttendance = attendance.map(att => ({
+        const formattedAttendance = attendance.map((att: any) => ({
             id: att._id,
             ...att,
             training: att.trainingId ? {
@@ -266,7 +266,7 @@ export const getAttendanceByParticipant = async (req: AuthRequest, res: Response
             .sort({ createdAt: -1 })
             .lean() as any[];
 
-        const formattedAttendance = attendance.map(att => ({
+        const formattedAttendance = attendance.map((att: any) => ({
             id: att._id,
             ...att,
             training: att.trainingId ? {
@@ -334,12 +334,12 @@ export const startAttendanceSession = async (req: AuthRequest, res: Response): P
                 status: 'approved'
             }).select('participantId');
 
-            const participantIds = approvedNominations.map(n => n.participantId);
+            const participantIds = approvedNominations.map((n: any) => n.participantId);
 
             if (participantIds.length > 0) {
                 const message = `An attendance session has started for "${training.title}". Please scan the QR code to mark your attendance.`;
 
-                await Promise.all(participantIds.map(userId =>
+                await Promise.all(participantIds.map((userId: any) =>
                     createAndSendNotification({
                         userId: userId.toString(),
                         title: 'Attendance Session Started',

@@ -321,7 +321,7 @@ export const updateTraining = async (req: AuthRequest, res: Response): Promise<v
                     status: { $in: ['nominated', 'approved', 'attended'] }
                 }).select('participantId');
 
-                const participantIds = activeNominations.map(n => n.participantId);
+                const participantIds = activeNominations.map((n: { participantId: unknown }) => n.participantId);
 
                 if (participantIds.length > 0) {
                     // Find conflicting trainings
@@ -335,7 +335,7 @@ export const updateTraining = async (req: AuthRequest, res: Response): Promise<v
                         status: { $in: ['scheduled', 'ongoing'] }
                     }).select('_id');
 
-                    const conflictingTrainingIds = conflictingTrainings.map(t => t._id);
+                    const conflictingTrainingIds = conflictingTrainings.map((t: { _id: unknown }) => t._id);
 
                     if (conflictingTrainingIds.length > 0) {
                         const conflictingNomination = await Nomination.findOne({
@@ -504,3 +504,4 @@ export const generateCertificates = async (req: AuthRequest, res: Response): Pro
         res.status(500).json({ message: 'Error generating certificates' });
     }
 };
+

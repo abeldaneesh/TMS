@@ -11,7 +11,7 @@ export const getNotifications = async (req: AuthRequest, res: Response): Promise
             .sort({ createdAt: -1 })
             .limit(50); // Limit to last 50 notifications
 
-        const formattedNotifications = notifications.map(n => ({
+        const formattedNotifications = notifications.map((n: any) => ({
             ...n.toObject(),
             id: n._id
         }));

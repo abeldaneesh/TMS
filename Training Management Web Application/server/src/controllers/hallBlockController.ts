@@ -133,7 +133,7 @@ export const getBlocks = async (req: Request, res: Response): Promise<void> => {
         }
 
         const blocks = await HallBlock.find(query).sort({ startTime: 1 });
-        const formattedBlocks = blocks.map(block => ({
+        const formattedBlocks = blocks.map((block: any) => ({
             ...block.toObject(),
             id: block._id
         }));

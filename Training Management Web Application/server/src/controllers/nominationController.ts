@@ -89,7 +89,7 @@ export const nominateParticipant = async (req: AuthRequest, res: Response): Prom
             ]
         }).select('_id');
 
-        const conflictingTrainingIds = conflictingTrainings.map(t => t._id);
+        const conflictingTrainingIds = conflictingTrainings.map((t: any) => t._id);
 
         if (conflictingTrainingIds.length > 0) {
             const conflictingNomination = await Nomination.findOne({

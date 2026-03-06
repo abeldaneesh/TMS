@@ -11,7 +11,7 @@ export const getInstitutions = async (req: Request, res: Response): Promise<void
         // For now, sending the document as is. 
         // If frontend breaks on 'id' vs '_id', we might need a transform.
         // Given existing Prisma usage returned 'id', let's map it.
-        const formattedInstitutions = institutions.map(inst => ({
+        const formattedInstitutions = institutions.map((inst: any) => ({
             ...inst.toObject(),
             id: inst._id
         }));

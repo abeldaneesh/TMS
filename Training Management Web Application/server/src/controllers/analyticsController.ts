@@ -179,7 +179,7 @@ export const getInstitutionReport = async (req: AuthRequest, res: Response): Pro
         // Approach: Find all users of this institution, then find if they are in attendance.
 
         const staffMembers = await User.find({ institutionId }).select('_id');
-        const staffIds = staffMembers.map(u => u._id);
+        const staffIds = staffMembers.map((u: any) => u._id);
 
         const trainedStaffIds = await Attendance.distinct('participantId', {
             participantId: { $in: staffIds }
@@ -212,7 +212,7 @@ export const getInstitutionReport = async (req: AuthRequest, res: Response): Pro
             entry.participants.add(nom.participantId.toString());
         });
 
-        const trainingsByProgram = Array.from(trainingsByProgramMap.values()).map(entry => ({
+        const trainingsByProgram = Array.from(trainingsByProgramMap.values()).map((entry: any) => ({
             program: entry.program,
             trainings: entry.trainings.size,
             participants: entry.participants.size
