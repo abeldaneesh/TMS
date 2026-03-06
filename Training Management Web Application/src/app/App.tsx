@@ -87,6 +87,14 @@ const AppRoutes: React.FC = () => {
         }
       />
       <Route
+        path="/login/medical_officer"
+        element={
+          <PublicRoute>
+            <Login roleTitle="Medical Officer Login" allowedRoles={['medical_officer']} />
+          </PublicRoute>
+        }
+      />
+      <Route
         path="/register"
         element={
           <PublicRoute>
@@ -300,7 +308,7 @@ const AppRoutes: React.FC = () => {
       <Route
         path="/personnel"
         element={
-          <ProtectedRoute allowedRoles={['master_admin', 'institutional_admin']}>
+          <ProtectedRoute allowedRoles={['master_admin', 'institutional_admin', 'medical_officer']}>
             <Layout>
               <Personnel />
             </Layout>
@@ -310,7 +318,7 @@ const AppRoutes: React.FC = () => {
       <Route
         path="/user/:id"
         element={
-          <ProtectedRoute allowedRoles={['master_admin', 'institutional_admin']}>
+          <ProtectedRoute allowedRoles={['master_admin', 'institutional_admin', 'medical_officer']}>
             <Layout>
               <UserDetails />
             </Layout>

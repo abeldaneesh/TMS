@@ -155,7 +155,7 @@ const Login: React.FC<LoginProps> = ({ roleTitle = 'Sign In', allowedRoles }) =>
                   <p className="text-sm text-muted-foreground">
                     {t('auth.noAccount', "Don't have an account?")}{' '}
                     <Link
-                      to={`/register?role=${allowedRoles?.includes('program_officer') ? 'program_officer' : 'participant'}`}
+                      to={`/register?role=${allowedRoles?.includes('program_officer') ? 'program_officer' : allowedRoles?.includes('medical_officer') ? 'medical_officer' : 'participant'}`}
                       className="text-primary font-medium hover:underline transition-colors ml-1"
                     >
                       {t('auth.requestAccess', 'Request Access')}
