@@ -1,0 +1,120 @@
+commit 4a73f45f95b4cf68b95dfab053a89ebb35c82dfe
+Author: Their Name <their_github_email@example.com>
+Date:   Sun Mar 1 18:59:59 2026 +0530
+
+    feat(notifications): add URL routing on notification click
+
+diff --git a/Training Management Web Application/server/src/controllers/trainingController.ts b/Training Management Web Application/server/src/controllers/trainingController.ts
+index 325bfcd..d222800 100644
+--- a/Training Management Web Application/server/src/controllers/trainingController.ts	
++++ b/Training Management Web Application/server/src/controllers/trainingController.ts	
+@@ -477,7 +477,8 @@ export const generateCertificates = async (req: AuthRequest, res: Response): Pro
+                 title: 'Certificate Ready',
+                 message: `Your certificate for "${training.title}" is now available for download.`,
+                 type: 'success',
+-                relatedId: training._id
++                relatedId: training._id,
++                actionUrl: `/trainings/${training._id}`
+             });
+         });
+ 
+
+commit 9e5ddd04b54cae2cfb3317fdcf09b6fb8082c5ad
+Author: Their Name <their_github_email@example.com>
+Date:   Tue Feb 24 16:04:29 2026 +0530
+
+    feat: validate participant conflicts on training update
+
+diff --git a/Training Management Web Application/server/src/controllers/trainingController.ts b/Training Management Web Application/server/src/controllers/trainingController.ts
+index f1075a7..325bfcd 100644
+--- a/Training Management Web Application/server/src/controllers/trainingController.ts	
++++ b/Training Management Web Application/server/src/controllers/trainingController.ts	
+@@ -297,6 +297,50 @@ export const updateTraining = async (req: AuthRequest, res: Response): Promise<v
+                 res.status(403).json({ message: 'This hall slot is blocked by admin and cannot be booked.' });
+                 return;
+             }
++
++            // 3. Check Participant Conflicts
++            const dateChanged = date !== undefined && new Date(date).getTime() !== new Date(training.date).getTime();
++            const timeChanged = (startTime !== undefined && startTime !== training.startTime) || (endTime !== undefined && endTime !== training.endTime);
++            const statusChanged = status !== undefined && status !== training.status && status !== 'draft';
++
++            if (dateChanged || timeChanged || statusChanged) {
++                // Find all active nominations for this training
++                const activeNominations = await Nomination.find({
++                    trainingId: id,
++                    status: { $in: ['nominated', 'approved', 'attended'] }
++                }).select('participantId');
++
++                const participantIds = activeNominations.map(n => n.participantId);
++
++                if (participantIds.length > 0) {
++                    // Find conflicting trainings
++                    const conflictingTrainings = await Training.find({
++                        _id: { $ne: id },
++                        date: { $gte: startOfDay, $lte: endOfDay },
++                        $and: [
++                            { startTime: { $lt: endTime || training.endTime } },
++                            { endTime: { $gt: startTime || training.startTime } }
++                        ],
++                        status: { $in: ['scheduled', 'ongoing'] }
++                    }).select('_id');
++
++                    const conflictingTrainingIds = conflictingTrainings.map(t => t._id);
++
++                    if (conflictingTrainingIds.length > 0) {
++                        const conflictingNomination = await Nomination.findOne({
++                            participantId: { $in: participantIds },
++                            status: { $in: ['nominated', 'approved', 'attended'] },
++                            trainingId: { $in: conflictingTrainingIds }
++                        }).populate('participantId', 'name');
++
++                        if (conflictingNomination) {
++                            const participantName = (conflictingNomination.participantId as any)?.name || 'A participant';
++                            res.status(409).json({ message: `${participantName} is already assigned to another training on the selected date and time.` });
++                            return;
++                        }
++                    }
++                }
++            }
+         }
+ 
+         // Update fields
+
+commit f82ebccb94b8dc1119182211ea4fef4491a7bcdf
+Author: Their Name <their_github_email@example.com>
+Date:   Mon Feb 23 16:23:55 2026 +0530
+
+    fix: ensure userStatus is sent for single training fetch and refine certificate button logic
+
+diff --git a/Training Management Web Application/server/src/controllers/trainingController.ts b/Training Management Web Application/server/src/controllers/trainingController.ts
+index a77a46c..f1075a7 100644
+--- a/Training Management Web Application/server/src/controllers/trainingController.ts	
++++ b/Training Management Web Application/server/src/controllers/trainingController.ts	
+@@ -117,6 +117,16 @@ export const getTrainingById = async (req: Request, res: Response): Promise<void
+             return;
+         }
+ 
++        let userStatus = null;
++        if (authReq.user?.role === 'participant') {
++            const Nomination = require('../models/Nomination').default;
++            const nomination = await Nomination.findOne({
++                trainingId: id,
++                participantId: authReq.user.userId
++            });
++            userStatus = nomination?.status || null;
++        }
++
+         const transformedTraining = {
+             ...training,
+             // @ts-ignore
+@@ -124,7 +134,8 @@ export const getTrainingById = async (req: Request, res: Response): Promise<void
+             // @ts-ignore
+             creator: training.createdById,
+             // @ts-ignore
+-            createdById: training.createdById?._id || training.createdById
++            createdById: training.createdById?._id || training.createdById,
++            userStatus
+         };
+ 
+         res.json(transformedTraining);
