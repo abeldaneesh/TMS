@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTranslation } from 'react-i18next';
-import { usersApi, BASE_URL } from '../../services/api';
+import { usersApi, institutionsApi, BASE_URL } from '../../services/api';
+import { Institution } from '../../types';
 import { toast } from 'sonner';
 import { User, Lock, Save, Loader2, Camera } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '../components/ui/avatar';
@@ -10,6 +11,7 @@ import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 
 const Settings: React.FC = () => {
     const { user, updateUser } = useAuth();
@@ -17,6 +19,19 @@ const Settings: React.FC = () => {
     const [loading, setLoading] = useState(false);
     const [uploading, setUploading] = useState(false);
     const fileInputRef = React.useRef<HTMLInputElement>(null);
+    const [institutions, setInstitutions] = useState<Institution[]>([]);
+
+    useEffect(() => {
+        const fetchInstitutions = async () => {
+            try {
+                const data = await institutionsApi.getAll();
+                setInstitutions(data);
+            } catch (error) {
+                console.error('Failed to fetch institutions');
+            }
+        };
+        fetchInstitutions();
+    }, []);
 
     // Profile State
     const [profileData, setProfileData] = useState({
@@ -25,6 +40,7 @@ const Settings: React.FC = () => {
         designation: user?.designation || '',
         department: user?.department || '',
         profilePicture: user?.profilePicture || '',
+        institutionId: user?.institutionId || '',
     });
 
     // Sync state when user object changes
@@ -36,6 +52,7 @@ const Settings: React.FC = () => {
                 designation: user.designation || '',
                 department: user.department || '',
                 profilePicture: user.profilePicture || '',
+                institutionId: user.institutionId || '',
             });
         }
     }, [user]);
@@ -88,10 +105,10 @@ const Settings: React.FC = () => {
         if (!user) return;
         setLoading(true);
         try {
-            const response = await usersApi.updateProfile(user.id, profileData);
+            const response = await usersApi.update(user.id, profileData);
             toast.success('Profile updated successfully');
-            if (response.user) {
-                updateUser(response.user);
+            if (response) {
+                updateUser(response);
             }
         } catch (error: any) {
             console.error(error);
@@ -227,6 +244,24 @@ const Settings: React.FC = () => {
                                             value={profileData.designation}
                                             onChange={handleProfileChange}
                                         />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="institutionId">{t('settings.profile.institution', 'Institution')}</Label>
+                                        <Select
+                                            onValueChange={(value) => setProfileData({ ...profileData, institutionId: value })}
+                                            value={profileData.institutionId}
+                                        >
+                                            <SelectTrigger id="institutionId" className="bg-background">
+                                                <SelectValue placeholder="Select institution" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {institutions.map((inst) => (
+                                                    <SelectItem key={inst.id} value={inst.id}>
+                                                        {inst.name}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
                                     </div>
                                     <div className="space-y-2">
                                         <Label htmlFor="department">{t('settings.profile.department', 'Department')}</Label>

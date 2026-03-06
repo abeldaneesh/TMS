@@ -110,8 +110,8 @@ export const rejectUser = async (req: Request, res: Response): Promise<void> => 
 export const updateProfile = async (req: Request, res: Response): Promise<void> => {
     try {
         const userId = req.params.userId;
-        const { name, phone, designation, department, profilePicture } = req.body;
-        const updateData: any = { name, phone, designation, department };
+        const { name, phone, designation, department, profilePicture, institutionId } = req.body;
+        const updateData: any = { name, phone, designation, department, institutionId };
         if (profilePicture) {
             updateData.profilePicture = profilePicture;
         }

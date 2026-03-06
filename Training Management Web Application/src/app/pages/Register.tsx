@@ -11,7 +11,8 @@ import { Label } from '../components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '../components/ui/card';
 import { Alert, AlertDescription } from '../components/ui/alert';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
-import { authApi, usersApi } from '../../services/api';
+import { authApi, usersApi, institutionsApi } from '../../services/api';
+import { Institution } from '../../types';
 import { toast } from 'sonner';
 
 const Register: React.FC = () => {
@@ -39,7 +40,20 @@ const Register: React.FC = () => {
     const [emailVerified, setEmailVerified] = useState(false);
     const [sendingOtp, setSendingOtp] = useState(false);
     const [showOtpInput, setShowOtpInput] = useState(false);
+    const [institutions, setInstitutions] = useState<Institution[]>([]);
     const navigate = useNavigate();
+
+    useEffect(() => {
+        const fetchInstitutions = async () => {
+            try {
+                const data = await institutionsApi.getAll();
+                setInstitutions(data);
+            } catch (error) {
+                console.error('Failed to fetch institutions');
+            }
+        };
+        fetchInstitutions();
+    }, []);
 
     // Redirect if admin role is manually entered in URL
     useEffect(() => {
@@ -308,6 +322,23 @@ const Register: React.FC = () => {
                                 </div>
                             </div>
 
+
+                            {/* Institution */}
+                            <div className="space-y-2 md:col-span-2">
+                                <Label htmlFor="institutionId" className="text-sm font-medium">{t('auth.register.institution', 'Institution')}</Label>
+                                <Select onValueChange={handleSelectChange} value={formData.institutionId}>
+                                    <SelectTrigger className="h-11 bg-background">
+                                        <SelectValue placeholder="Select your institution" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {institutions.map((inst) => (
+                                            <SelectItem key={inst.id} value={inst.id}>
+                                                {inst.name}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
 
                             {/* Designation */}
                             <div className="space-y-2">
