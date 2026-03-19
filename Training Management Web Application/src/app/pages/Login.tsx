@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../contexts/ThemeContext';
 import { Mail, Lock, AlertCircle, ArrowLeft, ShieldCheck, Database, Cpu, Sun, Moon } from 'lucide-react';
 import { motion } from 'framer-motion';
-import DoctorLogo from '../components/DoctorLogo';
+import TmsLogo from '../components/TmsLogo';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
@@ -79,7 +79,7 @@ const Login: React.FC<LoginProps> = ({ roleTitle = 'Sign In', allowedRoles }) =>
         <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" />
         <div className="relative z-10 flex flex-col items-center justify-center w-full p-12 text-white">
           <div className="bg-white/10 backdrop-blur-md p-6 rounded-2xl mb-8 border border-white/20 shadow-2xl">
-            <DoctorLogo className="size-20 text-white" />
+            <TmsLogo className="size-20 text-white" />
           </div>
           <h1 className="text-4xl font-semibold tracking-tight text-center text-white">
             DMO TMS
@@ -99,7 +99,7 @@ const Login: React.FC<LoginProps> = ({ roleTitle = 'Sign In', allowedRoles }) =>
             <CardHeader className="space-y-1 text-center pb-6 pt-8">
               <div className="flex justify-center mb-2">
                 <div className="bg-primary/10 text-primary p-3 rounded-full">
-                  <DoctorLogo className="size-8" />
+                  <TmsLogo className="size-8" />
                 </div>
               </div>
               <CardTitle className="text-2xl font-bold tracking-tight">{roleTitle}</CardTitle>

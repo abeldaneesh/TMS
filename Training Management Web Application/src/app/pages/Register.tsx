@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../contexts/ThemeContext';
 import { motion } from 'framer-motion';
 import { Mail, Lock, User, Phone, Briefcase, ChevronLeft, ShieldCheck, Sun, Moon } from 'lucide-react';
-import DoctorLogo from '../components/DoctorLogo';
+import TmsLogo from '../components/TmsLogo';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
@@ -156,7 +156,7 @@ const Register: React.FC = () => {
                 <Card className="w-full max-w-md border bg-card text-center shadow-lg relative z-10 overflow-hidden">
                     <div className="relative z-10 flex flex-col items-center justify-center w-full p-10 bg-primary/5 rounded-t-xl">
                         <div className="bg-primary/10 p-6 rounded-2xl mb-6">
-                            <DoctorLogo className="size-16 text-primary" />
+                            <TmsLogo className="size-16 text-primary" />
                         </div>
                         <h1 className="text-2xl font-bold tracking-tight text-center text-foreground">{t('auth.register.title', 'Request Received')}</h1>
                         <CardDescription className="mt-2 text-sm text-muted-foreground text-center">
@@ -331,11 +331,17 @@ const Register: React.FC = () => {
                                         <SelectValue placeholder="Select your institution" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        {institutions.map((inst) => (
-                                            <SelectItem key={inst.id} value={inst.id}>
-                                                {inst.name}
-                                            </SelectItem>
-                                        ))}
+                                        {institutions.length > 0 ? (
+                                            institutions.map((inst) => (
+                                                <SelectItem key={inst.id} value={inst.id}>
+                                                    {inst.name}
+                                                </SelectItem>
+                                            ))
+                                        ) : (
+                                            <div className="p-4 text-center text-sm text-muted-foreground">
+                                                No institutions found
+                                            </div>
+                                        )}
                                     </SelectContent>
                                 </Select>
                             </div>

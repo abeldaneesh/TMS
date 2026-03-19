@@ -255,11 +255,17 @@ const Settings: React.FC = () => {
                                                 <SelectValue placeholder="Select institution" />
                                             </SelectTrigger>
                                             <SelectContent>
-                                                {institutions.map((inst) => (
-                                                    <SelectItem key={inst.id} value={inst.id}>
-                                                        {inst.name}
-                                                    </SelectItem>
-                                                ))}
+                                                {institutions.length > 0 ? (
+                                                    institutions.map((inst) => (
+                                                        <SelectItem key={inst.id} value={inst.id}>
+                                                            {inst.name}
+                                                        </SelectItem>
+                                                    ))
+                                                ) : (
+                                                    <div className="p-4 text-center text-sm text-muted-foreground">
+                                                        No institutions found
+                                                    </div>
+                                                )}
                                             </SelectContent>
                                         </Select>
                                     </div>

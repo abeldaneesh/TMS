@@ -13,7 +13,7 @@ import {
   FileText, Settings, Bell, Menu, X, LogOut, QrCode,
   ClipboardList, BarChart3, Search, AppWindowMac, Cast, UserCheck, Sun, Moon, Globe
 } from 'lucide-react';
-import DoctorLogo from './DoctorLogo';
+import TmsLogo from './TmsLogo';
 import { AnimatePresence } from 'framer-motion';
 import PageTransition from './PageTransition';
 
@@ -316,7 +316,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           </Button>
           <Link to="/dashboard" className="flex items-center gap-2 cursor-pointer mr-6">
             <div className="text-primary bg-background rounded-full p-1 border border-primary/20">
-              <DoctorLogo className="size-6 text-primary" />
+              <TmsLogo className="size-6 text-primary" />
             </div>
             <h1 className="font-bold text-xl text-foreground tracking-tighter">
               DMO <span className="text-primary font-semibold tracking-normal">TMS</span>
