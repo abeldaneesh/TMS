@@ -58,8 +58,8 @@ const PortalSelection: React.FC = () => {
                 />
                 <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" />
                 <div className="relative z-10 flex flex-col items-center justify-center w-full p-12 text-white">
-                    <div className="bg-white/10 backdrop-blur-md p-6 rounded-2xl mb-8 border border-white/20 shadow-2xl">
-                        <TmsLogo className="size-20 text-white" />
+                    <div className="mb-8">
+                        <TmsLogo className="size-28 text-white" />
                     </div>
                     <h1 className="text-4xl font-semibold tracking-tight text-center text-white">
                         DMO TMS
@@ -75,8 +75,8 @@ const PortalSelection: React.FC = () => {
 
                 {/* Mobile Header */}
                 <div className="flex md:hidden flex-col items-center mb-10 relative z-10">
-                    <div className="bg-primary/10 text-primary p-5 rounded-2xl mb-4 border border-primary/20 shadow-sm">
-                        <TmsLogo className="size-10" />
+                    <div className="mb-4">
+                        <TmsLogo className="size-16" />
                     </div>
                     <h1 className="text-3xl font-bold text-foreground text-center tracking-tight">DMO TMS</h1>
                     <p className="text-sm text-muted-foreground mt-1 text-center font-medium">Training Management System</p>

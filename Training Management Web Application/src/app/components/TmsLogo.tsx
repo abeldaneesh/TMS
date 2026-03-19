@@ -5,7 +5,7 @@ const TmsLogo: React.FC<{ className?: string }> = ({ className }) => {
         <img 
             src="/tms-logo.jpg" 
             alt="TMS Logo" 
-            className={`object-contain ${className || ''}`} 
+            className={`object-contain rounded-full shadow-md bg-white ${className || ''}`} 
         />
     );
 };

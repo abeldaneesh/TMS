@@ -155,8 +155,8 @@ const Register: React.FC = () => {
                 </div>
                 <Card className="w-full max-w-md border bg-card text-center shadow-lg relative z-10 overflow-hidden">
                     <div className="relative z-10 flex flex-col items-center justify-center w-full p-10 bg-primary/5 rounded-t-xl">
-                        <div className="bg-primary/10 p-6 rounded-2xl mb-6">
-                            <TmsLogo className="size-16 text-primary" />
+                        <div className="mb-6">
+                            <TmsLogo className="size-24 text-primary" />
                         </div>
                         <h1 className="text-2xl font-bold tracking-tight text-center text-foreground">{t('auth.register.title', 'Request Received')}</h1>
                         <CardDescription className="mt-2 text-sm text-muted-foreground text-center">
