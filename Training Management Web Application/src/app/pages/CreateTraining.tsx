@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTranslation } from 'react-i18next';
@@ -6,7 +6,7 @@ import LoadingAnimation from '../components/LoadingAnimation';
 import { trainingsApi, hallsApi, institutionsApi, hallRequestsApi } from '../../services/api';
 import api from '../../services/api';
 import { Hall, Institution, TrainingStatus } from '../../types';
-import { Calendar, Save, ArrowLeft, AlertCircle, FileQuestion } from 'lucide-react';
+import { AlertCircle, ArrowLeft, CheckCircle2, Clock3, DoorOpen, FileQuestion, MapPin, Save, Sparkles, Users, XCircle } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
@@ -25,6 +25,7 @@ import { Checkbox } from '../components/ui/checkbox';
 import { toast } from 'sonner';
 import { MultiSelect } from '../components/ui/multi-select';
 import { ClockTimePicker } from '../components/ui/clock-time-picker';
+import { motion } from 'framer-motion';
 
 const programs = [
   'Emergency Medicine',
@@ -42,9 +43,11 @@ const CreateTraining: React.FC = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const queryParams = new URLSearchParams(location.search);
   const { id } = useParams<{ id: string }>();
   const isEditMode = !!id;
   const { t } = useTranslation();
+  const prefilledDateFromRoute = (location.state as { selectedDate?: string } | null)?.selectedDate || queryParams.get('date') || '';
 
   const [halls, setHalls] = useState<Hall[]>([]);
   const [institutions, setInstitutions] = useState<Institution[]>([]);
@@ -147,6 +150,11 @@ const CreateTraining: React.FC = () => {
 
           // Clear location state to prevent re-filling if user navigates away and back via back button
           window.history.replaceState({}, document.title)
+        } else if (prefilledDateFromRoute) {
+          setFormData(prev => ({
+            ...prev,
+            date: /^\d{4}-\d{2}-\d{2}$/.test(prefilledDateFromRoute) ? prefilledDateFromRoute : prev.date,
+          }));
         }
 
       } catch (error) {
@@ -156,7 +164,7 @@ const CreateTraining: React.FC = () => {
       }
     };
     fetchData();
-  }, [id, isEditMode, navigate, location.state]);
+  }, [id, isEditMode, navigate, location.state, prefilledDateFromRoute]);
 
   const checkHallAvailability = async () => {
     if (!formData.date || !formData.startTime || !formData.endTime) {
@@ -188,6 +196,27 @@ const CreateTraining: React.FC = () => {
   };
 
   const [unavailableReason, setUnavailableReason] = useState<string | null>(null);
+  const selectedHall = useMemo(
+    () => halls.find((hall) => hall.id === formData.hallId) || null,
+    [halls, formData.hallId]
+  );
+  const canCheckAvailability = Boolean(formData.date && formData.startTime && formData.endTime);
+  const hallCards = useMemo(() => {
+    const availableHallIds = new Set(availableHalls.map((hall) => hall.id));
+
+    return halls.map((hall) => {
+      const isAvailable = availableHallIds.has(hall.id);
+      const isSelected = formData.hallId === hall.id;
+      const status = !canCheckAvailability ? 'idle' : isAvailable ? 'available' : 'booked';
+
+      return {
+        ...hall,
+        isAvailable,
+        isSelected,
+        status,
+      };
+    });
+  }, [availableHalls, canCheckAvailability, formData.hallId, halls]);
 
   useEffect(() => {
     const checkDetails = async () => {
@@ -257,6 +286,9 @@ const CreateTraining: React.FC = () => {
     if (!formData.endTime) newErrors.endTime = 'End time is required';
     if (!formData.hallId) newErrors.hallId = 'Hall is required';
     if (!formData.capacity || parseInt(formData.capacity) <= 0) newErrors.capacity = 'Valid capacity is required';
+    if (selectedHall && formData.capacity && parseInt(formData.capacity) > selectedHall.capacity) {
+      newErrors.capacity = `Capacity cannot exceed ${selectedHall.capacity} seats for the selected hall`;
+    }
     if (formData.requiredInstitutions.length === 0) newErrors.requiredInstitutions = 'Select at least one institution';
 
     if (formData.startTime && formData.endTime && formData.startTime >= formData.endTime) {
@@ -624,76 +656,166 @@ const CreateTraining: React.FC = () => {
               </div>
             )}
 
-            {formData.date && formData.startTime && formData.endTime && (
-              <div className="space-y-4">
-                <Alert variant={availableHalls.length > 0 ? "default" : "destructive"}>
-                  <AlertCircle className="size-4" />
-                  <AlertDescription>
-                    {checkingAvailability ? (
-                      t('createTraining.hallStatus.checking', 'Checking hall availability...')
-                    ) : availableHalls.length > 0 ? (
-                      `${availableHalls.length} ${t('createTraining.hallStatus.available', 'hall(s) available for the selected time slot')}`
-                    ) : (
-                      t('createTraining.hallStatus.none', 'No halls available for the selected time slot.')
-                    )}
-                  </AlertDescription>
-                </Alert>
-
-                {!checkingAvailability && (availableHalls.length === 0 || (formData.hallId && !availableHalls.find(h => h.id === formData.hallId))) && (
-                  <div className="p-4 border rounded-md bg-yellow-50 border-yellow-200">
-                    <h4 className="font-semibold text-yellow-800 flex items-center gap-2">
-                      <AlertCircle className="size-5" />
-                      {t('createTraining.hallStatus.notAvailable', 'Hall Not Available')}
-                    </h4>
-                    <p className="text-sm text-yellow-700 mt-1 mb-3">
-                      {unavailableReason
-                        ? <span className="font-semibold">{unavailableReason}</span>
-                        : t('createTraining.hallStatus.booked', 'The selected hall is booked or blocked.')}
-                      <br />
-                      {t('createTraining.hallStatus.submitRequest', 'You can submit a request to the Admin for approval.')}
-                    </p>
-                    <Button
-                      type="button"
-                      className="bg-yellow-600 hover:bg-yellow-700 text-white"
-                      onClick={() => {
-                        if (!validateForm()) {
-                          toast.error('Please fill all training details first');
-                          return;
-                        }
-                        setShowRequestDialog(true);
-                      }}
-                    >
-                      <FileQuestion className="size-4 mr-2" />
-                      {t('createTraining.buttons.requestHall', 'Request Hall Approval')}
-                    </Button>
-                  </div>
-                )}
-              </div>
-            )}
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="hallId">{t('createTraining.fields.hall', 'Hall *')}</Label>
-                <Select
-                  value={formData.hallId}
-                  onValueChange={(value) => handleChange('hallId', value)}
-                  disabled={availableHalls.length === 0}
+            <div className="rounded-2xl border border-border bg-card p-5 text-foreground shadow-sm md:p-6">
+              <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                <div>
+                  <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Hall Selection</p>
+                  <h3 className="mt-1 text-xl font-semibold text-foreground">Choose the best venue for this session</h3>
+                  <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
+                    Review live availability, capacity, and booking state before you lock the hall for this training.
+                  </p>
+                </div>
+                <Button
+                  type="button"
+                  onClick={checkHallAvailability}
+                  disabled={!canCheckAvailability || checkingAvailability}
+                  className="h-11 rounded-2xl bg-gradient-to-r from-violet-500 via-indigo-500 to-sky-500 px-5 text-white shadow-[0_18px_40px_rgba(79,70,229,0.25)] transition-all duration-200 hover:scale-[1.02] hover:shadow-[0_22px_45px_rgba(59,130,246,0.32)] active:scale-[0.98]"
                 >
-                  <SelectTrigger>
-                    <SelectValue placeholder={t('createTraining.fields.hallPlaceholder', 'Select hall')} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {(availableHalls.length > 0 ? availableHalls : halls).map((hall) => (
-                      <SelectItem key={hall.id} value={hall.id}>
-                        {hall.name} - Capacity: {hall.capacity} {availableHalls.find(h => h.id === hall.id) ? t('createTraining.hallStatus.availableOption', '(Available)') : t('createTraining.hallStatus.unavailableOption', '(Unavailable)')}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {errors.hallId && <p className="text-sm text-red-600 mt-1">{errors.hallId}</p>}
+                  <Sparkles className="mr-2 size-4" />
+                  {checkingAvailability ? 'Checking...' : 'Check Availability'}
+                </Button>
               </div>
 
-              <div>
+              <div className="mt-5 grid gap-4 md:grid-cols-3">
+                <div className="rounded-xl border border-border bg-background p-4">
+                  <p className="text-xs uppercase tracking-[0.24em] text-muted-foreground">Selected slot</p>
+                  <p className="mt-2 flex items-center gap-2 text-sm font-medium text-foreground">
+                    <Clock3 className="size-4 text-primary" />
+                    {canCheckAvailability ? `${formData.startTime} - ${formData.endTime}` : 'Choose session timing'}
+                  </p>
+                </div>
+                <div className="rounded-xl border border-border bg-background p-4">
+                  <p className="text-xs uppercase tracking-[0.24em] text-muted-foreground">Availability count</p>
+                  <p className="mt-2 flex items-center gap-2 text-sm font-medium text-foreground">
+                    <CheckCircle2 className="size-4 text-emerald-500" />
+                    {checkingAvailability
+                      ? t('createTraining.hallStatus.checking', 'Checking hall availability...')
+                      : canCheckAvailability
+                        ? `${availableHalls.length} ${t('createTraining.hallStatus.available', 'hall(s) available for the selected time slot')}`
+                        : 'Pick date and time to inspect halls'}
+                  </p>
+                </div>
+                <div className="rounded-xl border border-border bg-background p-4">
+                  <p className="text-xs uppercase tracking-[0.24em] text-muted-foreground">Selected hall</p>
+                  <p className="mt-2 flex items-center gap-2 text-sm font-medium text-foreground">
+                    <DoorOpen className="size-4 text-primary" />
+                    {selectedHall ? selectedHall.name : 'No hall selected yet'}
+                  </p>
+                </div>
+              </div>
+
+              {canCheckAvailability && (
+                <div className="mt-5 space-y-4">
+                  <Alert className="border-border bg-background text-foreground">
+                    <AlertCircle className="size-4 text-primary" />
+                    <AlertDescription className="text-muted-foreground">
+                      {checkingAvailability ? (
+                        t('createTraining.hallStatus.checking', 'Checking hall availability...')
+                      ) : availableHalls.length > 0 ? (
+                        `${availableHalls.length} ${t('createTraining.hallStatus.available', 'hall(s) available for the selected time slot')}`
+                      ) : (
+                        t('createTraining.hallStatus.none', 'No halls available for the selected time slot.')
+                      )}
+                    </AlertDescription>
+                  </Alert>
+
+                  {!checkingAvailability && (availableHalls.length === 0 || (formData.hallId && !availableHalls.find(h => h.id === formData.hallId))) && (
+                    <div className="rounded-xl border border-amber-500/20 bg-amber-500/10 p-4">
+                      <h4 className="flex items-center gap-2 text-sm font-semibold text-amber-700 dark:text-amber-200">
+                        <AlertCircle className="size-4" />
+                        {t('createTraining.hallStatus.notAvailable', 'Hall Not Available')}
+                      </h4>
+                      <p className="mt-2 text-sm text-amber-700/90 dark:text-amber-100/90">
+                        {unavailableReason
+                          ? <span className="font-semibold">{unavailableReason}</span>
+                          : t('createTraining.hallStatus.booked', 'The selected hall is booked or blocked.')}
+                        <br />
+                        {t('createTraining.hallStatus.submitRequest', 'You can submit a request to the Admin for approval.')}
+                      </p>
+                      <Button
+                        type="button"
+                        className="mt-4 rounded-xl bg-amber-500 text-white hover:bg-amber-600"
+                        onClick={() => {
+                          if (!validateForm()) {
+                            toast.error('Please fill all training details first');
+                            return;
+                          }
+                          setShowRequestDialog(true);
+                        }}
+                      >
+                        <FileQuestion className="mr-2 size-4" />
+                        {t('createTraining.buttons.requestHall', 'Request Hall Approval')}
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              <div className="mt-6">
+                <Label htmlFor="hallId" className="text-xs uppercase tracking-[0.24em] text-muted-foreground">
+                  {t('createTraining.fields.hall', 'Hall *')}
+                </Label>
+                <div className="mt-3 grid grid-cols-1 gap-4 xl:grid-cols-2">
+                  {hallCards.map((hall, index) => (
+                    <motion.button
+                      key={hall.id}
+                      type="button"
+                      initial={{ opacity: 0, y: 16 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.22, delay: index * 0.02 }}
+                      whileHover={{ y: -4 }}
+                      whileTap={{ scale: 0.98 }}
+                      onClick={() => handleChange('hallId', hall.id)}
+                      className={`rounded-xl border p-5 text-left transition-all duration-200 ${
+                        hall.isSelected
+                          ? 'border-primary/40 bg-primary/10 shadow-sm'
+                          : hall.status === 'available'
+                            ? 'border-emerald-500/20 bg-emerald-500/5 hover:border-emerald-500/35'
+                            : hall.status === 'booked'
+                              ? 'border-rose-500/20 bg-rose-500/5 hover:border-rose-500/35'
+                              : 'border-border bg-background hover:border-primary/25'
+                      }`}
+                    >
+                      <div className="flex items-start justify-between gap-4">
+                        <div>
+                          <h4 className="text-lg font-semibold text-foreground">{hall.name}</h4>
+                          <p className="mt-2 flex items-center gap-2 text-sm text-muted-foreground">
+                            <MapPin className="size-4 text-muted-foreground" />
+                            {hall.location}
+                          </p>
+                        </div>
+                        <div className={`rounded-full border px-3 py-1 text-xs font-medium ${
+                          hall.status === 'available'
+                            ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-700 dark:text-emerald-200'
+                            : hall.status === 'booked'
+                              ? 'border-rose-500/20 bg-rose-500/10 text-rose-700 dark:text-rose-200'
+                              : 'border-border bg-muted text-muted-foreground'
+                        }`}>
+                          {hall.status === 'available' ? 'Available' : hall.status === 'booked' ? 'Booked' : 'Pending'}
+                        </div>
+                      </div>
+
+                      <div className="mt-5 flex items-center justify-between border-t border-border pt-4">
+                        <span className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <Users className="size-4 text-muted-foreground" />
+                          {hall.capacity} seats
+                        </span>
+                        <span className="flex items-center gap-2 text-sm font-medium text-foreground">
+                          {hall.status === 'available' ? (
+                            <CheckCircle2 className="size-4 text-emerald-500" />
+                          ) : (
+                            <XCircle className="size-4 text-rose-500" />
+                          )}
+                          {hall.isSelected ? 'Selected' : hall.status === 'available' ? 'Ready to assign' : 'Needs approval'}
+                        </span>
+                      </div>
+                    </motion.button>
+                  ))}
+                </div>
+                {errors.hallId && <p className="text-sm text-red-600 mt-2">{errors.hallId}</p>}
+              </div>
+
+              <div className="mt-6">
                 <Label htmlFor="capacity">{t('createTraining.fields.capacity', 'Training Capacity *')}</Label>
                 <Input
                   id="capacity"
@@ -702,7 +824,13 @@ const CreateTraining: React.FC = () => {
                   onChange={(e) => handleChange('capacity', e.target.value)}
                   placeholder={t('createTraining.fields.capacityPlaceholder', 'Maximum participants')}
                   min="1"
+                  className="mt-2"
                 />
+                {selectedHall && (
+                  <p className="mt-2 text-sm text-muted-foreground">
+                    Selected hall capacity: <span className="font-medium text-foreground">{selectedHall.capacity} seats</span>
+                  </p>
+                )}
                 {errors.capacity && <p className="text-sm text-red-600 mt-1">{errors.capacity}</p>}
               </div>
             </div>

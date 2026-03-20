@@ -2,9 +2,9 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import api from '../../services/api';
-import { Training, Hall, User } from '../../types';
+import { MyFeedbackSubmission, TrainingFeedback, TrainingFeedbackSummary } from '../../types';
 import {
-    Calendar, Clock, Users, MapPin, ArrowLeft, Edit, Trash2, CheckCircle, XCircle
+    Calendar, Clock, Users, MapPin, ArrowLeft, Edit, Trash2, CheckCircle, XCircle, MessageSquareMore, Star, TrendingUp, QrCode, Award
 } from 'lucide-react';
 import { Badge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
@@ -13,11 +13,11 @@ import { format } from 'date-fns';
 import { toast } from 'sonner';
 import AttendanceListModal from '../components/AttendanceListModal';
 import AttendanceSessionManager from '../components/AttendanceSessionManager';
-import { QrCode } from 'lucide-react';
 import LoadingScreen from '../components/LoadingScreen';
-import { Award, FileDown } from 'lucide-react';
 import { generateCertificatePDF } from '../../utils/certificateGenerator';
-import { trainingsApi, nominationsApi, institutionsApi, usersApi } from '../../services/api';
+import { trainingsApi, feedbackApi } from '../../services/api';
+import FeedbackSubmissionDialog from '../components/FeedbackSubmissionDialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 
 const TrainingDetails: React.FC = () => {
     const { id } = useParams<{ id: string }>();
@@ -27,11 +27,19 @@ const TrainingDetails: React.FC = () => {
     const [training, setTraining] = useState<any | null>(null);
     const [loading, setLoading] = useState(true);
     const [generating, setGenerating] = useState(false);
-    const [statusUpdating, setStatusUpdating] = useState(false);
     const [attendanceModalOpen, setAttendanceModalOpen] = useState(false);
     const [isAttendanceSessionActive, setIsAttendanceSessionActive] = useState(false);
-    const [institutions, setInstitutions] = useState<any[]>([]);
-    const [allUsers, setAllUsers] = useState<any[]>([]);
+    const [feedbackLoading, setFeedbackLoading] = useState(false);
+    const [feedbackEntries, setFeedbackEntries] = useState<TrainingFeedback[]>([]);
+    const [feedbackSummary, setFeedbackSummary] = useState<TrainingFeedbackSummary>({
+        totalResponses: 0,
+        averageRating: null,
+        commonTopics: []
+    });
+    const [feedbackSort, setFeedbackSort] = useState<'latest' | 'oldest'>('latest');
+    const [feedbackRatingFilter, setFeedbackRatingFilter] = useState<string>('all');
+    const [feedbackDialogOpen, setFeedbackDialogOpen] = useState(false);
+    const [myFeedbackSubmission, setMyFeedbackSubmission] = useState<MyFeedbackSubmission | null>(null);
 
     useEffect(() => {
         const fetchData = async () => {
@@ -55,6 +63,70 @@ const TrainingDetails: React.FC = () => {
             fetchData();
         }
     }, [id, navigate]);
+
+    useEffect(() => {
+        const fetchFeedbackData = async () => {
+            if (!id || !training) return;
+
+            const creatorId = typeof training.createdById === 'string'
+                ? training.createdById
+                : training.createdById?.id || training.createdById?._id;
+            const currentUserId = user?.id || (user as any)?.userId;
+            const isReviewer = Boolean(
+                user?.role === 'master_admin' ||
+                ((user?.role === 'program_officer' || user?.role === 'medical_officer') && creatorId === currentUserId)
+            );
+            const canSubmitFeedback = Boolean(user?.role === 'participant' && training.status === 'completed' && training.userStatus === 'attended');
+
+            try {
+                setFeedbackLoading(true);
+
+                const requests: Promise<any>[] = [];
+                if (isReviewer) {
+                    requests.push(feedbackApi.getByTraining(id));
+                } else {
+                    requests.push(Promise.resolve(null));
+                }
+
+                if (canSubmitFeedback) {
+                    requests.push(feedbackApi.getMySubmissions());
+                } else {
+                    requests.push(Promise.resolve([]));
+                }
+
+                const [feedbackResponse, mySubmissions] = await Promise.all(requests);
+
+                if (feedbackResponse) {
+                    setFeedbackEntries(feedbackResponse.entries);
+                    setFeedbackSummary(feedbackResponse.summary);
+                } else {
+                    setFeedbackEntries([]);
+                    setFeedbackSummary({
+                        totalResponses: 0,
+                        averageRating: null,
+                        commonTopics: []
+                    });
+                }
+
+                const currentSubmission = Array.isArray(mySubmissions)
+                    ? mySubmissions.find((entry: MyFeedbackSubmission) => entry.trainingId === id) || null
+                    : null;
+                setMyFeedbackSubmission(currentSubmission);
+            } catch (error: any) {
+                console.error('Failed to fetch feedback data:', error);
+                setFeedbackEntries([]);
+                setFeedbackSummary({
+                    totalResponses: 0,
+                    averageRating: null,
+                    commonTopics: []
+                });
+            } finally {
+                setFeedbackLoading(false);
+            }
+        };
+
+        fetchFeedbackData();
+    }, [id, training, user]);
 
     const handleGenerateCertificates = async () => {
         if (!id) return;
@@ -136,26 +208,24 @@ const TrainingDetails: React.FC = () => {
 
     if (!training) return null;
 
-    // Helper to get names safely
     const hallName = training.hall?.name || training.hallId?.name || 'Unknown Hall';
-    const trainerName = training.creator?.name || training.createdById?.name || 'Unknown Trainer'; // Fallback if regular trainer field logic differs
-
-    // The Training type usually has a `trainerId` which is a User ID.
-    // The controller populates `createdById` but seemingly not `trainerId` specifically in the customized transformation?
-    // Let's check the controller `getTrainingById`:
-    // .populate('hallId').populate('createdById', 'name email')
-    // It does NOT populate `trainerId`.
-    // So `training.trainerId` will likely just be an ID string.
-    // If we want the Trainer Name, we might need to fetch users or reliance on `createdById` if logic assumes creator = trainer often.
-    // However, the `Trainings.tsx` list fetches ALL users to find the trainer name. 
-    // For this detail page, ideally the backend should populate it, OR we fetch users.
-    // For now, I will display the Trainer Name if available in `creator` (if self-taught) or just ID if not, 
-    // OR BETTER: I'll quickly fetch the trainer user object if it's just an ID string.
-
-    // Actually, purely to get this reliable without changing backend right now, I'll assume users usually want to see the details.
-    // I'll check if I can just fetch the specific user or if I should just show the ID for now/wait. 
-    // The `Trainings.tsx` list fetched *all* users. I can do the same here or just fetch the one.
-    // Simpler: I'll just show the `createdById` name as "Created By" and maybe `trainerId` if it differs.
+    const currentUserId = user?.id || (user as any)?.userId;
+    const creatorId = typeof training.createdById === 'string'
+        ? training.createdById
+        : training.createdById?.id || training.createdById?._id;
+    const isOwnerOrAdmin = Boolean(
+        user?.role === 'master_admin' ||
+        ((user?.role === 'program_officer' || user?.role === 'medical_officer') && creatorId === currentUserId)
+    );
+    const canViewFeedback = training.status === 'completed' && isOwnerOrAdmin;
+    const canSubmitFeedback = Boolean(user?.role === 'participant' && training.status === 'completed' && training.userStatus === 'attended');
+    const filteredFeedbackEntries = feedbackEntries
+        .filter((entry) => feedbackRatingFilter === 'all' || String(entry.rating || 'unrated') === feedbackRatingFilter)
+        .sort((a, b) => {
+            const first = new Date(a.submittedAt).getTime();
+            const second = new Date(b.submittedAt).getTime();
+            return feedbackSort === 'latest' ? second - first : first - second;
+        });
 
     return (
         <div className="pb-12 space-y-8 text-foreground">
@@ -205,7 +275,7 @@ const TrainingDetails: React.FC = () => {
                     {/* Attendance Session Manager - Visible if owner/admin OR if session is active for participants */}
                     <AttendanceSessionManager
                         trainingId={id!}
-                        isOwnerOrAdmin={user?.role === 'master_admin' || (user?.role === 'program_officer' && training.createdById === user.id)}
+                        isOwnerOrAdmin={Boolean(user?.role === 'master_admin' || ((user?.role === 'program_officer' || user?.role === 'medical_officer') && creatorId === currentUserId))}
                         date={training.date}
                         startTime={training.startTime}
                         endTime={training.endTime}
@@ -276,7 +346,7 @@ const TrainingDetails: React.FC = () => {
                     </Card>
 
                     {/* Manage Section - Consolidated for all roles */}
-                    {(user?.role === 'participant' || user?.role === 'program_officer' || user?.role === 'master_admin') && (
+                    {(user?.role === 'participant' || user?.role === 'program_officer' || user?.role === 'medical_officer' || user?.role === 'master_admin') && (
                         <Card className="bg-white/5 border-white/10">
                             <CardHeader>
                                 <CardTitle className="text-lg">Manage</CardTitle>
@@ -314,14 +384,36 @@ const TrainingDetails: React.FC = () => {
                                     </Button>
                                 )}
 
+                                {canSubmitFeedback && (
+                                    myFeedbackSubmission ? (
+                                        <div className="flex items-start gap-3 rounded-lg border border-emerald-500/20 bg-emerald-500/10 p-3 text-emerald-400">
+                                            <MessageSquareMore className="mt-0.5 size-4 flex-shrink-0" />
+                                            <div>
+                                                <p className="text-sm font-semibold">Feedback submitted</p>
+                                                <p className="text-xs text-emerald-300/90">
+                                                    Submitted on {format(new Date(myFeedbackSubmission.submittedAt), 'MMM dd, yyyy')}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <Button
+                                            variant="outline"
+                                            className="w-full justify-start border-primary/20 text-primary hover:bg-primary/10"
+                                            onClick={() => setFeedbackDialogOpen(true)}
+                                        >
+                                            <MessageSquareMore className="size-4 mr-3" /> Submit Feedback
+                                        </Button>
+                                    )
+                                )}
+
                                 {/* Admin/PO actions */}
-                                {(user?.role === 'program_officer' || user?.role === 'master_admin') && (
+                                {(user?.role === 'program_officer' || user?.role === 'medical_officer' || user?.role === 'master_admin') && (
                                     <Button variant="outline" className="w-full justify-start border-white/10 hover:bg-white/10" onClick={() => setAttendanceModalOpen(true)}>
                                         <Users className="size-4 mr-3" /> View Attendance
                                     </Button>
                                 )}
 
-                                {(user?.role === 'master_admin' || (user?.role === 'program_officer' && (training.createdById === user.id || training.createdById === (user as any).userId))) && (
+                                {isOwnerOrAdmin && (
                                     <>
                                         {/* Generate Certificates Button for PO */}
                                         {training.status === 'completed' && !training.certificatesGenerated && (
@@ -379,12 +471,175 @@ const TrainingDetails: React.FC = () => {
                 </div>
             </div>
 
+            {canViewFeedback && (
+                <Card className="border-border bg-card">
+                    <CardHeader className="gap-4">
+                        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                            <div>
+                                <CardTitle className="flex items-center gap-2 text-xl text-foreground">
+                                    <MessageSquareMore className="size-5 text-primary" />
+                                    Participant Feedback
+                                </CardTitle>
+                                <p className="mt-2 text-sm text-muted-foreground">
+                                    Review suggestions, future requests, and session arrangement feedback from attendees.
+                                </p>
+                            </div>
+
+                            <div className="grid gap-3 sm:grid-cols-2">
+                                <Select value={feedbackRatingFilter} onValueChange={setFeedbackRatingFilter}>
+                                    <SelectTrigger className="w-full min-w-[170px] border-border bg-background">
+                                        <SelectValue placeholder="Filter by rating" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="all">All ratings</SelectItem>
+                                        <SelectItem value="5">5 stars</SelectItem>
+                                        <SelectItem value="4">4 stars</SelectItem>
+                                        <SelectItem value="3">3 stars</SelectItem>
+                                        <SelectItem value="2">2 stars</SelectItem>
+                                        <SelectItem value="1">1 star</SelectItem>
+                                        <SelectItem value="unrated">Unrated</SelectItem>
+                                    </SelectContent>
+                                </Select>
+
+                                <Select value={feedbackSort} onValueChange={(value) => setFeedbackSort(value as 'latest' | 'oldest')}>
+                                    <SelectTrigger className="w-full min-w-[170px] border-border bg-background">
+                                        <SelectValue placeholder="Sort responses" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="latest">Latest first</SelectItem>
+                                        <SelectItem value="oldest">Oldest first</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        </div>
+                    </CardHeader>
+                    <CardContent className="space-y-6">
+                        <div className="grid gap-4 md:grid-cols-3">
+                            <div className="rounded-2xl border border-border bg-background/80 p-5">
+                                <p className="text-xs uppercase tracking-[0.24em] text-muted-foreground">Average rating</p>
+                                <div className="mt-3 flex items-end gap-2">
+                                    <span className="text-3xl font-bold text-foreground">
+                                        {feedbackSummary.averageRating ?? '--'}
+                                    </span>
+                                    <span className="mb-1 flex items-center gap-1 text-sm text-amber-500">
+                                        <Star className="size-4 fill-current" />
+                                        out of 5
+                                    </span>
+                                </div>
+                            </div>
+                            <div className="rounded-2xl border border-border bg-background/80 p-5">
+                                <p className="text-xs uppercase tracking-[0.24em] text-muted-foreground">Total responses</p>
+                                <p className="mt-3 text-3xl font-bold text-foreground">{feedbackSummary.totalResponses}</p>
+                            </div>
+                            <div className="rounded-2xl border border-border bg-background/80 p-5">
+                                <p className="text-xs uppercase tracking-[0.24em] text-muted-foreground">Common themes</p>
+                                <div className="mt-3 flex flex-wrap gap-2">
+                                    {feedbackSummary.commonTopics.length > 0 ? (
+                                        feedbackSummary.commonTopics.map((topic) => (
+                                            <Badge key={topic.keyword} variant="outline" className="border-primary/20 bg-primary/5 text-primary">
+                                                <TrendingUp className="mr-1 size-3.5" />
+                                                {topic.keyword} ({topic.count})
+                                            </Badge>
+                                        ))
+                                    ) : (
+                                        <span className="text-sm text-muted-foreground">Themes will appear after responses arrive.</span>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+
+                        {feedbackLoading ? (
+                            <div className="rounded-2xl border border-dashed border-border bg-background/50 px-6 py-12 text-center text-muted-foreground">
+                                Loading feedback...
+                            </div>
+                        ) : filteredFeedbackEntries.length === 0 ? (
+                            <div className="rounded-2xl border border-dashed border-border bg-background/50 px-6 py-12 text-center">
+                                <MessageSquareMore className="mx-auto mb-3 size-10 text-muted-foreground/50" />
+                                <p className="text-lg font-semibold text-foreground">No feedback received yet</p>
+                                <p className="mt-2 text-sm text-muted-foreground">
+                                    Responses from attendees will appear here after they submit feedback.
+                                </p>
+                            </div>
+                        ) : (
+                            <div className="grid gap-4">
+                                {filteredFeedbackEntries.map((entry) => (
+                                    <div key={entry.id} className="rounded-2xl border border-border bg-background/80 p-5 shadow-sm">
+                                        <div className="flex flex-col gap-4 border-b border-border pb-4 sm:flex-row sm:items-start sm:justify-between">
+                                            <div>
+                                                <p className="text-base font-semibold text-foreground">{entry.participantName}</p>
+                                                <p className="mt-1 text-sm text-muted-foreground">
+                                                    Submitted on {format(new Date(entry.submittedAt), 'MMM dd, yyyy, h:mm a')}
+                                                </p>
+                                            </div>
+                                            <div className="flex flex-wrap items-center gap-2">
+                                                <Badge variant="outline" className="border-border bg-card text-foreground">
+                                                    {entry.rating ? `${entry.rating} / 5 stars` : 'No rating'}
+                                                </Badge>
+                                                <Badge
+                                                    className={
+                                                        entry.sentiment === 'positive'
+                                                            ? 'bg-emerald-500/10 text-emerald-500'
+                                                            : entry.sentiment === 'negative'
+                                                                ? 'bg-rose-500/10 text-rose-500'
+                                                                : 'bg-amber-500/10 text-amber-500'
+                                                    }
+                                                >
+                                                    {entry.sentiment}
+                                                </Badge>
+                                            </div>
+                                        </div>
+
+                                        <div className="mt-4 grid gap-4 lg:grid-cols-3">
+                                            <div className="rounded-xl border border-border bg-card p-4">
+                                                <p className="text-xs font-semibold uppercase tracking-[0.24em] text-muted-foreground">Suggestions</p>
+                                                <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-foreground">{entry.suggestions}</p>
+                                            </div>
+                                            <div className="rounded-xl border border-border bg-card p-4">
+                                                <p className="text-xs font-semibold uppercase tracking-[0.24em] text-muted-foreground">Future training requests</p>
+                                                <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-muted-foreground">{entry.futureTrainingRequests}</p>
+                                            </div>
+                                            <div className="rounded-xl border border-border bg-card p-4">
+                                                <p className="text-xs font-semibold uppercase tracking-[0.24em] text-muted-foreground">Arrangements</p>
+                                                <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-foreground">{entry.arrangementsFeedback}</p>
+                                                {entry.overallExperience && (
+                                                    <div className="mt-4 rounded-lg border border-border bg-background px-3 py-2 text-sm text-muted-foreground">
+                                                        Overall experience: <span className="font-medium text-foreground">{entry.overallExperience}</span>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </CardContent>
+                </Card>
+            )}
+
             <AttendanceListModal
                 isOpen={attendanceModalOpen}
                 onClose={() => setAttendanceModalOpen(false)}
                 trainingId={id || ''}
                 trainingTitle={training.title}
             />
+
+            {canSubmitFeedback && !myFeedbackSubmission && (
+                <FeedbackSubmissionDialog
+                    trainingId={id || ''}
+                    trainingTitle={training.title}
+                    open={feedbackDialogOpen}
+                    onOpenChange={setFeedbackDialogOpen}
+                    onSubmitted={(feedback) => {
+                        setMyFeedbackSubmission({
+                            id: feedback.id,
+                            trainingId: feedback.trainingId,
+                            submittedAt: feedback.submittedAt,
+                            rating: feedback.rating,
+                            anonymous: feedback.anonymous
+                        });
+                    }}
+                />
+            )}
         </div>
     );
 };

@@ -12,7 +12,7 @@ import HorizontalScrollList from '../components/HorizontalScrollList';
 import MediaCard from '../components/MediaCard';
 import { Calendar } from '../components/ui/calendar';
 import { Button } from '../components/ui/button';
-import { Calendar as CalendarIcon, X } from 'lucide-react';
+import { Calendar as CalendarIcon, CalendarPlus, Plus, X } from 'lucide-react';
 
 const Dashboard: React.FC = () => {
   const { user } = useAuth();
@@ -23,6 +23,13 @@ const Dashboard: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [activeFilter, setActiveFilter] = useState('all');
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
+
+  const formatDateParam = (date: Date) => {
+    const year = date.getFullYear();
+    const month = `${date.getMonth() + 1}`.padStart(2, '0');
+    const day = `${date.getDate()}`.padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
 
   useEffect(() => {
     const fetchData = async () => {
@@ -137,6 +144,22 @@ const Dashboard: React.FC = () => {
       return t.status === 'ongoing' || (t.status === 'scheduled' && isPast);
     });
 
+  const hasTrainingsOnSelectedDate =
+    activeOrOngoing.length > 0 || upcomingTrainings.length > 0 || completedTrainings.length > 0;
+  const canCreateTraining = user?.role === 'master_admin' || user?.role === 'program_officer';
+  const selectedDateIsPast = Boolean(selectedDate && selectedDate < today);
+
+  const handleDateSelect = (date?: Date) => {
+    setSelectedDate(date);
+  };
+
+  const handleCreateTrainingForDate = () => {
+    if (!selectedDate || !canCreateTraining || selectedDateIsPast) return;
+    navigate(`/trainings/create?date=${formatDateParam(selectedDate)}`, {
+      state: { selectedDate: formatDateParam(selectedDate) },
+    });
+  };
+
   const filters = [
     { value: 'all', label: t('dashboard.filters.all', 'All Activity') },
     { value: 'upcoming', label: t('dashboard.filters.upcoming', 'Upcoming sessions') },
@@ -233,9 +256,61 @@ const Dashboard: React.FC = () => {
                   <CalendarIcon className="size-5 text-primary" />
                   {t('dashboard.trainingsOn', 'Trainings on')} {selectedDate.toLocaleDateString()}
                 </h2>
-                {activeOrOngoing.length === 0 && upcomingTrainings.length === 0 && completedTrainings.length === 0 && (
-                  <div className="p-8 border-2 border-dashed border-secondary/30 rounded-2xl text-center text-muted-foreground">
-                    <p>{t('dashboard.noTrainingsOnDate', 'No trainings scheduled for this date.')}</p>
+                {!hasTrainingsOnSelectedDate && (
+                  <div
+                    className={`rounded-2xl border-2 border-dashed p-8 transition-all ${
+                      canCreateTraining && !selectedDateIsPast
+                        ? 'border-primary/20 bg-primary/5 hover:border-primary/35 hover:bg-primary/10 cursor-pointer'
+                        : 'border-secondary/30 text-muted-foreground'
+                    }`}
+                    onClick={() => {
+                      if (canCreateTraining && !selectedDateIsPast) {
+                        handleCreateTrainingForDate();
+                      }
+                    }}
+                    role={canCreateTraining && !selectedDateIsPast ? 'button' : undefined}
+                    tabIndex={canCreateTraining && !selectedDateIsPast ? 0 : -1}
+                    onKeyDown={(e) => {
+                      if ((e.key === 'Enter' || e.key === ' ') && canCreateTraining && !selectedDateIsPast) {
+                        e.preventDefault();
+                        handleCreateTrainingForDate();
+                      }
+                    }}
+                  >
+                    <div className="mx-auto flex max-w-md flex-col items-center text-center">
+                      <div className="mb-4 flex size-14 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+                        <CalendarPlus className="size-7" />
+                      </div>
+                      <p className="text-xl font-semibold text-foreground">
+                        {t('dashboard.noTrainingsOnDate', 'No trainings scheduled for this date.')}
+                      </p>
+                      <p className="mt-2 text-sm text-muted-foreground">
+                        {selectedDateIsPast
+                          ? 'Training creation is disabled for past dates.'
+                          : canCreateTraining
+                            ? 'Create a new training session for this date.'
+                            : 'You do not have permission to create a training session for this date.'}
+                      </p>
+                      <Button
+                        type="button"
+                        className="mt-5 transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleCreateTrainingForDate();
+                        }}
+                        disabled={!canCreateTraining || selectedDateIsPast}
+                        title={
+                          selectedDateIsPast
+                            ? 'Cannot create a training for a past date'
+                            : !canCreateTraining
+                              ? 'You do not have permission to create trainings'
+                              : 'Create a training for this date'
+                        }
+                      >
+                        <Plus className="mr-2 size-4" />
+                        Create Training
+                      </Button>
+                    </div>
                   </div>
                 )}
               </div>
@@ -357,7 +432,7 @@ const Dashboard: React.FC = () => {
               <Calendar
                 mode="single"
                 selected={selectedDate}
-                onSelect={setSelectedDate}
+                onSelect={handleDateSelect}
                 className="rounded-md border-0 bg-transparent flex justify-center"
               />
               <p className="text-xs text-muted-foreground mt-4 px-2 italic text-center">

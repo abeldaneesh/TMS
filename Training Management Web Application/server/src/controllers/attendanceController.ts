@@ -214,7 +214,7 @@ export const getMyAttendance = async (req: AuthRequest, res: Response): Promise<
         const attendance = await Attendance.find({ participantId })
             .populate({
                 path: 'trainingId',
-                select: 'title date startTime endTime program hallId',
+                select: 'title date startTime endTime program hallId status',
                 populate: {
                     path: 'hallId',
                     select: 'name location'
@@ -257,7 +257,7 @@ export const getAttendanceByParticipant = async (req: AuthRequest, res: Response
         const attendance = await Attendance.find({ participantId })
             .populate({
                 path: 'trainingId',
-                select: 'title date startTime endTime program hallId',
+                select: 'title date startTime endTime program hallId status',
                 populate: {
                     path: 'hallId',
                     select: 'name location'

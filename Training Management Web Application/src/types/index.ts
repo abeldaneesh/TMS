@@ -124,6 +124,52 @@ export interface Attendance {
   participant?: User;
 }
 
+export interface TrainingFeedback {
+  id: string;
+  trainingId: string;
+  participantId: string;
+  participantName: string;
+  suggestions: string;
+  futureTrainingRequests: string;
+  arrangementsFeedback: string;
+  rating?: number;
+  overallExperience?: string;
+  anonymous: boolean;
+  submittedAt: Date | string;
+  sentiment: 'positive' | 'neutral' | 'negative' | 'unrated';
+}
+
+export interface TrainingFeedbackSubmission {
+  suggestions: string;
+  futureTrainingRequests: string;
+  arrangementsFeedback: string;
+  rating?: number;
+  overallExperience?: string;
+  anonymous?: boolean;
+}
+
+export interface TrainingFeedbackSummary {
+  totalResponses: number;
+  averageRating: number | null;
+  commonTopics: Array<{
+    keyword: string;
+    count: number;
+  }>;
+}
+
+export interface TrainingFeedbackListResponse {
+  entries: TrainingFeedback[];
+  summary: TrainingFeedbackSummary;
+}
+
+export interface MyFeedbackSubmission {
+  id: string;
+  trainingId: string;
+  submittedAt: Date | string;
+  rating?: number;
+  anonymous: boolean;
+}
+
 export type NotificationType = 'info' | 'success' | 'warning' | 'error';
 
 export interface Notification {

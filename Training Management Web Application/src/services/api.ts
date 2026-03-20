@@ -1,7 +1,8 @@
 import axios from 'axios';
 import {
     User, Institution, Hall, Training, Nomination, Attendance, Notification,
-    TrainingAnalytics, InstitutionReport, DashboardStats, QRCodeData, NominationStatus, HallBlock, HallBookingRequest
+    TrainingAnalytics, InstitutionReport, DashboardStats, QRCodeData, NominationStatus, HallBlock, HallBookingRequest,
+    TrainingFeedback, TrainingFeedbackListResponse, TrainingFeedbackSubmission, MyFeedbackSubmission
 } from '../types';
 
 const API_URL = (import.meta as any).env.VITE_API_URL || '/api';
@@ -487,6 +488,23 @@ export const analyticsApi = {
         const response = await api.get(`/analytics/institution/${institutionId}`);
         return response.data;
     },
+};
+
+export const feedbackApi = {
+    submit: async (trainingId: string, data: TrainingFeedbackSubmission): Promise<TrainingFeedback> => {
+        const response = await api.post(`/feedback/training/${trainingId}`, data);
+        return response.data;
+    },
+
+    getByTraining: async (trainingId: string): Promise<TrainingFeedbackListResponse> => {
+        const response = await api.get(`/feedback/training/${trainingId}`);
+        return response.data;
+    },
+
+    getMySubmissions: async (): Promise<MyFeedbackSubmission[]> => {
+        const response = await api.get('/feedback/my');
+        return response.data;
+    }
 };
 
 export const qrApi = {

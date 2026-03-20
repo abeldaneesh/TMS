@@ -14,6 +14,7 @@ import userRoutes from './routes/userRoutes';
 import notificationRoutes from './routes/notificationRoutes';
 import hallBlockRoutes from './routes/hallBlockRoutes';
 import hallRequestRoutes from './routes/hallRequestRoutes';
+import feedbackRoutes from './routes/feedbackRoutes';
 
 import institutionRoutes from './routes/institutionRoutes';
 import hallRoutes from './routes/hallRoutes';
@@ -66,6 +67,7 @@ app.use('/api/institutions', institutionRoutes);
 app.use('/api/halls', hallRoutes);
 app.use('/api/hall-blocks', hallBlockRoutes);
 app.use('/api/hall-requests', hallRequestRoutes);
+app.use('/api/feedback', feedbackRoutes);
 app.use('/api/uploads', uploadRoutes);
 
 // Static files serving
