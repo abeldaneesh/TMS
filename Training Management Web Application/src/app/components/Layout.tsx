@@ -227,7 +227,6 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           { icon: Users, label: t('nav.participants', 'Participants'), path: '/participants' },
           { icon: Building2, label: t('nav.institutions', 'Institutions'), path: '/institutions' },
           { icon: DoorOpen, label: t('nav.halls', 'Halls'), path: '/halls' },
-          { icon: ClipboardList, label: t('nav.nominations', 'Library (Noms)'), path: '/nominations' },
           { icon: BarChart3, label: t('nav.analytics', 'Analytics'), path: '/analytics' },
           { icon: FileText, label: t('nav.reports', 'Reports'), path: '/reports' },
         ];
@@ -238,7 +237,6 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           { icon: AppWindowMac, label: t('nav.explore', 'Explore (Trainings)'), path: '/trainings' },
           { icon: Calendar, label: t('nav.createTraining', 'Create Training'), path: '/trainings/create' },
           { icon: DoorOpen, label: t('nav.hallAvailability', 'Hall Availability'), path: '/hall-availability' },
-          { icon: ClipboardList, label: t('nav.nominations', 'Library (Noms)'), path: '/nominations' },
           { icon: BarChart3, label: t('nav.analytics', 'Analytics'), path: '/analytics' },
           { icon: FileText, label: t('nav.reports', 'Reports'), path: '/reports' },
         ];
@@ -248,7 +246,6 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           ...commonItems,
           { icon: AppWindowMac, label: t('nav.explore', 'Explore (Trainings)'), path: '/trainings' },
           { icon: Users, label: t('nav.staff', 'Staff'), path: '/staff' },
-          { icon: ClipboardList, label: t('nav.nominations', 'Library (Noms)'), path: '/nominations' },
           { icon: BarChart3, label: t('nav.analytics', 'Analytics'), path: '/analytics' },
           { icon: FileText, label: t('nav.reports', 'Reports'), path: '/reports' },
         ];

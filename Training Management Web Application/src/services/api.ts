@@ -252,10 +252,11 @@ export const hallsApi = {
 };
 
 export const hallBlocksApi = {
-    getAll: async (hallId: string, date?: string): Promise<HallBlock[]> => {
+    getAll: async (hallId?: string, date?: string): Promise<HallBlock[]> => {
         const params = new URLSearchParams();
         if (date) params.append('date', date);
-        const response = await api.get(`/hall-blocks/${hallId}?${params.toString()}`);
+        const url = hallId ? `/hall-blocks/${hallId}` : '/hall-blocks';
+        const response = await api.get(`${url}?${params.toString()}`);
         return response.data;
     },
 

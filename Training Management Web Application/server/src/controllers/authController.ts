@@ -10,7 +10,7 @@ const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
 
 export const register = async (req: Request, res: Response): Promise<void> => {
     try {
-        const { email, password, name, role, institutionId, designation, department } = req.body;
+        const { email, password, name, role, institutionId, designation, department, phone } = req.body;
 
         // Validation
         if (!email) {
@@ -23,10 +23,7 @@ export const register = async (req: Request, res: Response): Promise<void> => {
             return;
         }
 
-        if (!password || password.length < 8) {
-            res.status(400).json({ message: 'Password must be at least 8 characters long.' });
-            return;
-        }
+        // Duplicate check removed (redundant)
 
         // Check if user exists
         const existingUser = await User.findOne({ email });
@@ -55,6 +52,8 @@ export const register = async (req: Request, res: Response): Promise<void> => {
             role: role || 'participant',
             institutionId,
             designation,
+            department,
+            phone,
             isApproved: false, // Explicitly set to false indicating manual approval is still required
         });
 

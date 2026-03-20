@@ -40,7 +40,7 @@ const Settings: React.FC = () => {
         designation: user?.designation || '',
         department: user?.department || '',
         profilePicture: user?.profilePicture || '',
-        institutionId: user?.institutionId || '',
+        institutionId: (typeof user?.institutionId === 'object' ? (user.institutionId as any)?.id || (user.institutionId as any)?._id : user?.institutionId) || '',
     });
 
     // Sync state when user object changes
@@ -52,7 +52,7 @@ const Settings: React.FC = () => {
                 designation: user.designation || '',
                 department: user.department || '',
                 profilePicture: user.profilePicture || '',
-                institutionId: user.institutionId || '',
+                institutionId: (typeof user.institutionId === 'object' ? (user.institutionId as any)?.id || (user.institutionId as any)?._id : user.institutionId) || '',
             });
         }
     }, [user]);
@@ -105,7 +105,13 @@ const Settings: React.FC = () => {
         if (!user) return;
         setLoading(true);
         try {
-            const response = await usersApi.update(user.id, profileData);
+            // Ensure institutionId is a string, not an object, before sending
+            const preparedData = {
+                ...profileData,
+                institutionId: typeof profileData.institutionId === 'object' ? (profileData.institutionId as any)?.id || (profileData.institutionId as any)?._id : profileData.institutionId
+            };
+            
+            const response = await usersApi.update(user.id, preparedData);
             toast.success('Profile updated successfully');
             if (response) {
                 updateUser(response);

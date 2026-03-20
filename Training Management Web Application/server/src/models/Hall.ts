@@ -14,6 +14,7 @@ export interface IHall extends Omit<Document, '_id'> {
     name: string;
     location: string;
     capacity: number;
+    programOfficerId?: string;
     availability: IHallAvailabilityData[];
     createdAt: Date;
 }
@@ -23,6 +24,7 @@ const HallSchema: Schema = new Schema({
     name: { type: String, required: true },
     location: { type: String, required: true },
     capacity: { type: Number, required: true },
+    programOfficerId: { type: String, ref: 'User' },
     availability: [{
         dayOfWeek: { type: Number }, // 0-6 for recurring
         specificDate: { type: Date }, // For specific date slots

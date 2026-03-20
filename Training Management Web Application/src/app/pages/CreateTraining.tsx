@@ -65,6 +65,7 @@ const CreateTraining: React.FC = () => {
     program: '',
     customProgram: '',
     targetAudience: [] as string[],
+    customTargetAudience: '',
     date: '',
     startTime: '',
     endTime: '',
@@ -97,9 +98,17 @@ const CreateTraining: React.FC = () => {
               description: training.description,
               program: isCustomProgram ? 'Other' : training.program,
               customProgram: isCustomProgram ? training.program : '',
-              targetAudience: Array.isArray(training.targetAudience)
-                ? training.targetAudience
-                : (training.targetAudience ? [training.targetAudience] : []),
+              targetAudience: (() => {
+                const arr = Array.isArray(training.targetAudience) ? training.targetAudience : (training.targetAudience ? [training.targetAudience] : []);
+                const standards = ['Doctors', 'Nurses', 'Lab Technicians', 'Health Inspectors', 'Administrative Staff', 'Other'];
+                const hasCustom = arr.some((a: string) => !standards.includes(a));
+                return hasCustom ? [...arr.filter((a: string) => standards.includes(a) && a !== 'Other'), 'Other'] : arr;
+              })(),
+              customTargetAudience: (() => {
+                const arr = Array.isArray(training.targetAudience) ? training.targetAudience : (training.targetAudience ? [training.targetAudience] : []);
+                const standards = ['Doctors', 'Nurses', 'Lab Technicians', 'Health Inspectors', 'Administrative Staff', 'Other'];
+                return arr.filter((a: string) => !standards.includes(a) && a !== 'Other').join(', ');
+              })(),
               date: new Date(training.date).toISOString().split('T')[0],
               startTime: training.startTime,
               endTime: training.endTime,
@@ -121,9 +130,17 @@ const CreateTraining: React.FC = () => {
             description: training.description,
             program: isCustomProgram ? 'Other' : training.program,
             customProgram: isCustomProgram ? training.program : '',
-            targetAudience: Array.isArray(training.targetAudience)
-              ? training.targetAudience
-              : (training.targetAudience ? [training.targetAudience] : []),
+            targetAudience: (() => {
+              const arr = Array.isArray(training.targetAudience) ? training.targetAudience : (training.targetAudience ? [training.targetAudience] : []);
+              const standards = ['Doctors', 'Nurses', 'Lab Technicians', 'Health Inspectors', 'Administrative Staff', 'Other'];
+              const hasCustom = arr.some((a: string) => !standards.includes(a));
+              return hasCustom ? [...arr.filter((a: string) => standards.includes(a) && a !== 'Other'), 'Other'] : arr;
+            })(),
+            customTargetAudience: (() => {
+              const arr = Array.isArray(training.targetAudience) ? training.targetAudience : (training.targetAudience ? [training.targetAudience] : []);
+              const standards = ['Doctors', 'Nurses', 'Lab Technicians', 'Health Inspectors', 'Administrative Staff', 'Other'];
+              return arr.filter((a: string) => !standards.includes(a) && a !== 'Other').join(', ');
+            })(),
             capacity: training.capacity?.toString() || '',
             requiredInstitutions: training.requiredInstitutions || [],
           }));
@@ -232,6 +249,9 @@ const CreateTraining: React.FC = () => {
       newErrors.customProgram = 'Custom program name is required';
     }
     if (formData.targetAudience.length === 0) newErrors.targetAudience = 'Select at least one target audience';
+    if (formData.targetAudience.includes('Other') && (!formData.customTargetAudience || !formData.customTargetAudience.trim())) {
+      newErrors.customTargetAudience = 'Custom target audience is required';
+    }
     if (!formData.date) newErrors.date = 'Date is required';
     if (!formData.startTime) newErrors.startTime = 'Start time is required';
     if (!formData.endTime) newErrors.endTime = 'End time is required';
@@ -263,7 +283,7 @@ const CreateTraining: React.FC = () => {
         title: formData.title,
         description: formData.description,
         program: formData.program === 'Other' ? formData.customProgram : formData.program,
-        targetAudience: formData.targetAudience,
+        targetAudience: formData.targetAudience.map(a => a === 'Other' ? formData.customTargetAudience : a),
         date: new Date(formData.date),
         startTime: formData.startTime,
         endTime: formData.endTime,
@@ -310,7 +330,7 @@ const CreateTraining: React.FC = () => {
           title: formData.title,
           description: formData.description,
           program: formData.program === 'Other' ? formData.customProgram : formData.program,
-          targetAudience: formData.targetAudience,
+          targetAudience: formData.targetAudience.map(a => a === 'Other' ? formData.customTargetAudience : a),
           date: new Date(formData.date),
           startTime: formData.startTime,
           endTime: formData.endTime,
@@ -500,6 +520,16 @@ const CreateTraining: React.FC = () => {
                   onChange={(value) => handleChange('targetAudience', value)}
                   placeholder={t('createTraining.fields.targetAudiencePlaceholder', 'Select target audience')}
                 />
+                {formData.targetAudience.includes('Other') && (
+                  <div className="mt-3">
+                    <Input
+                      value={formData.customTargetAudience}
+                      onChange={(e) => handleChange('customTargetAudience', e.target.value)}
+                      placeholder={t('createTraining.fields.customTargetAudiencePlaceholder', 'Enter custom audience')}
+                    />
+                    {errors.customTargetAudience && <p className="text-sm text-red-600 mt-1">{errors.customTargetAudience}</p>}
+                  </div>
+                )}
                 {errors.targetAudience && <p className="text-sm text-red-600 mt-1">{errors.targetAudience}</p>}
               </div>
             </div>
@@ -512,7 +542,7 @@ const CreateTraining: React.FC = () => {
             <CardDescription>{t('createTraining.sections.schedule.desc', 'Set the date, time, and location')}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="date">{t('createTraining.fields.date', 'Date *')}</Label>
                 <Input
@@ -526,25 +556,73 @@ const CreateTraining: React.FC = () => {
               </div>
 
               <div>
-                <Label htmlFor="startTime">{t('createTraining.fields.startTime', 'Start Time *')}</Label>
-                <ClockTimePicker
-                  value={formData.startTime}
-                  onChange={(val) => handleChange('startTime', val)}
-                  className={errors.startTime ? "border-red-500" : ""}
-                />
-                {errors.startTime && <p className="text-sm text-red-600 mt-1">{errors.startTime}</p>}
-              </div>
-
-              <div>
-                <Label htmlFor="endTime">{t('createTraining.fields.endTime', 'End Time *')}</Label>
-                <ClockTimePicker
-                  value={formData.endTime}
-                  onChange={(val) => handleChange('endTime', val)}
-                  className={errors.endTime ? "border-red-500" : ""}
-                />
-                {errors.endTime && <p className="text-sm text-red-600 mt-1">{errors.endTime}</p>}
+                <Label htmlFor="session">{t('createTraining.fields.session', 'Training Session *')}</Label>
+                <Select
+                  value={
+                    formData.startTime === '10:00' && formData.endTime === '13:30' ? 'morning' :
+                    formData.startTime === '14:00' && formData.endTime === '17:00' ? 'afternoon' :
+                    formData.startTime === '10:00' && formData.endTime === '17:00' ? 'fullday' : 
+                    (formData.startTime || formData.endTime ? 'custom' : '')
+                  }
+                  onValueChange={(val) => {
+                    if (val === 'morning') {
+                      setFormData(prev => ({ ...prev, startTime: '10:00', endTime: '13:30' }));
+                      setErrors(prev => ({ ...prev, startTime: '', endTime: '' }));
+                    } else if (val === 'afternoon') {
+                      setFormData(prev => ({ ...prev, startTime: '14:00', endTime: '17:00' }));
+                      setErrors(prev => ({ ...prev, startTime: '', endTime: '' }));
+                    } else if (val === 'fullday') {
+                      setFormData(prev => ({ ...prev, startTime: '10:00', endTime: '17:00' }));
+                      setErrors(prev => ({ ...prev, startTime: '', endTime: '' }));
+                    } else if (val === 'custom') {
+                      setFormData(prev => ({ 
+                        ...prev, 
+                        startTime: prev.startTime || '09:00', 
+                        endTime: prev.endTime || '17:00' 
+                      }));
+                      setErrors(prev => ({ ...prev, startTime: '', endTime: '' }));
+                    }
+                  }}
+                >
+                  <SelectTrigger className={errors.startTime || errors.endTime ? "border-red-500" : ""}>
+                    <SelectValue placeholder={t('createTraining.fields.sessionPlaceholder', 'Select session')} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="morning">Morning (10:00 AM - 1:30 PM)</SelectItem>
+                    <SelectItem value="afternoon">Afternoon (2:00 PM - 5:00 PM)</SelectItem>
+                    <SelectItem value="fullday">Full Day (10:00 AM - 5:00 PM)</SelectItem>
+                    <SelectItem value="custom">Custom Time</SelectItem>
+                  </SelectContent>
+                </Select>
+                {(errors.startTime || errors.endTime) && <p className="text-sm text-red-600 mt-1">{errors.startTime || errors.endTime}</p>}
               </div>
             </div>
+
+            {(!(formData.startTime === '10:00' && formData.endTime === '13:30') &&
+              !(formData.startTime === '14:00' && formData.endTime === '17:00') &&
+              !(formData.startTime === '10:00' && formData.endTime === '17:00') &&
+              (formData.startTime || formData.endTime)) && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="startTime">{t('createTraining.fields.startTime', 'Custom Start Time *')}</Label>
+                  <ClockTimePicker
+                    value={formData.startTime}
+                    onChange={(val) => handleChange('startTime', val)}
+                    className={errors.startTime ? "border-red-500" : ""}
+                  />
+                  {errors.startTime && <p className="text-sm text-red-600 mt-1">{errors.startTime}</p>}
+                </div>
+                <div>
+                  <Label htmlFor="endTime">{t('createTraining.fields.endTime', 'Custom End Time *')}</Label>
+                  <ClockTimePicker
+                    value={formData.endTime}
+                    onChange={(val) => handleChange('endTime', val)}
+                    className={errors.endTime ? "border-red-500" : ""}
+                  />
+                  {errors.endTime && <p className="text-sm text-red-600 mt-1">{errors.endTime}</p>}
+                </div>
+              </div>
+            )}
 
             {formData.date && formData.startTime && formData.endTime && (
               <div className="space-y-4">

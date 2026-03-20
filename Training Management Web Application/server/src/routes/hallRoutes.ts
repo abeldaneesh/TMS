@@ -7,16 +7,25 @@ import {
     getAvailability,
     getHallAvailabilityDetails,
     createHall,
+    updateHall,
     deleteHall
 } from '../controllers/hallController';
-import { authenticateToken } from '../middleware/authMiddleware';
+import {
+    createBlock,
+    deleteBlock,
+    getBlocks
+} from '../controllers/hallBlockController';
+import { authenticateToken, authorizeRole } from '../middleware/authMiddleware';
 
 const router = Router();
 
-router.post('/', authenticateToken, createHall);
+router.post('/', authenticateToken, authorizeRole(['admin', 'master_admin']), createHall);
+router.put('/:hallId', authenticateToken, authorizeRole(['admin', 'master_admin']), updateHall);
 router.get('/', authenticateToken, getHalls);
-router.delete('/:hallId', authenticateToken, deleteHall);
+router.delete('/:hallId', authenticateToken, authorizeRole(['admin', 'master_admin']), deleteHall);
 router.get('/available', authenticateToken, getAvailableHalls);
+router.get('/blocks', authenticateToken, getBlocks);
+router.get('/:hallId/blocks', authenticateToken, getBlocks);
 router.get('/:hallId/details', authenticateToken, getHallAvailabilityDetails);
 router.get('/:hallId/availability', authenticateToken, getAvailability);
 router.post('/:hallId/availability', authenticateToken, addAvailability);

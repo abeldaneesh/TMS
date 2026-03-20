@@ -12,6 +12,7 @@ const router = Router();
 
 router.post('/', authenticateToken, authorizeRole(['admin', 'master_admin']), createBlock);
 router.delete('/:id', authenticateToken, authorizeRole(['admin', 'master_admin']), deleteBlock);
-router.get('/:hallId', authenticateToken, getBlocks); // Viewable by authenticated users
+router.get('/', authenticateToken, getBlocks);
+router.get('/:hallId', authenticateToken, getBlocks);
 
 export default router;

@@ -6,7 +6,8 @@ import { v4 as uuidv4 } from 'uuid';
 
 export const getHalls = async (req: Request, res: Response): Promise<void> => {
     try {
-        const halls = await Hall.find().sort({ name: 1 });
+        const halls = await Hall.find()
+            .sort({ name: 1 });
 
         const formattedHalls = halls.map((hall: any) => ({
             ...hall.toObject(),
@@ -22,12 +23,13 @@ export const getHalls = async (req: Request, res: Response): Promise<void> => {
 
 export const createHall = async (req: Request, res: Response): Promise<void> => {
     try {
-        const { name, capacity, location } = req.body;
+        const { name, capacity, location, programOfficerId } = req.body;
 
         const newHall = await Hall.create({
             name,
             capacity,
-            location
+            location,
+            programOfficerId
         });
 
         res.status(201).json({
@@ -343,6 +345,34 @@ export const getHallAvailabilityDetails = async (req: Request, res: Response): P
     } catch (error) {
         console.error('Error checking availability details:', error);
         res.status(500).json({ message: 'Error checking availability details' });
+    }
+};
+
+export const updateHall = async (req: Request, res: Response): Promise<void> => {
+    try {
+        const { hallId } = req.params;
+        const { name, capacity, location, programOfficerId } = req.body;
+
+        const hall = await Hall.findById(hallId);
+        if (!hall) {
+            res.status(404).json({ message: 'Hall not found' });
+            return;
+        }
+
+        if (name) hall.name = name;
+        if (capacity !== undefined) hall.capacity = capacity;
+        if (location) hall.location = location;
+        if (programOfficerId !== undefined) hall.programOfficerId = programOfficerId;
+
+        await hall.save();
+
+        res.json({
+            ...hall.toObject(),
+            id: hall._id
+        });
+    } catch (error) {
+        console.error('Error updating hall:', error);
+        res.status(500).json({ message: 'Error updating hall' });
     }
 };
 

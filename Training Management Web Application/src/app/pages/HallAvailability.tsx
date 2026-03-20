@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { hallsApi, trainingsApi, hallBlocksApi } from '../../services/api';
 import { Hall, Training, HallBlock } from '../../types';
-import { DoorOpen, Calendar, Clock, CheckCircle, XCircle, Search, Ban } from 'lucide-react';
+import { DoorOpen, Calendar, Clock, CheckCircle, XCircle, Search, Ban, LayoutGrid, List, ChevronLeft, ChevronRight, MapPin, Users, Sun, Sunset, Info } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
@@ -15,425 +15,479 @@ import { format } from 'date-fns';
 import LoadingAnimation from '../components/LoadingAnimation';
 import { ClockTimePicker } from '../components/ui/clock-time-picker';
 
+// Simple cn helper for conditional classes
+const cn = (...classes: (string | boolean | undefined)[]) => classes.filter(Boolean).join(' ');
+
 const HallAvailability: React.FC = () => {
-  const [halls, setHalls] = useState<Hall[]>([]);
-  const [trainings, setTrainings] = useState<Training[]>([]);
-  const [blocks, setBlocks] = useState<HallBlock[]>([]);
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
-  const [startTime, setStartTime] = useState('09:00');
-  const [endTime, setEndTime] = useState('17:00');
-  const [availability, setAvailability] = useState<Record<string, boolean>>({});
-  const [loading, setLoading] = useState(true);
-  const [checking, setChecking] = useState(false);
+    const { user } = useAuth();
+    const isOfficer = user?.role === 'program_officer' || user?.role === 'medical_officer' || user?.role === 'master_admin';
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [hallsData, trainingsData] = await Promise.all([
-          hallsApi.getAll(),
-          trainingsApi.getAll(),
-        ]);
-        setHalls(hallsData);
-        setTrainings(trainingsData);
-      } catch (error) {
-        console.error('Error fetching data:', error);
-      } finally {
-        setLoading(false);
-      }
+    const [halls, setHalls] = useState<Hall[]>([]);
+    const [trainings, setTrainings] = useState<Training[]>([]);
+    const [blocks, setBlocks] = useState<HallBlock[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
+    const [searchTerm, setSearchTerm] = useState('');
+
+    // List view filters
+    const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+    const [startTime, setStartTime] = useState('09:00');
+    const [endTime, setEndTime] = useState('17:00');
+    const [availability, setAvailability] = useState<Record<string, boolean>>({});
+    const [checking, setChecking] = useState(false);
+
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                const [hallsData, trainingsData, blocksData] = await Promise.all([
+                    hallsApi.getAll().catch(err => { console.error('Halls fetch fail:', err); return []; }),
+                    trainingsApi.getAll().catch(err => { console.error('Trainings fetch fail:', err); return []; }),
+                    hallBlocksApi.getAll().catch(err => { console.error('Blocks fetch fail:', err); return []; })
+                ]);
+                setHalls(hallsData);
+                setTrainings(trainingsData);
+                setBlocks(blocksData);
+            } catch (error) {
+                console.error('Error fetching data:', error);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchData();
+    }, []);
+
+    const checkAvailability = async () => {
+        if (!selectedDate || !startTime || !endTime) return;
+        setChecking(true);
+        try {
+            const availableHalls = await hallsApi.getAvailableHalls(
+                new Date(selectedDate),
+                startTime,
+                endTime
+            );
+            const availableIds = availableHalls.map(h => h.id);
+            const results: Record<string, boolean> = {};
+            halls.forEach(hall => {
+                results[hall.id] = availableIds.includes(hall.id);
+            });
+            setAvailability(results);
+        } catch (error) {
+            console.error('Error checking availability:', error);
+        } finally {
+            setChecking(false);
+        }
     };
-    fetchData();
-  }, []);
 
-  // Fetch blocks when halls or date changes
-  useEffect(() => {
-    const fetchBlocks = async () => {
-      if (halls.length === 0) return;
-      try {
-        const allBlocks: HallBlock[] = [];
-        // Ideally backend should support fetching all blocks for a date range/all halls
-        // But for now, we can fetch per hall or just fetch all if endpoint supports
-        // hallBlocksApi.getAll(hallId)
-        // We'll iterate for now, or improve backend to get all blocks
-        // Actually, fetching per hall in a loop is okay for small number of halls.
-        // Better: Update backend to get ALL blocks. But time constraints.
-        // Let's iterate.
-        const promises = halls.map(h => hallBlocksApi.getAll(h.id, selectedDate));
-        const results = await Promise.all(promises);
-        results.forEach(r => allBlocks.push(...r));
-        setBlocks(allBlocks);
-      } catch (error) {
-        console.error('Error fetching blocks:', error);
-      }
+    useEffect(() => {
+        if (halls.length > 0) checkAvailability();
+    }, [halls, selectedDate, startTime, endTime]);
+
+    const filteredHalls = useMemo(() => {
+        return halls.filter(hall => 
+            hall.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            hall.location.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+    }, [halls, searchTerm]);
+
+    const getEventsForHallOnDate = (hallId: string) => {
+        const dateStr = format(new Date(selectedDate), 'yyyy-MM-dd');
+        const hallTrainings = trainings.filter(t => 
+            t.hallId === hallId && 
+            t.status !== 'cancelled' && 
+            format(new Date(t.date), 'yyyy-MM-dd') === dateStr
+        );
+        const hallBlocks = blocks.filter(b => 
+            b.hallId === hallId && 
+            format(new Date(b.date), 'yyyy-MM-dd') === dateStr
+        );
+        return { trainings: hallTrainings, blocks: hallBlocks };
     };
-    if (halls.length > 0) {
-      fetchBlocks();
-    }
-  }, [halls, selectedDate]);
 
-  const checkAvailability = async () => {
-    if (!selectedDate || !startTime || !endTime) return;
+    // Blocking Dialog State
+    const [showBlockDialog, setShowBlockDialog] = useState(false);
+    const [blockingHall, setBlockingHall] = useState<Hall | null>(null);
+    const [blockReason, setBlockReason] = useState('Maintenance / Repair');
+    const [customReason, setCustomReason] = useState('');
+    const [isBlocking, setIsBlocking] = useState(false);
 
-    setChecking(true);
-    try {
-      const availableHalls = await hallsApi.getAvailableHalls(
-        new Date(selectedDate),
-        startTime,
-        endTime
-      );
+    const reasons = [
+        'Meeting / Internal Booking',
+        'Maintenance / Repair',
+        'Cleaning / Sanitization',
+        'Inspection / Audit',
+        'Other'
+    ];
 
-      const availableIds = availableHalls.map(h => h.id);
-      const results: Record<string, boolean> = {};
-      halls.forEach(hall => {
-        results[hall.id] = availableIds.includes(hall.id);
-      });
-      setAvailability(results);
-    } catch (error) {
-      console.error('Error checking availability:', error);
-    } finally {
-      setChecking(false);
-    }
-  };
+    const handleBlockClick = (hall: Hall) => {
+        setBlockingHall(hall);
+        setShowBlockDialog(true);
+    };
 
-  useEffect(() => {
-    if (halls.length > 0) {
-      checkAvailability();
-    }
-  }, [halls]);
+    const handleCellClick = (hallId: string, day: number) => {
+        if (user?.role !== 'master_admin') return;
+        const hall = halls.find(h => h.id === hallId);
+        if (hall) {
+            setBlockingHall(hall);
+            setShowBlockDialog(true);
+        }
+    };
 
-  const getEventsForHallOnDate = (hallId: string) => {
-    const hallTrainings = trainings.filter(t => {
-      if (t.hallId !== hallId) return false;
-      if (t.status === 'cancelled') return false;
-      const trainingDate = new Date(t.date).toDateString();
-      const checkDate = new Date(selectedDate).toDateString();
-      return trainingDate === checkDate;
-    });
+    const submitBlock = async () => {
+        if (!blockingHall || !user) return;
+        setIsBlocking(true);
+        try {
+            const finalReason = blockReason === 'Other' ? customReason : blockReason;
+            await hallBlocksApi.create({
+                hallId: blockingHall.id,
+                date: new Date(selectedDate),
+                startTime,
+                endTime,
+                reason: finalReason
+            });
+            toast.success('Hall blocked successfully');
+            setShowBlockDialog(false);
+            // Refresh blocks
+            const blocksData = await hallBlocksApi.getAll();
+            setBlocks(blocksData);
+            checkAvailability();
+        } catch (error: any) {
+            toast.error(error.response?.data?.message || 'Failed to block hall');
+        } finally {
+            setIsBlocking(false);
+        }
+    };
 
-    const hallBlocks = blocks.filter(b => {
-      if (b.hallId !== hallId) return false;
-      const blockDate = new Date(b.date).toDateString();
-      const checkDate = new Date(selectedDate).toDateString();
-      return blockDate === checkDate;
-    });
+    const MonthlyGridView: React.FC = () => {
+        const [currentDate, setCurrentDate] = useState(new Date());
+        const daysInMonth = (year: number, month: number) => new Date(year, month + 1, 0).getDate();
+        const firstDayOfMonth = (year: number, month: number) => new Date(year, month, 1).getDay();
 
-    return { trainings: hallTrainings, blocks: hallBlocks };
-  };
+        const year = currentDate.getFullYear();
+        const month = currentDate.getMonth();
 
-  const [showBlockDialog, setShowBlockDialog] = useState(false);
-  const [blockingHall, setBlockingHall] = useState<Hall | null>(null);
-  const [blockReason, setBlockReason] = useState('');
-  const [customReason, setCustomReason] = useState('');
-  const [blockDate, setBlockDate] = useState(selectedDate);
-  const [blockStartTime, setBlockStartTime] = useState(startTime);
-  const [blockEndTime, setBlockEndTime] = useState(endTime);
-  const [blocking, setBlocking] = useState(false);
+        const prevMonth = () => setCurrentDate(new Date(year, month - 1, 1));
+        const nextMonth = () => setCurrentDate(new Date(year, month + 1, 1));
 
-  const { user } = useAuth(); // Need auth for role check
+        const getSlottedStatus = (day: number, hallId: string) => {
+            const date = new Date(year, month, day);
+            const dateStr = format(date, 'yyyy-MM-dd');
 
-  const reasons = [
-    'Hall Booked (Internal/External)',
-    'Reserved for Furnishing / Setup',
-    'Maintenance / Repair',
-    'Cleaning / Sanitization',
-    'Inspection / Audit',
-    'Other'
-  ];
+            const dayTrainings = trainings.filter(t => 
+                t.hallId === hallId && 
+                format(new Date(t.date), 'yyyy-MM-dd') === dateStr &&
+                t.status !== 'cancelled'
+            );
 
-  const handleBlockClick = (hall: Hall) => {
-    setBlockingHall(hall);
-    setBlockDate(selectedDate);
-    setBlockStartTime(startTime);
-    setBlockEndTime(endTime);
-    setBlockReason(reasons[0]);
-    setShowBlockDialog(true);
-  };
+            const dayBlocks = blocks.filter(b => 
+                b.hallId === hallId && 
+                format(new Date(b.date), 'yyyy-MM-dd') === dateStr
+            );
 
-  const submitBlock = async () => {
-    if (!blockingHall || !user) return;
+            const morningOccupied = dayTrainings.some(t => t.startTime < '13:30' && t.endTime > '10:00') ||
+                                    dayBlocks.some(b => b.startTime < '13:30' && b.endTime > '10:00');
+            
+            const afternoonOccupied = dayTrainings.some(t => t.startTime >= '13:30' || t.endTime > '14:00') ||
+                                       dayBlocks.some(b => b.startTime >= '13:30' || b.endTime > '14:00');
 
-    setBlocking(true);
-    try {
-      const finalReason = blockReason === 'Other' ? customReason : blockReason;
-      if (!finalReason) {
-        toast.error('Please specify a reason');
-        setBlocking(false);
-        return;
-      }
+            return {
+                morning: morningOccupied ? 'booked' : 'available',
+                afternoon: afternoonOccupied ? 'booked' : 'available'
+            };
+        };
 
-      await hallBlocksApi.create({
-        hallId: blockingHall.id,
-        date: new Date(blockDate),
-        startTime: blockStartTime,
-        endTime: blockEndTime,
-        reason: finalReason
-      });
+        return (
+            <div className="space-y-8">
+                <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-4">
+                        <h3 className="text-xl font-bold text-primary tracking-widest uppercase">
+                            {currentDate.toLocaleString('default', { month: 'long' })} {year}
+                        </h3>
+                        <div className="flex gap-2">
+                            <Button variant="outline" size="icon" onClick={prevMonth} className="size-8 rounded-full border-primary/20 bg-primary/5"><ChevronLeft className="size-4" /></Button>
+                            <Button variant="outline" size="icon" onClick={nextMonth} className="size-8 rounded-full border-primary/20 bg-primary/5"><ChevronRight className="size-4" /></Button>
+                        </div>
+                    </div>
+                </div>
 
-      toast.success('Hall blocked successfully');
-      setShowBlockDialog(false);
-      // Refresh blocks
-      // Ideally checking availability refresh everything
-      // But we need to refresh blocks explicitly
-      const newBlocks = await hallBlocksApi.getAll(blockingHall.id, selectedDate);
-      setBlocks(prev => [...prev.filter(b => b.hallId !== blockingHall.id), ...newBlocks]);
-      checkAvailability(); // Re-check availability
+                <div className="grid gap-12">
+                    {filteredHalls.map((hall) => (
+                        <div key={hall.id} className="space-y-4">
+                            <div className="flex items-center justify-between px-2 pb-2 border-b border-primary/10">
+                                <h4 className="font-bold text-foreground flex items-center gap-2">
+                                    <MapPin className="size-4 text-primary" />
+                                    {hall.name}
+                                </h4>
+                                <div className="flex items-center gap-4">
+                                    <span className="text-[10px] font-mono text-muted-foreground uppercase flex items-center gap-2">
+                                        <Users className="size-3" />
+                                        {hall.capacity} CAPACITY
+                                    </span>
+                                </div>
+                            </div>
+                            <div className="grid grid-cols-7 gap-2">
+                                {['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'].map(d => (
+                                    <div key={d} className="text-[10px] text-center font-bold text-primary/60 p-1 tracking-[0.2em]">{d}</div>
+                                ))}
+                                {Array.from({ length: firstDayOfMonth(year, month) }).map((_, i) => (
+                                    <div key={`empty-${i}`} className="p-4" />
+                                ))}
+                                {Array.from({ length: daysInMonth(year, month) }).map((_, i) => {
+                                    const day = i + 1;
+                                    const { morning, afternoon } = getSlottedStatus(day, hall.id);
+                                    return (
+                                        <div key={day} className="relative p-3 h-20 border border-primary/10 rounded-xl bg-primary/5 hover:bg-primary/10 transition-all group overflow-hidden">
+                                            <span className="absolute top-1 right-2 text-[10px] font-bold font-mono opacity-30">{day}</span>
+                                            <div className="flex flex-col gap-2 mt-4">
+                                                <div className="flex items-center justify-between gap-1">
+                                                    <div className="flex items-center gap-1.5 min-w-[30px]">
+                                                        <Sun className={cn("size-2.5", morning === 'available' ? "text-emerald-500" : "text-rose-500")} />
+                                                        <span className={cn("text-[8px] font-bold tracking-tighter uppercase", morning === 'available' ? "text-emerald-500" : "text-rose-500")}>AM</span>
+                                                    </div>
+                                                    <div className={cn("h-1 flex-1 rounded-full", morning === 'available' ? "bg-emerald-500/20" : "bg-rose-500/60")} />
+                                                </div>
+                                                <div className="flex items-center justify-between gap-1">
+                                                    <div className="flex items-center gap-1.5 min-w-[30px]">
+                                                        <Sunset className={cn("size-2.5", afternoon === 'available' ? "text-emerald-500" : "text-rose-500")} />
+                                                        <span className={cn("text-[8px] font-bold tracking-tighter uppercase", afternoon === 'available' ? "text-emerald-500" : "text-rose-500")}>PM</span>
+                                                    </div>
+                                                    <div className={cn("h-1 flex-1 rounded-full", afternoon === 'available' ? "bg-emerald-500/20" : "bg-rose-500/60")} />
+                                                </div>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            </div>
+        );
+    };
 
-    } catch (error: any) {
-      console.error('Error blocking hall:', error);
-      toast.error(error.response?.data?.message || 'Failed to block hall');
-    } finally {
-      setBlocking(false);
-    }
-  };
+    if (loading) return <div className="flex items-center justify-center py-20"><LoadingAnimation text="Scanning Venue Grid..." /></div>;
 
-
-  if (loading) {
     return (
-      <div className="flex items-center justify-center h-96">
-        <LoadingAnimation text={'Loading hall availability...'} />
-      </div>
-    );
-  }
-
-  return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold">Hall Availability</h1>
-        <p className="text-gray-500 mt-1">Check venue availability for training sessions</p>
-      </div>
-
-      {/* Filters */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Calendar className="size-5" />
-            Check Availability
-          </CardTitle>
-          <CardDescription>
-            Select date and time to check which halls are available
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <Label htmlFor="date">Date</Label>
-              <Input
-                id="date"
-                type="date"
-                value={selectedDate}
-                onChange={(e) => setSelectedDate(e.target.value)}
-                min={new Date().toISOString().split('T')[0]}
-              />
-            </div>
-            <div>
-              <Label htmlFor="startTime">Start Time</Label>
-              <ClockTimePicker
-                value={startTime}
-                onChange={setStartTime}
-              />
-            </div>
-            <div>
-              <Label htmlFor="endTime">End Time</Label>
-              <ClockTimePicker
-                value={endTime}
-                onChange={setEndTime}
-              />
-            </div>
-          </div>
-          <div className="mt-4 flex justify-end">
-            <Button
-              onClick={checkAvailability}
-              disabled={checking}
-              className="gap-2"
-            >
-              <Search className="size-4" />
-              {checking ? 'Checking...' : 'Check Availability'}
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Hall Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {halls.map((hall) => {
-          const isAvailable = availability[hall.id];
-          const hallEvents = getEventsForHallOnDate(hall.id);
-
-          return (
-            <Card key={hall.id} className={isAvailable ? 'border-green-200' : 'border-red-200'}>
-              <CardHeader>
-                <div className="flex items-start justify-between">
-                  <div className="flex items-center gap-2">
-                    <DoorOpen className="size-5 text-gray-600" />
-                    <CardTitle className="text-lg">{hall.name}</CardTitle>
-                  </div>
-                  {isAvailable ? (
-                    <CheckCircle className="size-6 text-green-600" />
-                  ) : (
-                    <XCircle className="size-6 text-red-600" />
-                  )}
-                </div>
-                <CardDescription>{hall.location}</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-gray-600">Capacity</span>
-                  <Badge variant="outline">{hall.capacity} people</Badge>
+        <div className="space-y-6">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+                <div>
+                    <h1 className="text-3xl font-bold tracking-tighter flex items-center gap-3 uppercase">
+                        <Calendar className="size-8 text-primary" />
+                        Hall Availability
+                    </h1>
+                    <p className="text-muted-foreground mt-1 font-mono text-xs uppercase tracking-widest opacity-70">Check and Manage Sector Occupancy</p>
                 </div>
 
-                {hall.facilities && hall.facilities.length > 0 && (
-                  <div>
-                    <p className="text-sm text-gray-600 mb-2">Facilities</p>
-                    <div className="flex flex-wrap gap-1">
-                      {hall.facilities.map((facility, index) => (
-                        <Badge key={index} variant="outline" className="text-xs">
-                          {facility}
-                        </Badge>
-                      ))}
+                <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
+                    <div className="relative group flex-1 md:w-64">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
+                        <Input 
+                            placeholder="Filter halls or location..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className="pl-10 bg-background/50 border-border/50 focus:border-primary/50"
+                        />
                     </div>
-                  </div>
-                )}
-
-                <div className="pt-4 border-t">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-medium">Status</span>
-                    <Badge className={isAvailable ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}>
-                      {isAvailable ? 'Available' : 'Booked'}
-                    </Badge>
-                  </div>
-
-                  {/* Events List */}
-                  {(hallEvents.trainings.length > 0 || hallEvents.blocks.length > 0) && (
-                    <div className="mt-3 space-y-2">
-                      <p className="text-xs font-medium text-gray-600">Schedule on {format(new Date(selectedDate), 'MMM dd')}:</p>
-
-                      {hallEvents.blocks.map((block) => (
-                        <div key={block.id} className="text-xs p-2 bg-red-50 border border-red-100 rounded">
-                          <div className="flex items-center gap-1 text-red-700 font-medium mb-1">
-                            <Ban className="size-3" />
-                            <span>Blocked: {block.reason}</span>
-                          </div>
-                          <div className="flex items-center gap-2 text-red-600">
-                            <Clock className="size-3" />
-                            <span>{block.startTime} - {block.endTime}</span>
-                          </div>
-                        </div>
-                      ))}
-
-                      {hallEvents.trainings.map((training) => (
-                        <div key={training.id} className="text-xs p-2 bg-gray-50 rounded">
-                          <p className="font-medium">{training.title}</p>
-                          <div className="flex items-center gap-2 text-gray-600 mt-1">
-                            <Clock className="size-3" />
-                            <span>{training.startTime} - {training.endTime}</span>
-                          </div>
-                        </div>
-                      ))}
+                    
+                    <div className="flex bg-muted/50 p-1 rounded-xl border border-border">
+                        <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            onClick={() => setViewMode('list')}
+                            className={cn("h-8 px-3 rounded-lg text-[10px] font-bold tracking-widest uppercase", viewMode === 'list' ? "bg-primary text-primary-foreground" : "text-muted-foreground")}
+                        >
+                            <List className="size-3 mr-2" /> LIST
+                        </Button>
+                        <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            onClick={() => setViewMode('grid')}
+                            className={cn("h-8 px-3 rounded-lg text-[10px] font-bold tracking-widest uppercase", viewMode === 'grid' ? "bg-primary text-primary-foreground" : "text-muted-foreground")}
+                        >
+                            <LayoutGrid className="size-3 mr-2" /> GRID
+                        </Button>
                     </div>
-                  )}
-
-                  {/* Admin Action: Block Hall */}
-                  {user?.role === 'master_admin' && (
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      className="w-full mt-4"
-                      onClick={() => handleBlockClick(hall)}
-                    >
-                      <Ban className="size-4 mr-2" />
-                      Block Hall
-                    </Button>
-                  )}
                 </div>
-              </CardContent>
-            </Card>
-          );
-        })}
-      </div>
+            </div>
 
-      {/* Summary */}
-      <Card>
-        <CardContent className="p-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
-            <div>
-              <p className="text-3xl font-bold text-blue-600">{halls.length}</p>
-              <p className="text-sm text-gray-600 mt-1">Total Halls</p>
-            </div>
-            <div>
-              <p className="text-3xl font-bold text-green-600">
-                {Object.values(availability).filter(v => v).length}
-              </p>
-              <p className="text-sm text-gray-600 mt-1">Available</p>
-            </div>
-            <div>
-              <p className="text-3xl font-bold text-red-600">
-                {Object.values(availability).filter(v => !v).length}
-              </p>
-              <p className="text-sm text-gray-600 mt-1">Booked</p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Block Hall Dialog */}
-      <Dialog open={showBlockDialog} onOpenChange={setShowBlockDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Block Hall - {blockingHall?.name}</DialogTitle>
-            <DialogDescription>
-              Mark this hall as unavailable for a specific period.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-2">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label>Date</Label>
-                <Input type="date" value={blockDate} onChange={(e) => setBlockDate(e.target.value)} />
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label>Start Time</Label>
-                <ClockTimePicker value={blockStartTime} onChange={setBlockStartTime} />
-              </div>
-              <div>
-                <Label>End Time</Label>
-                <ClockTimePicker value={blockEndTime} onChange={setBlockEndTime} />
-              </div>
-            </div>
-            <div>
-              <Label>Reason</Label>
-              <Select value={blockReason} onValueChange={(val: any) => setBlockReason(val)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select reason" />
-                </SelectTrigger>
-                <SelectContent>
-                  {reasons.map(r => (
-                    <SelectItem key={r} value={r}>{r}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            {blockReason === 'Other' && (
-              <div>
-                <Label>Custom Reason</Label>
-                <Input
-                  value={customReason}
-                  onChange={(e) => setCustomReason(e.target.value)}
-                  placeholder="Enter reason..."
-                />
-              </div>
+            {viewMode === 'list' && (
+                <Card className="glass-card mb-6 border-primary/20 bg-primary/5">
+                    <CardHeader className="pb-4">
+                        <CardTitle className="text-sm font-bold text-primary tracking-[0.2em] flex items-center gap-2 uppercase">
+                            <Clock className="size-4" />
+                            AVAILABILITY PROTOCOL
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <div className="space-y-2">
+                                <Label className="text-[10px] font-bold font-mono uppercase tracking-widest text-primary/70">Date</Label>
+                                <Input
+                                    type="date"
+                                    value={selectedDate}
+                                    onChange={(e) => setSelectedDate(e.target.value)}
+                                    className="bg-background/50 border-primary/10 text-xs font-mono"
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label className="text-[10px] font-bold font-mono uppercase tracking-widest text-primary/70">Start Time</Label>
+                                <ClockTimePicker value={startTime} onChange={setStartTime} />
+                            </div>
+                            <div className="space-y-2">
+                                <Label className="text-[10px] font-bold font-mono uppercase tracking-widest text-primary/70">End Time</Label>
+                                <ClockTimePicker value={endTime} onChange={setEndTime} />
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
             )}
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowBlockDialog(false)}>Cancel</Button>
-            <Button variant="destructive" onClick={submitBlock} disabled={blocking}>
-              {blocking ? 'Blocking...' : 'Block Hall'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </div>
-  );
+
+            {viewMode === 'grid' ? (
+                <Card className="glass-card p-6">
+                    <MonthlyGridView />
+                </Card>
+            ) : filteredHalls.length === 0 ? (
+                <div className="text-center py-20 bg-primary/5 rounded-3xl border border-dashed border-primary/20">
+                    <Info className="size-12 mx-auto mb-4 text-primary/20 animate-pulse" />
+                    <h3 className="text-xl font-bold text-foreground tracking-widest uppercase">No Halls Detected</h3>
+                    <p className="text-muted-foreground mt-2 font-mono text-[10px] uppercase tracking-widest">Sector search returned zero results.</p>
+                </div>
+            ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {filteredHalls.map((hall) => {
+                        const isAvailable = availability[hall.id];
+                        const events = getEventsForHallOnDate(hall.id);
+
+                        return (
+                            <Card key={hall.id} className={cn("glass-card transition-all group overflow-hidden", isAvailable ? 'border-emerald-500/20' : 'border-rose-500/20')}>
+                                <CardHeader className={cn("pb-4", isAvailable ? "bg-emerald-500/5" : "bg-rose-500/5")}>
+                                    <div className="flex items-start justify-between">
+                                        <div className="flex flex-col gap-1">
+                                            <div className="flex items-center gap-2">
+                                                <DoorOpen className={cn("size-4", isAvailable ? "text-emerald-500" : "text-rose-500")} />
+                                                <CardTitle className="text-lg font-bold group-hover:text-primary transition-colors">{hall.name}</CardTitle>
+                                            </div>
+                                            <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground font-mono uppercase tracking-wider">
+                                                <MapPin className="size-3" />
+                                                {hall.location}
+                                            </div>
+                                        </div>
+                                        <div className={cn("p-1.5 rounded-lg border", isAvailable ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-500" : "bg-rose-500/10 border-rose-500/20 text-rose-500")}>
+                                            {isAvailable ? <CheckCircle className="size-5" /> : <XCircle className="size-5" />}
+                                        </div>
+                                    </div>
+                                </CardHeader>
+                                <CardContent className="pt-6 space-y-4">
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-2 text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
+                                            <Users className="size-3 text-primary/50" />
+                                            CAPACITY
+                                        </div>
+                                        <Badge variant="outline" className="border-primary/20 bg-primary/5 text-primary text-[10px] px-2 py-0">
+                                            {hall.capacity} SEATS
+                                        </Badge>
+                                    </div>
+
+                                    {(events.trainings.length > 0 || events.blocks.length > 0) && (
+                                        <div className="space-y-3 pt-4 border-t border-border/50">
+                                            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-2">
+                                                <Info className="size-3" />
+                                                Daily Intel: {format(new Date(selectedDate), 'MMM dd')}
+                                            </p>
+
+                                            {events.blocks.map((block) => (
+                                                <div key={block.id} className="p-2.5 rounded-xl bg-rose-500/5 border border-rose-500/10 space-y-1">
+                                                    <div className="flex items-center gap-2 text-rose-500 font-bold text-[10px] uppercase">
+                                                        <Ban className="size-3" />
+                                                        BLOCKED: {block.reason}
+                                                    </div>
+                                                    <div className="flex items-center gap-2 text-muted-foreground font-mono text-[9px]">
+                                                        <Clock className="size-3" /> {block.startTime} — {block.endTime}
+                                                    </div>
+                                                </div>
+                                            ))}
+
+                                            {events.trainings.map((training) => (
+                                                <div key={training.id} className="p-2.5 rounded-xl bg-primary/5 border border-primary/10 space-y-1">
+                                                    <div className="font-bold text-[10px] uppercase truncate">{training.title}</div>
+                                                    <div className="flex items-center gap-2 text-muted-foreground font-mono text-[9px]">
+                                                        <Clock className="size-3" /> {training.startTime} — {training.endTime}
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+
+                                    {user?.role === 'master_admin' && (
+                                        <Button
+                                            variant="destructive"
+                                            size="sm"
+                                            className="w-full mt-4 bg-rose-500/10 hover:bg-rose-500 text-rose-500 hover:text-white border-rose-500/20 text-[10px] font-bold tracking-[0.2em] uppercase rounded-xl transition-all"
+                                            onClick={() => handleBlockClick(hall)}
+                                        >
+                                            <Ban className="size-3 mr-2" />
+                                            Abort Sector Ops
+                                        </Button>
+                                    )}
+                                </CardContent>
+                            </Card>
+                        );
+                    })}
+                </div>
+            )}
+
+            {/* Block Hall Dialog */}
+            <Dialog open={showBlockDialog} onOpenChange={setShowBlockDialog}>
+                <DialogContent className="glass border-rose-500/20">
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2 text-rose-500">
+                            <Ban className="size-5" />
+                            ABORT SECTOR OPERATION
+                        </DialogTitle>
+                        <DialogDescription className="font-mono text-[10px] uppercase tracking-widest">
+                            {blockingHall?.name} — {format(new Date(selectedDate), 'MMM dd, yyyy')}
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-6 py-4">
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label className="text-[10px] font-bold uppercase tracking-widest text-primary/70">Start Intel</Label>
+                                <ClockTimePicker value={startTime} onChange={setStartTime} />
+                            </div>
+                            <div className="space-y-2">
+                                <Label className="text-[10px] font-bold uppercase tracking-widest text-primary/70">End Intel</Label>
+                                <ClockTimePicker value={endTime} onChange={setEndTime} />
+                            </div>
+                        </div>
+                        <div className="space-y-2">
+                            <Label className="text-[10px] font-bold uppercase tracking-widest text-primary/70">Reason for Abort</Label>
+                            <Select value={blockReason} onValueChange={setBlockReason}>
+                                <SelectTrigger className="bg-background/50 border-input font-mono text-xs">
+                                    <SelectValue placeholder="Select protocol" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {reasons.map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        {blockReason === 'Other' && (
+                            <Input
+                                value={customReason}
+                                onChange={(e) => setCustomReason(e.target.value)}
+                                placeholder="Specify custom Intel..."
+                                className="bg-background/50 font-mono text-xs"
+                            />
+                        )}
+                    </div>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setShowBlockDialog(false)} className="rounded-xl font-bold tracking-widest uppercase">Recall</Button>
+                        <Button variant="destructive" onClick={submitBlock} disabled={isBlocking} className="rounded-xl font-bold tracking-widest uppercase">
+                            {isBlocking ? 'Synchronizing...' : 'Commit Abort'}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+        </div>
+    );
 };
 
 export default HallAvailability;

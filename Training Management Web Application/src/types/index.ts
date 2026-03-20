@@ -33,6 +33,8 @@ export interface Hall {
   name: string;
   location: string;
   capacity: number;
+  programOfficerId?: string;
+  programOfficer?: User;
   facilities?: string[];
   createdAt: Date;
 }

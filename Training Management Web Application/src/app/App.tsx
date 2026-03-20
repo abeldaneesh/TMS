@@ -208,7 +208,7 @@ const AppRoutes: React.FC = () => {
       <Route
         path="/nominations"
         element={
-          <ProtectedRoute>
+          <ProtectedRoute allowedRoles={['medical_officer']}>
             <Layout>
               <Nominations />
             </Layout>

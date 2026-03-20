@@ -123,7 +123,9 @@ export const getBlocks = async (req: Request, res: Response): Promise<void> => {
         const { hallId } = req.params;
         const { date } = req.query;
 
-        const query: any = { hallId };
+        const query: any = {};
+        if (hallId) query.hallId = hallId;
+        
         if (date) {
             const startOfDay = new Date(date as string);
             startOfDay.setHours(0, 0, 0, 0);
@@ -132,7 +134,7 @@ export const getBlocks = async (req: Request, res: Response): Promise<void> => {
             query.date = { $gte: startOfDay, $lte: endOfDay };
         }
 
-        const blocks = await HallBlock.find(query).sort({ startTime: 1 });
+        const blocks = await HallBlock.find(query).sort({ date: 1, startTime: 1 });
         const formattedBlocks = blocks.map((block: any) => ({
             ...block.toObject(),
             id: block._id
