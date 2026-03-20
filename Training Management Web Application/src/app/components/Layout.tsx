@@ -255,6 +255,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           ...commonItems,
           { icon: UserCheck, label: t('nav.userApprovals', 'Approvals'), path: '/admin/approvals' },
           { icon: AppWindowMac, label: t('nav.explore', 'Explore (Trainings)'), path: '/trainings' },
+          { icon: DoorOpen, label: t('nav.hallAvailability', 'Hall Availability'), path: '/hall-availability' },
           { icon: ClipboardList, label: t('nav.nominations', 'Library (Noms)'), path: '/nominations' },
           { icon: FileText, label: t('nav.reports', 'Reports'), path: '/reports' },
         ];

@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Calendar, QrCode, ClipboardList, Settings, Bell } from 'lucide-react';
+import { LayoutDashboard, Calendar, QrCode, ClipboardList, Settings, Bell, DoorOpen } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTranslation } from 'react-i18next';
 import { useIsMobile } from './ui/use-mobile';
@@ -18,9 +18,9 @@ const BottomNav: React.FC<BottomNavProps> = ({ unreadCount = 0 }) => {
         { icon: LayoutDashboard, label: 'Home', path: '/dashboard' },
         { icon: Calendar, label: 'Trainings', path: '/trainings' },
         {
-            icon: user.role === 'participant' ? QrCode : ClipboardList,
-            label: user.role === 'participant' ? 'Scan' : 'Library',
-            path: user.role === 'participant' ? '/scan-qr' : '/nominations'
+            icon: user.role === 'participant' ? QrCode : user.role === 'medical_officer' ? DoorOpen : ClipboardList,
+            label: user.role === 'participant' ? 'Scan' : user.role === 'medical_officer' ? 'Halls' : 'Library',
+            path: user.role === 'participant' ? '/scan-qr' : user.role === 'medical_officer' ? '/hall-availability' : '/nominations'
         },
         { icon: Bell, label: 'Alerts', path: '/notifications-mobile' },
         { icon: Settings, label: 'Settings', path: '/settings' },
