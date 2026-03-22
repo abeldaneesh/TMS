@@ -43,6 +43,8 @@ const normalizeAudienceList = (value: string[] | string | undefined) =>
   normalizeStringList(value).flatMap((item) =>
     item.split(',').map((part) => part.trim()).filter(Boolean)
   );
+const isNominatableRole = (role?: User['role']) =>
+  role === 'participant' || role === 'medical_officer' || role === 'institutional_admin';
 const formatSessionWindow = (startTime?: string, endTime?: string) =>
   startTime && endTime ? `${startTime} - ${endTime}` : 'Time not set';
 type NominationDisplayStatus = 'assigned' | 'attended' | 'rejected';
@@ -478,7 +480,7 @@ const Nominations: React.FC = () => {
     );
 
     const eligibleParticipants = users.filter((participant) => {
-      if (participant.role !== 'participant' || !selectedTraining) return false;
+      if (!selectedTraining || !isNominatableRole(participant.role)) return false;
 
       const participantInstitutionId = getEntityId(participant.institutionId);
       const participantDesignation = participant.designation?.trim() || '';
