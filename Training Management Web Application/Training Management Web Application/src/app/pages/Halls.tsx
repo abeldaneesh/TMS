@@ -354,7 +354,7 @@ const Halls: React.FC = () => {
             const events = getEventsForHallOnDate(hallId, day);
             return {
                 morning: getWindowAnalytics(events, '10:00', '13:30'),
-                evening: getWindowAnalytics(events, '17:00', '22:00')
+                evening: getWindowAnalytics(events, '17:00', '23:59')
             };
         };
 
