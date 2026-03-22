@@ -242,7 +242,11 @@ export const getNominations = async (req: AuthRequest, res: Response): Promise<v
             .populate('institutionId', 'name')
             .lean() as any[];
 
-        const formattedNominations = nominations.map((nom) => {
+        const validNominations = nominations.filter((nom) =>
+            nom.trainingId && typeof nom.trainingId === 'object'
+        );
+
+        const formattedNominations = validNominations.map((nom) => {
             const participantId = String(nom.participantId?._id || nom.participantId || nom.participantSnapshot?.participantId || '');
             const trainingSnapshot = Array.isArray(nom.trainingId?.participantSnapshots)
                 ? nom.trainingId.participantSnapshots.find((entry: any) => String(entry.participantId) === participantId)

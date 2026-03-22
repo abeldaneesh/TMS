@@ -412,7 +412,7 @@ const TrainingParticipants: React.FC = () => {
                     </div>
                     {canMarkLateAttendance && (
                         <div className="rounded-2xl border border-amber-500/20 bg-amber-500/10 px-4 py-3 text-sm text-amber-500">
-                            Late attendance is active. Program Officers can mark approved participants as present after the QR window closes.
+                            Late attendance is active. Program Officers can mark assigned participants as present after the QR window closes.
                         </div>
                     )}
                     {canGenerateAttendanceSheet && (

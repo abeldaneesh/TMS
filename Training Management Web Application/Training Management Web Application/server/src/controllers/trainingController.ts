@@ -3,6 +3,9 @@ import Training from '../models/Training';
 import HallBlock from '../models/HallBlock';
 import { AuthRequest } from '../middleware/authMiddleware';
 import Nomination from '../models/Nomination';
+import Attendance from '../models/Attendance';
+import Notification from '../models/Notification';
+import TrainingFeedback from '../models/TrainingFeedback';
 import { createAndSendNotification } from '../utils/notificationUtils';
 
 const LATE_ATTENDANCE_WINDOW_HOURS = Math.max(2, Math.min(6, Number(process.env.LATE_ATTENDANCE_WINDOW_HOURS || 4)));
@@ -525,6 +528,10 @@ export const deleteTraining = async (req: AuthRequest, res: Response): Promise<v
         }
 
         await Training.findByIdAndDelete(id);
+        await Nomination.deleteMany({ trainingId: id });
+        await Attendance.deleteMany({ trainingId: id });
+        await TrainingFeedback.deleteMany({ trainingId: id });
+        await Notification.deleteMany({ actionUrl: `/trainings/${id}` });
 
         // Clean up associated hall requests
         const HallBookingRequest = require('../models/HallBookingRequest').default;

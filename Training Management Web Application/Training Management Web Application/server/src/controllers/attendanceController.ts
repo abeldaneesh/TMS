@@ -35,6 +35,8 @@ const canManageLateAttendance = (training: any, requester?: AuthRequest['user'])
     return requester.role === 'master_admin' || (requester.role === 'program_officer' && requester.userId === String(training.createdById));
 };
 
+const ATTENDANCE_ELIGIBLE_NOMINATION_STATUSES = ['nominated', 'approved', 'attended'] as const;
+
 const getTrainingStartDateTime = (training: any) =>
     parseTrainingDateTime(training.date, training.startTime);
 
@@ -76,15 +78,15 @@ export const markAttendance = async (req: AuthRequest, res: Response): Promise<v
             return;
         }
 
-        // Check if participant is approved for this training
+        // Check if participant is assigned for this training
         const nomination = await Nomination.findOne({
             trainingId,
             participantId,
-            status: 'approved'
+            status: { $in: ATTENDANCE_ELIGIBLE_NOMINATION_STATUSES }
         });
 
         if (!nomination) {
-            res.status(403).json({ message: 'You must be an approved participant to mark attendance.' });
+            res.status(403).json({ message: 'You must be assigned to this training to mark attendance.' });
             return;
         }
 
@@ -165,7 +167,7 @@ export const markAttendance = async (req: AuthRequest, res: Response): Promise<v
             {
                 trainingId,
                 participantId,
-                status: 'approved'
+                status: { $in: ['nominated', 'approved'] }
             },
             {
                 status: 'attended',
@@ -268,7 +270,7 @@ export const markLateAttendance = async (req: AuthRequest, res: Response): Promi
         const nominations = await Nomination.find({
             trainingId,
             participantId: { $in: participantIds },
-            status: { $in: ['approved', 'attended'] },
+            status: { $in: ATTENDANCE_ELIGIBLE_NOMINATION_STATUSES },
         } as any).populate('participantId', 'name email designation department phone role institutionId isDeleted deletedAt')
             .lean() as any[];
 
@@ -317,7 +319,7 @@ export const markLateAttendance = async (req: AuthRequest, res: Response): Promi
             });
 
             await Nomination.updateMany(
-                { trainingId, participantId, status: 'approved' },
+                { trainingId, participantId, status: { $in: ['nominated', 'approved'] } },
                 { status: 'attended' }
             );
 
@@ -381,7 +383,7 @@ export const markManualAttendance = async (req: AuthRequest, res: Response): Pro
         const nominations = await Nomination.find({
             trainingId,
             participantId: { $in: participantIds },
-            status: { $in: ['approved', 'attended'] },
+            status: { $in: ATTENDANCE_ELIGIBLE_NOMINATION_STATUSES },
         } as any).populate('participantId', 'name email designation department phone role institutionId isDeleted deletedAt')
             .lean() as any[];
 
@@ -430,7 +432,7 @@ export const markManualAttendance = async (req: AuthRequest, res: Response): Pro
             });
 
             await Nomination.updateMany(
-                { trainingId, participantId, status: 'approved' },
+                { trainingId, participantId, status: { $in: ['nominated', 'approved'] } },
                 { status: 'attended' }
             );
 
@@ -623,13 +625,13 @@ export const startAttendanceSession = async (req: AuthRequest, res: Response): P
 
         // --- NOTIFICATION LOGIC ---
         try {
-            // Find all approved participants for this training
-            const approvedNominations = await Nomination.find({
+            // Find all assigned participants for this training
+            const assignedNominations = await Nomination.find({
                 trainingId,
-                status: 'approved'
+                status: { $in: ['nominated', 'approved'] }
             }).select('participantId');
 
-            const participantIds = approvedNominations.map((n: any) => n.participantId);
+            const participantIds = assignedNominations.map((n: any) => n.participantId);
 
             if (participantIds.length > 0) {
                 const message = `An attendance session has started for "${training.title}". Please scan the QR code to mark your attendance.`;

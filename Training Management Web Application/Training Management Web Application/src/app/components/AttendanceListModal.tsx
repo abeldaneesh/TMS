@@ -325,7 +325,7 @@ const AttendanceListModal: React.FC<AttendanceListModalProps> = ({
 
                                 <div className="mt-4 grid gap-3 md:grid-cols-2">
                                     {eligibleManualParticipants.length === 0 ? (
-                                        <div className="text-sm text-muted-foreground">All approved participants already have attendance recorded.</div>
+                                        <div className="text-sm text-muted-foreground">All assigned participants already have attendance recorded.</div>
                                     ) : (
                                         eligibleManualParticipants.map((nomination) => (
                                             <label
@@ -354,7 +354,7 @@ const AttendanceListModal: React.FC<AttendanceListModalProps> = ({
                                     <div>
                                         <p className="text-sm font-semibold text-amber-500">Mark Late Attendance</p>
                                         <p className="mt-1 text-sm text-amber-500/90">
-                                            The QR window is closed. You can still mark approved participants as present within the allowed late-attendance period.
+                                            The QR window is closed. You can still mark assigned participants as present within the allowed late-attendance period.
                                         </p>
                                     </div>
                                     <Button
