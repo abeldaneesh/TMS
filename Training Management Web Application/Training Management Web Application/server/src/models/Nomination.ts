@@ -1,6 +1,7 @@
 
 import mongoose, { Schema, Document } from 'mongoose';
 import { v4 as uuidv4 } from 'uuid';
+import { IParticipantSnapshot, ParticipantSnapshotSchema } from './shared/participantSnapshot';
 
 export enum NominationStatus {
     NOMINATED = 'nominated',
@@ -20,6 +21,7 @@ export interface INomination extends Omit<Document, '_id'> {
     approvedBy?: string;
     approvedAt?: Date;
     rejectionReason?: string;
+    participantSnapshot?: IParticipantSnapshot;
 }
 
 const NominationSchema: Schema = new Schema({
@@ -36,7 +38,8 @@ const NominationSchema: Schema = new Schema({
     nominatedAt: { type: Date, default: Date.now },
     approvedBy: { type: String }, // User ID
     approvedAt: { type: Date },
-    rejectionReason: { type: String }
+    rejectionReason: { type: String },
+    participantSnapshot: { type: ParticipantSnapshotSchema }
 });
 
 export default mongoose.model<INomination>('Nomination', NominationSchema);

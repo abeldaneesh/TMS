@@ -434,6 +434,16 @@ export const attendanceApi = {
         return response.data;
     },
 
+    markManualAttendance: async (trainingId: string, participantIds: string[]): Promise<{ message: string; markedCount: number; skippedCount: number; records: Attendance[] }> => {
+        const response = await api.post(`/attendance/${trainingId}/manual`, { participantIds });
+        return response.data;
+    },
+
+    markLateAttendance: async (trainingId: string, participantIds: string[]): Promise<{ message: string; markedCount: number; skippedCount: number; records: Attendance[] }> => {
+        const response = await api.post(`/attendance/${trainingId}/late`, { participantIds });
+        return response.data;
+    },
+
     getMyHistory: async (): Promise<any[]> => {
         const response = await api.get('/attendance/my');
         return response.data;

@@ -25,7 +25,7 @@ const HorizontalScrollList: React.FC<HorizontalScrollListProps> = ({ title, subt
     };
 
     return (
-        <div className="mb-12 w-full overflow-hidden">
+        <div className="mb-12 min-w-0 w-full overflow-hidden">
             <div className="flex items-end justify-between mb-4 mt-2">
                 <div className="flex items-center gap-4">
                     <div className="flex flex-col">
@@ -60,10 +60,10 @@ const HorizontalScrollList: React.FC<HorizontalScrollListProps> = ({ title, subt
                 </div>
             </div>
 
-            <div className="relative -mx-4 sm:mx-0">
+            <div className="relative min-w-0 -mx-4 sm:mx-0">
                 <div
                     ref={scrollContainerRef}
-                    className="flex gap-4 sm:gap-6 overflow-x-auto px-4 sm:px-0 scroll-smooth pb-4 snap-x snap-mandatory hide-scroll"
+                    className="flex min-w-0 gap-4 overflow-x-auto px-4 pb-4 scroll-smooth snap-x snap-mandatory hide-scroll sm:gap-6 sm:px-0"
                     style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
                 >
                     {React.Children.map(children, (child) => (

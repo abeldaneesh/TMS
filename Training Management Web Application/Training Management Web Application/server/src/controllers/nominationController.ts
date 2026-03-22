@@ -4,6 +4,12 @@ import User from '../models/User';
 import Training from '../models/Training';
 import { AuthRequest } from '../middleware/authMiddleware';
 import { createAndSendNotification } from '../utils/notificationUtils';
+import {
+    buildParticipantSnapshot,
+    mergeParticipantSnapshots,
+    toArchivedParticipantProfile,
+    upsertTrainingParticipantSnapshot,
+} from '../models/shared/participantSnapshot';
 
 // Nominate participant
 export const nominateParticipant = async (req: AuthRequest, res: Response): Promise<void> => {
@@ -24,7 +30,7 @@ export const nominateParticipant = async (req: AuthRequest, res: Response): Prom
 
         if (!institutionId) {
             // Fetch participant's institution
-            const participant = await User.findById(participantId).select('institutionId name');
+            const participant = await User.findOne({ _id: participantId, isDeleted: { $ne: true } }).select('institutionId name');
             institutionId = participant?.institutionId;
             const participantName = participant?.name || 'User';
 
@@ -34,14 +40,20 @@ export const nominateParticipant = async (req: AuthRequest, res: Response): Prom
             }
         }
 
-        const participant = await User.findById(participantId).select('name institutionId designation');
+        const participant = await User.findOne({ _id: participantId, isDeleted: { $ne: true } })
+            .select('name institutionId designation department email phone role isDeleted deletedAt')
+            .populate('institutionId', 'name');
         if (!participant) {
             res.status(404).json({ message: 'Participant not found' });
             return;
         }
 
+        const participantSnapshot = buildParticipantSnapshot(participant, (participant as any).institutionId);
+
         const participantName = participant.name || 'User';
-        const participantInstitutionId = participant.institutionId?.toString() || '';
+        const participantInstitutionId = typeof participant.institutionId === 'string'
+            ? participant.institutionId
+            : ((participant as any).institutionId?._id?.toString() || '');
         const participantDesignation = participant.designation?.trim() || '';
 
         if ((req.user?.role === 'institutional_admin' || req.user?.role === 'medical_officer') &&
@@ -108,6 +120,9 @@ export const nominateParticipant = async (req: AuthRequest, res: Response): Prom
             return;
         }
 
+        upsertTrainingParticipantSnapshot(training, participantSnapshot);
+        await training.save();
+
         // Check if participant has any other training on the same date
         const trainingDate = new Date(training.date);
         const startOfDay = new Date(trainingDate);
@@ -142,6 +157,10 @@ export const nominateParticipant = async (req: AuthRequest, res: Response): Prom
             existingNomination.institutionId = institutionId;
             existingNomination.nominatedBy = req.user!.userId;
             existingNomination.rejectionReason = undefined;
+            existingNomination.participantSnapshot = mergeParticipantSnapshots(
+                existingNomination.participantSnapshot as any,
+                participantSnapshot
+            ) as any;
             await existingNomination.save();
             nomination = existingNomination;
         } else {
@@ -150,6 +169,7 @@ export const nominateParticipant = async (req: AuthRequest, res: Response): Prom
                 participantId,
                 institutionId,
                 nominatedBy: req.user!.userId,
+                participantSnapshot,
             });
         }
 
@@ -209,30 +229,44 @@ export const getNominations = async (req: AuthRequest, res: Response): Promise<v
         }
 
         const nominations = await Nomination.find(where)
-            .populate('participantId', 'name email designation institutionId') // Populating fields for display
-            .populate('trainingId', 'title date')
+            .populate('participantId', 'name email designation institutionId department phone role isDeleted deletedAt')
+            .populate('trainingId', 'title date participantSnapshots')
             .populate('institutionId', 'name')
             .lean() as any[];
 
-        const formattedNominations = nominations.map(nom => ({
-            id: nom._id,
-            ...nom,
-            participantId: nom.participantId?._id || nom.participantId,
-            trainingId: nom.trainingId?._id || nom.trainingId,
-            institutionId: nom.institutionId?._id || nom.institutionId,
-            participant: {
-                ...nom.participantId,
-                id: nom.participantId?._id
-            },
-            training: {
-                ...nom.trainingId,
-                id: nom.trainingId?._id
-            },
-            institution: {
-                ...nom.institutionId,
-                id: nom.institutionId?._id
-            }
-        }));
+        const formattedNominations = nominations.map((nom) => {
+            const participantId = String(nom.participantId?._id || nom.participantId || nom.participantSnapshot?.participantId || '');
+            const trainingSnapshot = Array.isArray(nom.trainingId?.participantSnapshots)
+                ? nom.trainingId.participantSnapshots.find((entry: any) => String(entry.participantId) === participantId)
+                : undefined;
+            const participantSnapshot = mergeParticipantSnapshots(nom.participantSnapshot, trainingSnapshot);
+            const participantProfile = toArchivedParticipantProfile(participantId, nom.participantId, participantSnapshot);
+
+            return {
+                id: nom._id,
+                ...nom,
+                participantId,
+                trainingId: nom.trainingId?._id || nom.trainingId,
+                institutionId: nom.institutionId?._id || nom.institutionId || participantSnapshot?.institutionId,
+                participantSnapshot,
+                participant: participantProfile,
+                training: {
+                    ...nom.trainingId,
+                    id: nom.trainingId?._id,
+                },
+                institution: nom.institutionId
+                    ? {
+                        ...nom.institutionId,
+                        id: nom.institutionId?._id
+                    }
+                    : participantSnapshot?.institutionName
+                        ? {
+                            id: participantSnapshot.institutionId,
+                            name: participantSnapshot.institutionName,
+                        }
+                        : null
+            };
+        });
 
         res.json(formattedNominations);
     } catch (error) {

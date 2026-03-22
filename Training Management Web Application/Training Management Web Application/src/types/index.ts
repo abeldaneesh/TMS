@@ -91,6 +91,7 @@ export interface Training {
   certificatesGenerated?: boolean;
   assignedParticipantsCount?: number;
   remainingCapacity?: number;
+  lateAttendanceWindowHours?: number;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -109,6 +110,20 @@ export interface Nomination {
   approvedAt?: Date;
   rejectionReason?: string;
   participant?: User;
+  participantSnapshot?: {
+    participantId: string;
+    fullName: string;
+    role?: string;
+    designation?: string;
+    department?: string;
+    institutionId?: string;
+    institutionName?: string;
+    email?: string;
+    phone?: string;
+    isDeleted?: boolean;
+    deletedAt?: Date | string;
+    snapshotAt?: Date | string;
+  };
   training?: Training;
   institution?: Institution;
 }
@@ -120,9 +135,27 @@ export interface Attendance {
   participantId: string;
   timestamp: Date;
   method: 'qr' | 'manual' | 'digital';
+  status?: 'present';
+  attendanceType?: 'on_time' | 'late';
+  markedBy?: string;
+  markedByName?: string;
   verifiedBy?: string;
   qrData?: string;
   participant?: User;
+  participantSnapshot?: {
+    participantId: string;
+    fullName: string;
+    role?: string;
+    designation?: string;
+    department?: string;
+    institutionId?: string;
+    institutionName?: string;
+    email?: string;
+    phone?: string;
+    isDeleted?: boolean;
+    deletedAt?: Date | string;
+    snapshotAt?: Date | string;
+  };
 }
 
 export interface TrainingFeedback {

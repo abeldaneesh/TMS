@@ -5,6 +5,8 @@ import { AuthRequest } from '../middleware/authMiddleware';
 import Nomination from '../models/Nomination';
 import { createAndSendNotification } from '../utils/notificationUtils';
 
+const LATE_ATTENDANCE_WINDOW_HOURS = Math.max(2, Math.min(6, Number(process.env.LATE_ATTENDANCE_WINDOW_HOURS || 4)));
+
 // Get all trainings
 export const getTrainings = async (req: Request, res: Response): Promise<void> => {
     try {
@@ -132,7 +134,8 @@ export const getTrainingById = async (req: Request, res: Response): Promise<void
             createdById: training.createdById?._id || training.createdById,
             userStatus,
             assignedParticipantsCount,
-            remainingCapacity: Math.max(0, training.capacity - assignedParticipantsCount)
+            remainingCapacity: Math.max(0, training.capacity - assignedParticipantsCount),
+            lateAttendanceWindowHours: LATE_ATTENDANCE_WINDOW_HOURS,
         };
 
         res.json(transformedTraining);

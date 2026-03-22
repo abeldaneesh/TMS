@@ -2,6 +2,10 @@ import { Request, Response } from 'express';
 import User from '../models/User';
 import bcrypt from 'bcryptjs';
 import { AuthRequest } from '../middleware/authMiddleware';
+import Training from '../models/Training';
+import Nomination from '../models/Nomination';
+import Attendance from '../models/Attendance';
+import { markSnapshotAsDeleted } from '../models/shared/participantSnapshot';
 
 const normalizePhoneNumber = (value?: string) => value ? value.replace(/\D/g, '') : '';
 const isValidPhoneNumber = (value?: string) => !value || normalizePhoneNumber(value).length === 10;
@@ -17,6 +21,7 @@ export const getUsers = async (req: Request, res: Response): Promise<void> => {
 
         // Only return approved users for this general list
         filter.isApproved = true;
+        filter.isDeleted = { $ne: true };
 
         const users = await User.find(filter)
             .populate('institutionId', 'name')
@@ -40,7 +45,7 @@ export const getUsers = async (req: Request, res: Response): Promise<void> => {
 export const getUserById = async (req: Request, res: Response): Promise<void> => {
     try {
         const { userId } = req.params;
-        const user = await User.findById(userId)
+        const user = await User.findOne({ _id: userId, isDeleted: { $ne: true } })
             .populate('institutionId', 'name')
             .lean();
 
@@ -187,14 +192,54 @@ export const deleteUser = async (req: Request, res: Response): Promise<void> => 
             return;
         }
 
-        const user = await User.findByIdAndDelete(userId);
+        const user = await User.findById(userId);
 
         if (!user) {
             res.status(404).json({ message: 'User not found' });
             return;
         }
 
-        res.status(200).json({ message: 'User deleted successfully' });
+        if (user.isDeleted) {
+            res.status(200).json({ message: 'User already removed' });
+            return;
+        }
+
+        user.isDeleted = true;
+        user.deletedAt = new Date();
+        user.fcmToken = undefined;
+        await user.save();
+
+        await Nomination.updateMany(
+            { participantId: userId },
+            {
+                $set: {
+                    'participantSnapshot.isDeleted': true,
+                    'participantSnapshot.deletedAt': user.deletedAt,
+                },
+            }
+        );
+
+        await Attendance.updateMany(
+            { participantId: userId },
+            {
+                $set: {
+                    'participantSnapshot.isDeleted': true,
+                    'participantSnapshot.deletedAt': user.deletedAt,
+                },
+            }
+        );
+
+        const trainings = await Training.find({ 'participantSnapshots.participantId': userId });
+        await Promise.all(
+            trainings.map(async (training) => {
+                training.participantSnapshots = (training.participantSnapshots || []).map((snapshot: any) =>
+                    String(snapshot.participantId) === userId ? markSnapshotAsDeleted(snapshot) : snapshot
+                ) as any;
+                await training.save();
+            })
+        );
+
+        res.status(200).json({ message: 'User archived successfully' });
     } catch (error) {
         console.error('Error deleting user:', error);
         res.status(500).json({ message: 'Error deleting user' });

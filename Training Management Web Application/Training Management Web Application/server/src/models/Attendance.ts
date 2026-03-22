@@ -1,6 +1,7 @@
 
 import mongoose, { Schema, Document } from 'mongoose';
 import { v4 as uuidv4 } from 'uuid';
+import { IParticipantSnapshot, ParticipantSnapshotSchema } from './shared/participantSnapshot';
 
 export interface IAttendance extends Omit<Document, '_id'> {
     _id: string;
@@ -8,7 +9,12 @@ export interface IAttendance extends Omit<Document, '_id'> {
     participantId: string;
     timestamp: Date;
     method: string;
+    status?: 'present';
+    attendanceType?: 'on_time' | 'late';
+    markedBy?: string;
+    markedByName?: string;
     qrData?: string;
+    participantSnapshot?: IParticipantSnapshot;
 }
 
 const AttendanceSchema: Schema = new Schema({
@@ -17,7 +23,12 @@ const AttendanceSchema: Schema = new Schema({
     participantId: { type: String, ref: 'User', required: true },
     timestamp: { type: Date, default: Date.now },
     method: { type: String, required: true },
-    qrData: { type: String }
+    status: { type: String, default: 'present' },
+    attendanceType: { type: String, enum: ['on_time', 'late'], default: 'on_time' },
+    markedBy: { type: String, ref: 'User' },
+    markedByName: { type: String },
+    qrData: { type: String },
+    participantSnapshot: { type: ParticipantSnapshotSchema }
 });
 
 AttendanceSchema.index({ trainingId: 1, participantId: 1 }, { unique: true });

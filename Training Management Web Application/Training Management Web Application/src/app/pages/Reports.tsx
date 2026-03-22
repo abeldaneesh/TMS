@@ -56,8 +56,26 @@ const formatTimeWindow = (startTime: any, endTime: any): string => {
   return start || end || 'N/A';
 };
 
+const getArchivedParticipantLabel = (fullName?: string, isArchived?: boolean) => {
+  const baseName = asDisplayValue(fullName, 'Participant (Removed)');
+  if (baseName === 'Participant (Removed)') return baseName;
+  return isArchived ? `${baseName} (Archived)` : baseName;
+};
+
 const getUserInstitutionId = (entry: User): string =>
   getEntityId(entry.institution) || getEntityId(entry.institutionId);
+
+const getAttendanceStatusLabel = (attendanceRecord?: Attendance | null) => {
+  if (!attendanceRecord) return 'Absent';
+  const isLate = attendanceRecord.attendanceType === 'late';
+  const marker = asDisplayValue(attendanceRecord.markedByName, '');
+  const markerSuffix = isLate && marker ? ` - Marked by ${marker}` : '';
+  const timeSuffix = attendanceRecord.timestamp ? ` at ${formatExportDate(attendanceRecord.timestamp, 'hh:mm a')}` : '';
+  if (isLate) return `Present (Late${markerSuffix}${timeSuffix})`;
+  if (attendanceRecord.method === 'manual') return 'Present (Manual)';
+  if (attendanceRecord.method === 'qr') return 'Present (QR)';
+  return 'Present';
+};
 
 const Reports: React.FC = () => {
   const { t } = useTranslation();
@@ -99,35 +117,62 @@ const Reports: React.FC = () => {
     allInstitutions: Institution[]
   ) => {
     return nominations.map((nomination) => {
+      const nominationAny = nomination as any;
       const participant =
         nomination.participant ||
         allUsers.find((entry) => getEntityId(entry) === nomination.participantId);
+      const attendanceRecord =
+        attendanceRecords.find((entry) => entry.participantId === nomination.participantId) ||
+        attendanceRecords.find((entry) => getEntityId(entry.participant) === nomination.participantId);
+      const trainingSnapshot = Array.isArray((nominationAny.training as any)?.participantSnapshots)
+        ? (nominationAny.training as any).participantSnapshots.find((entry: any) => String(entry.participantId) === String(nomination.participantId))
+        : undefined;
+      const participantSnapshot =
+        nominationAny.participantSnapshot ||
+        trainingSnapshot ||
+        (attendanceRecord as any)?.participantSnapshot;
       const institution =
         nomination.institution ||
         allInstitutions.find((entry) => getEntityId(entry) === nomination.institutionId) ||
         (participant?.institutionId
           ? allInstitutions.find((entry) => getEntityId(entry) === participant.institutionId)
           : undefined);
-      const attendanceRecord =
-        attendanceRecords.find((entry) => entry.participantId === nomination.participantId) ||
-        attendanceRecords.find((entry) => getEntityId(entry.participant) === nomination.participantId);
+      const isArchivedParticipant = Boolean((participant as any)?.isDeleted || participantSnapshot?.isDeleted || (!participant && participantSnapshot));
 
       return {
         trainingTitle: asDisplayValue((nomination.training as any)?.title) !== 'N/A'
           ? asDisplayValue((nomination.training as any)?.title)
           : asDisplayValue(trainings.find((entry) => getEntityId(entry) === nomination.trainingId)?.title),
-        participantName: asDisplayValue(participant?.name),
-        designation: asDisplayValue(participant?.designation),
-        department: asDisplayValue(participant?.department),
-        institutionName: asDisplayValue(institution?.name),
+        participantName: getArchivedParticipantLabel(participant?.name || participantSnapshot?.fullName, isArchivedParticipant),
+        designation: asDisplayValue(participant?.designation || participantSnapshot?.designation || participantSnapshot?.role),
+        department: asDisplayValue(participant?.department || participantSnapshot?.department),
+        institutionName: asDisplayValue(institution?.name || participantSnapshot?.institutionName),
         institutionType: asDisplayValue(institution?.type),
-        phone: asDisplayValue(participant?.phone),
-        email: asDisplayValue(participant?.email),
+        phone: asDisplayValue(participant?.phone || participantSnapshot?.phone),
+        email: asDisplayValue(participant?.email || participantSnapshot?.email),
         nominationStatus: formatStatusLabel(nomination.status),
-        attended: attendanceRecord ? 'Yes' : 'No',
-        attendanceMethod: attendanceRecord ? formatStatusLabel(attendanceRecord.method) : 'Not marked',
+        attended: getAttendanceStatusLabel(attendanceRecord),
+        attendanceMethod: attendanceRecord
+          ? attendanceRecord.attendanceType === 'late'
+            ? 'Late Manual Entry'
+            : attendanceRecord.method === 'manual'
+              ? 'Sign-in Sheet'
+              : attendanceRecord.method === 'qr'
+                ? 'QR Scan'
+                : formatStatusLabel(attendanceRecord.method)
+          : 'Not marked',
         attendanceTimestamp: attendanceRecord ? formatExportDate(attendanceRecord.timestamp, 'yyyy-MM-dd HH:mm:ss') : 'Not marked',
         nominatedAt: formatExportDate(nomination.nominatedAt, 'yyyy-MM-dd HH:mm:ss'),
+        attendanceType: attendanceRecord?.attendanceType === 'late'
+          ? 'Late'
+          : attendanceRecord?.method === 'manual'
+            ? 'Manual'
+            : attendanceRecord?.method === 'qr'
+              ? 'QR'
+              : attendanceRecord
+                ? 'Present'
+                : 'Absent',
+        attendanceMarkedBy: attendanceRecord?.markedByName || 'N/A',
       };
     });
   };
@@ -261,7 +306,7 @@ const Reports: React.FC = () => {
 
       autoTable(doc, {
         startY: 130,
-        head: [['Participant Name', 'Designation', 'Institution', 'Status', 'Attended']],
+        head: [['Participant Name', 'Designation', 'Institution', 'Status', 'Attendance']],
         body: participantData,
         theme: 'grid',
         styles: { fontSize: 8 },
@@ -325,8 +370,10 @@ const Reports: React.FC = () => {
         'Phone': entry.phone,
         'Email': entry.email,
         'Nomination Status': entry.nominationStatus,
-        'Attended': entry.attended,
+        'Attendance Status': entry.attended,
         'Attendance Method': entry.attendanceMethod,
+        'Attendance Type': entry.attendanceType,
+        'Marked By': entry.attendanceMarkedBy,
         'Attendance Timestamp': entry.attendanceTimestamp,
         'Nominated At': entry.nominatedAt,
         'Signature': '',
@@ -350,8 +397,10 @@ const Reports: React.FC = () => {
           'Phone': 'N/A',
           'Email': 'N/A',
           'Nomination Status': 'N/A',
-          'Attended': 'No',
+          'Attendance Status': 'Absent',
           'Attendance Method': 'Not marked',
+          'Attendance Type': 'Absent',
+          'Marked By': 'N/A',
           'Attendance Timestamp': 'Not marked',
           'Nominated At': 'N/A',
           'Signature': '',

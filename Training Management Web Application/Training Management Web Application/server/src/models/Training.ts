@@ -1,6 +1,7 @@
 
 import mongoose, { Schema, Document } from 'mongoose';
 import { v4 as uuidv4 } from 'uuid';
+import { IParticipantSnapshot, ParticipantSnapshotSchema } from './shared/participantSnapshot';
 
 export enum TrainingStatus {
     DRAFT = 'draft',
@@ -25,6 +26,7 @@ export interface ITraining extends Omit<Document, '_id'> {
     createdById: string;
     status: TrainingStatus;
     requiredInstitutions?: string[];
+    participantSnapshots?: IParticipantSnapshot[];
     attendanceSession?: {
         isActive: boolean;
         startTime?: Date;
@@ -55,6 +57,7 @@ const TrainingSchema: Schema = new Schema({
         default: TrainingStatus.SCHEDULED
     },
     requiredInstitutions: [{ type: String }], // Array of institution IDs
+    participantSnapshots: [ParticipantSnapshotSchema],
     attendanceSession: {
         isActive: { type: Boolean, default: false },
         startTime: { type: Date },

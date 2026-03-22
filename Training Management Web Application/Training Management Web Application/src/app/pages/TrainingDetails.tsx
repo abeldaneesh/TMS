@@ -44,6 +44,48 @@ const normalizeDisplayList = (value: unknown): string[] => {
     return [];
 };
 
+interface OverviewTileProps {
+    icon: React.ReactNode;
+    label: string;
+    value: string;
+    hint?: string;
+}
+
+const OverviewTile: React.FC<OverviewTileProps> = ({ icon, label, value, hint }) => (
+    <div className="rounded-2xl border border-border/70 bg-background/60 p-4 shadow-sm">
+        <div className="flex items-start gap-3">
+            <div className="rounded-xl border border-primary/20 bg-primary/10 p-2 text-primary">
+                {icon}
+            </div>
+            <div className="min-w-0">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted-foreground">{label}</p>
+                <p className="mt-2 text-sm font-semibold leading-5 text-foreground">{value}</p>
+                {hint ? <p className="mt-1 text-xs text-muted-foreground">{hint}</p> : null}
+            </div>
+        </div>
+    </div>
+);
+
+interface LogisticsRowProps {
+    icon: React.ReactNode;
+    label: string;
+    value: string;
+    helper?: string;
+}
+
+const LogisticsRow: React.FC<LogisticsRowProps> = ({ icon, label, value, helper }) => (
+    <div className="flex items-start gap-4 rounded-2xl border border-border/60 bg-background/60 p-4 transition-colors hover:bg-background/80">
+        <div className="rounded-xl border border-primary/20 bg-primary/10 p-2.5 text-primary">
+            {icon}
+        </div>
+        <div className="min-w-0">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted-foreground">{label}</p>
+            <p className="mt-1 text-sm font-semibold leading-6 text-foreground">{value}</p>
+            {helper ? <p className="text-xs text-muted-foreground">{helper}</p> : null}
+        </div>
+    </div>
+);
+
 const TrainingDetails: React.FC = () => {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
@@ -253,6 +295,14 @@ const TrainingDetails: React.FC = () => {
     );
     const canViewFeedback = training.status === 'completed' && isOwnerOrAdmin;
     const canSubmitFeedback = Boolean(user?.role === 'participant' && training.status === 'completed' && training.userStatus === 'attended');
+    const assignedParticipantsCount = training.assignedParticipantsCount || 0;
+    const remainingCapacity = training.remainingCapacity !== undefined ? training.remainingCapacity : training.capacity;
+    const statusLabel = training.status
+        ? `${training.status.charAt(0).toUpperCase()}${training.status.slice(1)}`
+        : 'Draft';
+    const formattedFullDate = format(new Date(training.date), 'EEEE, MMMM do, yyyy');
+    const formattedShortDate = format(new Date(training.date), 'EEE, MMM d');
+    const sessionTime = `${training.startTime} - ${training.endTime}`;
     const filteredFeedbackEntries = feedbackEntries
         .filter((entry) => feedbackRatingFilter === 'all' || String(entry.rating || 'unrated') === feedbackRatingFilter)
         .sort((a, b) => {
@@ -292,38 +342,105 @@ const TrainingDetails: React.FC = () => {
     };
 
     return (
-        <div className="pb-12 space-y-8 text-foreground">
+        <div className="mx-auto max-w-7xl pb-12 space-y-8 text-foreground">
             <Button variant="ghost" onClick={() => navigate('/trainings')} className="gap-2 text-muted-foreground hover:text-foreground hover:bg-white/5">
                 <ArrowLeft className="size-4" /> Back to Library
             </Button>
 
-            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-                <div>
-                    <h1 className="text-3xl sm:text-5xl font-bold tracking-tight text-foreground">{training.title}</h1>
-                    <p className="text-xl text-primary font-medium mt-2">{training.program}</p>
-                </div>
-                <Badge className={`text-sm px-4 py-1.5 uppercase tracking-widest ${getStatusBadge(training.status)}`}>
-                    {training.status}
-                </Badge>
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                {/* Main Details */}
-                <Card className="lg:col-span-2 bg-white/5 border-white/10">
-                    <CardHeader>
-                        <CardTitle className="text-xl font-bold">About this Session</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-6">
-                        <div>
-                            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">Description</h3>
-                            <p className="text-foreground/90 leading-relaxed whitespace-pre-wrap">
+            <Card className="overflow-hidden border-border bg-card shadow-sm">
+                <CardContent className="space-y-8 p-6 sm:p-8">
+                    <div className="flex flex-col gap-6 xl:flex-row xl:items-start xl:justify-between">
+                        <div className="max-w-3xl">
+                            <div className="mb-4 flex flex-wrap items-center gap-3">
+                                <Badge className={`px-3 py-1.5 text-xs uppercase tracking-[0.24em] ${getStatusBadge(training.status)}`}>
+                                    {statusLabel}
+                                </Badge>
+                                <span className="text-sm text-muted-foreground">Session overview</span>
+                            </div>
+                            <h1 className="text-3xl font-bold tracking-tight text-foreground sm:text-5xl">{training.title}</h1>
+                            <p className="mt-3 text-lg font-medium text-primary sm:text-xl">{training.program}</p>
+                            <p className="mt-4 max-w-2xl text-sm leading-7 text-muted-foreground sm:text-base">
                                 {training.description || 'No description provided.'}
                             </p>
                         </div>
 
-                        <div className="grid gap-6 pt-6 border-t border-white/10 md:grid-cols-2">
-                            <div>
-                                <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Target Audience</h3>
+                        <div className="w-full max-w-sm rounded-3xl border border-border/70 bg-background/60 p-5 shadow-sm">
+                            <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted-foreground">At a glance</p>
+                            <div className="mt-4 space-y-4">
+                                <div className="flex items-center justify-between gap-3 border-b border-border/60 pb-3">
+                                    <span className="text-sm text-muted-foreground">Audience</span>
+                                    <span className="text-sm font-semibold text-foreground">
+                                        {targetAudience.length > 0 ? `${targetAudience.length} groups` : 'General staff'}
+                                    </span>
+                                </div>
+                                <div className="flex items-center justify-between gap-3 border-b border-border/60 pb-3">
+                                    <span className="text-sm text-muted-foreground">Institutions</span>
+                                    <span className="text-sm font-semibold text-foreground">
+                                        {requiredInstitutionNames.length > 0 ? requiredInstitutionNames.length : 'Open access'}
+                                    </span>
+                                </div>
+                                <div className="flex items-center justify-between gap-3">
+                                    <span className="text-sm text-muted-foreground">Seats remaining</span>
+                                    <span className={`text-sm font-semibold ${remainingCapacity === 0 ? 'text-red-400' : 'text-emerald-400'}`}>
+                                        {remainingCapacity}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                        <OverviewTile
+                            icon={<Calendar className="size-4" />}
+                            label="Date"
+                            value={formattedShortDate}
+                            hint={formattedFullDate}
+                        />
+                        <OverviewTile
+                            icon={<Clock className="size-4" />}
+                            label="Time"
+                            value={sessionTime}
+                        />
+                        <OverviewTile
+                            icon={<MapPin className="size-4" />}
+                            label="Venue"
+                            value={hallName}
+                        />
+                        <OverviewTile
+                            icon={<Users className="size-4" />}
+                            label="Capacity"
+                            value={`${assignedParticipantsCount}/${training.capacity} assigned`}
+                            hint={`${remainingCapacity} seat${remainingCapacity === 1 ? '' : 's'} remaining`}
+                        />
+                    </div>
+                </CardContent>
+            </Card>
+
+            <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
+                {/* Main Details */}
+                <Card className="lg:col-span-2 border-border bg-card shadow-sm">
+                    <CardHeader className="pb-4">
+                        <CardTitle className="text-2xl font-bold">About this Session</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-6">
+                        <div className="rounded-3xl border border-border/70 bg-background/50 p-5 sm:p-6">
+                            <h3 className="mb-3 text-sm font-semibold uppercase tracking-wider text-muted-foreground">Description</h3>
+                            <p className="whitespace-pre-wrap text-foreground/90 leading-8">
+                                {training.description || 'No description provided.'}
+                            </p>
+                        </div>
+
+                        <div className="grid gap-6 md:grid-cols-2">
+                            <div className="rounded-3xl border border-border/70 bg-background/50 p-5 sm:p-6">
+                                <div className="mb-4 flex items-center gap-3">
+                                    <div className="rounded-xl border border-primary/20 bg-primary/10 p-2 text-primary">
+                                        <Users className="size-4" />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Target Audience</h3>
+                                        <p className="mt-1 text-sm text-muted-foreground">Who this session is intended for</p>
+                                    </div>
+                                </div>
                                 {targetAudience.length > 0 ? (
                                     <div className="flex flex-wrap gap-2">
                                         {targetAudience.map((audience) => (
@@ -340,8 +457,16 @@ const TrainingDetails: React.FC = () => {
                                     <p className="font-medium text-foreground">General staff</p>
                                 )}
                             </div>
-                            <div>
-                                <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Institutions</h3>
+                            <div className="rounded-3xl border border-border/70 bg-background/50 p-5 sm:p-6">
+                                <div className="mb-4 flex items-center gap-3">
+                                    <div className="rounded-xl border border-primary/20 bg-primary/10 p-2 text-primary">
+                                        <MapPin className="size-4" />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Institutions</h3>
+                                        <p className="mt-1 text-sm text-muted-foreground">Required institutions for this session</p>
+                                    </div>
+                                </div>
                                 {requiredInstitutionNames.length > 0 ? (
                                     <div className="space-y-3">
                                         <p className="text-sm font-medium text-foreground">
@@ -368,7 +493,7 @@ const TrainingDetails: React.FC = () => {
                 </Card>
 
                 {/* Sidebar Details */}
-                <div className="space-y-6">
+                <div className="self-start space-y-6 lg:sticky lg:top-24">
                     {/* Attendance Session Manager - Visible if owner/admin OR if session is active for participants */}
                     <AttendanceSessionManager
                         trainingId={id!}
@@ -380,62 +505,39 @@ const TrainingDetails: React.FC = () => {
                     />
 
 
-                    <Card className="bg-white/5 border-white/10">
+                    <Card className="border-border bg-card shadow-sm">
                         <CardHeader>
                             <CardTitle className="text-lg text-foreground">Logistics</CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-4">
-                            <div className="flex items-start gap-4 p-3 bg-white/5 rounded-xl hover:bg-white/10 transition-colors">
-                                <div className="p-2 bg-secondary/20 rounded-lg text-primary">
-                                    <Calendar className="size-5" />
-                                </div>
-                                <div>
-                                    <p className="text-xs font-semibold text-muted-foreground uppercase">Date</p>
-                                    <p className="font-medium text-sm mt-0.5">{format(new Date(training.date), 'EEEE, MMMM do, yyyy')}</p>
-                                </div>
-                            </div>
+                            <LogisticsRow icon={<Calendar className="size-5" />} label="Date" value={formattedFullDate} />
+                            <LogisticsRow icon={<Clock className="size-5" />} label="Time" value={sessionTime} />
+                            <LogisticsRow icon={<MapPin className="size-5" />} label="Venue" value={hallName} />
 
-                            <div className="flex items-start gap-4 p-3 bg-white/5 rounded-xl hover:bg-white/10 transition-colors">
-                                <div className="p-2 bg-secondary/20 rounded-lg text-primary">
-                                    <Clock className="size-5" />
+                            <div className="rounded-2xl border border-border/60 bg-background/60 p-4">
+                                <div className="mb-4 flex items-start gap-4">
+                                    <div className="rounded-xl border border-primary/20 bg-primary/10 p-2.5 text-primary">
+                                        <Users className="size-5" />
+                                    </div>
+                                    <div>
+                                        <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted-foreground">Capacity</p>
+                                        <p className="mt-1 text-sm text-muted-foreground">Current seat allocation</p>
+                                    </div>
                                 </div>
-                                <div>
-                                    <p className="text-xs font-semibold text-muted-foreground uppercase">Time</p>
-                                    <p className="font-medium text-sm mt-0.5">{training.startTime} - {training.endTime}</p>
-                                </div>
-                            </div>
-
-                            <div className="flex items-start gap-4 p-3 bg-white/5 rounded-xl hover:bg-white/10 transition-colors">
-                                <div className="p-2 bg-secondary/20 rounded-lg text-primary">
-                                    <MapPin className="size-5" />
-                                </div>
-                                <div>
-                                    <p className="text-xs font-semibold text-muted-foreground uppercase">Venue</p>
-                                    <p className="font-medium text-sm mt-0.5">{hallName}</p>
-                                </div>
-                            </div>
-
-                            <div className="flex items-start gap-4 p-3 bg-white/5 rounded-xl hover:bg-white/10 transition-colors">
-                                <div className="p-2 bg-secondary/20 rounded-lg text-primary">
-                                    <Users className="size-5" />
-                                </div>
-                                <div className="w-full">
-                                    <p className="text-xs font-semibold text-muted-foreground uppercase mb-1">Capacity</p>
-                                    <div className="flex justify-between items-center bg-white/5 rounded p-2">
-                                        <div className="text-center px-2 border-r border-white/10 w-1/3">
-                                            <p className="text-xs text-muted-foreground">Total</p>
-                                            <p className="font-bold text-sm">{training.capacity}</p>
-                                        </div>
-                                        <div className="text-center px-2 border-r border-white/10 w-1/3">
-                                            <p className="text-xs text-muted-foreground">Assigned</p>
-                                            <p className="font-bold text-sm text-blue-400">{training.assignedParticipantsCount || 0}</p>
-                                        </div>
-                                        <div className="text-center px-2 w-1/3">
-                                            <p className="text-xs text-muted-foreground">Remaining</p>
-                                            <p className={`font-bold text-sm ${training.remainingCapacity === 0 ? 'text-red-400' : 'text-emerald-400'}`}>
-                                                {training.remainingCapacity !== undefined ? training.remainingCapacity : training.capacity}
-                                            </p>
-                                        </div>
+                                <div className="grid grid-cols-3 gap-3">
+                                    <div className="rounded-xl border border-border/60 bg-card p-3 text-center">
+                                        <p className="text-xs text-muted-foreground">Total</p>
+                                        <p className="mt-1 text-lg font-bold text-foreground">{training.capacity}</p>
+                                    </div>
+                                    <div className="rounded-xl border border-border/60 bg-card p-3 text-center">
+                                        <p className="text-xs text-muted-foreground">Assigned</p>
+                                        <p className="mt-1 text-lg font-bold text-blue-400">{assignedParticipantsCount}</p>
+                                    </div>
+                                    <div className="rounded-xl border border-border/60 bg-card p-3 text-center">
+                                        <p className="text-xs text-muted-foreground">Remaining</p>
+                                        <p className={`mt-1 text-lg font-bold ${remainingCapacity === 0 ? 'text-red-400' : 'text-emerald-400'}`}>
+                                            {remainingCapacity}
+                                        </p>
                                     </div>
                                 </div>
                             </div>
@@ -444,124 +546,126 @@ const TrainingDetails: React.FC = () => {
 
                     {/* Manage Section - Consolidated for all roles */}
                     {(user?.role === 'participant' || user?.role === 'program_officer' || user?.role === 'medical_officer' || user?.role === 'master_admin') && (
-                        <Card className="bg-white/5 border-white/10">
+                        <Card className="border-border bg-card shadow-sm">
                             <CardHeader>
                                 <CardTitle className="text-lg">Manage</CardTitle>
                             </CardHeader>
-                            <CardContent className="flex flex-col gap-3">
-                                {/* Participant specific actions */}
-                                {user?.role === 'participant' && (
-                                    <>
-                                        {training.userStatus === 'attended' ? (
-                                            <div className="flex items-center gap-3 p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-lg text-emerald-400">
-                                                <CheckCircle className="size-4 flex-shrink-0" />
-                                                <span className="font-semibold text-sm">Attendance Marked</span>
+                            <CardContent className="space-y-4">
+                                <p className="text-sm text-muted-foreground">
+                                    Available actions for this session based on your role and the current training status.
+                                </p>
+
+                                <div className="flex flex-col gap-3">
+                                    {user?.role === 'participant' && (
+                                        <>
+                                            {training.userStatus === 'attended' ? (
+                                                <div className="flex items-center gap-3 rounded-lg border border-emerald-500/20 bg-emerald-500/10 p-3 text-emerald-400">
+                                                    <CheckCircle className="size-4 flex-shrink-0" />
+                                                    <span className="font-semibold text-sm">Attendance Marked</span>
+                                                </div>
+                                            ) : (
+                                                training.status !== 'completed' && isAttendanceSessionActive && (
+                                                    <Button
+                                                        className="w-full justify-start bg-primary text-primary-foreground hover:bg-primary/90"
+                                                        onClick={() => navigate('/scan-qr')}
+                                                    >
+                                                        <QrCode className="mr-3 size-4" /> Scan Attendance QR
+                                                    </Button>
+                                                )
+                                            )}
+                                        </>
+                                    )}
+
+                                    {user?.role === 'participant' && training.userStatus === 'attended' && training.certificatesGenerated && (
+                                        <Button
+                                            variant="outline"
+                                            className="w-full justify-start border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/10 hover:text-emerald-300"
+                                            onClick={handleDownloadCertificate}
+                                        >
+                                            <Award className="mr-3 size-4" /> Download Certificate
+                                        </Button>
+                                    )}
+
+                                    {canSubmitFeedback && (
+                                        myFeedbackSubmission ? (
+                                            <div className="flex items-start gap-3 rounded-lg border border-emerald-500/20 bg-emerald-500/10 p-3 text-emerald-400">
+                                                <MessageSquareMore className="mt-0.5 size-4 flex-shrink-0" />
+                                                <div>
+                                                    <p className="text-sm font-semibold">Feedback submitted</p>
+                                                    <p className="text-xs text-emerald-300/90">
+                                                        Submitted on {format(new Date(myFeedbackSubmission.submittedAt), 'MMM dd, yyyy')}
+                                                    </p>
+                                                </div>
                                             </div>
                                         ) : (
-                                            training.status !== 'completed' && isAttendanceSessionActive && (
-                                                <Button
-                                                    className="w-full justify-start bg-primary text-primary-foreground hover:bg-primary/90"
-                                                    onClick={() => navigate('/scan-qr')}
-                                                >
-                                                    <QrCode className="size-4 mr-3" /> Scan Attendance QR
-                                                </Button>
-                                            )
-                                        )}
-                                    </>
-                                )}
-
-                                {/* Participant Download Certificate */}
-                                {user?.role === 'participant' && training.userStatus === 'attended' && training.certificatesGenerated && (
-                                    <Button
-                                        variant="outline"
-                                        className="w-full justify-start border-emerald-500/20 text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10"
-                                        onClick={handleDownloadCertificate}
-                                    >
-                                        <Award className="size-4 mr-3" /> Download Certificate
-                                    </Button>
-                                )}
-
-                                {canSubmitFeedback && (
-                                    myFeedbackSubmission ? (
-                                        <div className="flex items-start gap-3 rounded-lg border border-emerald-500/20 bg-emerald-500/10 p-3 text-emerald-400">
-                                            <MessageSquareMore className="mt-0.5 size-4 flex-shrink-0" />
-                                            <div>
-                                                <p className="text-sm font-semibold">Feedback submitted</p>
-                                                <p className="text-xs text-emerald-300/90">
-                                                    Submitted on {format(new Date(myFeedbackSubmission.submittedAt), 'MMM dd, yyyy')}
-                                                </p>
-                                            </div>
-                                        </div>
-                                    ) : (
-                                        <Button
-                                            variant="outline"
-                                            className="w-full justify-start border-primary/20 text-primary hover:bg-primary/10"
-                                            onClick={() => setFeedbackDialogOpen(true)}
-                                        >
-                                            <MessageSquareMore className="size-4 mr-3" /> Submit Feedback
-                                        </Button>
-                                    )
-                                )}
-
-                                {/* Admin/PO actions */}
-                                {(user?.role === 'program_officer' || user?.role === 'medical_officer' || user?.role === 'master_admin') && (
-                                    <Button variant="outline" className="w-full justify-start border-white/10 hover:bg-white/10" onClick={() => setAttendanceModalOpen(true)}>
-                                        <Users className="size-4 mr-3" /> View Attendance
-                                    </Button>
-                                )}
-
-                                {isOwnerOrAdmin && (
-                                    <>
-                                        {/* Generate Certificates Button for PO */}
-                                        {training.status === 'completed' && !training.certificatesGenerated && (
                                             <Button
-                                                className="w-full justify-start bg-emerald-600 text-white hover:bg-emerald-700"
-                                                onClick={handleGenerateCertificates}
-                                                disabled={generating}
+                                                variant="outline"
+                                                className="w-full justify-start border-primary/20 text-primary hover:bg-primary/10"
+                                                onClick={() => setFeedbackDialogOpen(true)}
                                             >
-                                                {generating ? (
-                                                    <Clock className="size-4 mr-3 animate-spin" />
-                                                ) : (
-                                                    <Award className="size-4 mr-3" />
-                                                )}
-                                                Generate Certificates
+                                                <MessageSquareMore className="mr-3 size-4" /> Submit Feedback
                                             </Button>
-                                        )}
+                                        )
+                                    )}
 
-                                        {training.status !== 'completed' && training.status !== 'cancelled' && (
-                                            <Button variant="outline" className="w-full justify-start border-white/10 hover:bg-white/10" onClick={() => navigate(`/trainings/${id}/edit`)}>
-                                                <Edit className="size-4 mr-3" /> Edit Training
-                                            </Button>
-                                        )}
-
-                                        {(training.status === 'scheduled' || training.status === 'ongoing') && (
-                                            <>
-                                                <Button
-                                                    variant="outline"
-                                                    className="w-full justify-start border-emerald-500/20 text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10"
-                                                    onClick={() => handleStatusUpdate('completed')}
-                                                >
-                                                    <CheckCircle className="size-4 mr-3" /> Mark Completed
-                                                </Button>
-                                                <Button
-                                                    variant="outline"
-                                                    className="w-full justify-start border-orange-500/20 text-orange-400 hover:text-orange-300 hover:bg-orange-500/10"
-                                                    onClick={() => handleStatusUpdate('cancelled')}
-                                                >
-                                                    <XCircle className="size-4 mr-3" /> Cancel Training
-                                                </Button>
-                                            </>
-                                        )}
-
-                                        <Button
-                                            variant="outline"
-                                            className="w-full justify-start border-destructive/20 text-destructive hover:text-destructive hover:bg-destructive/10"
-                                            onClick={handleDelete}
-                                        >
-                                            <Trash2 className="size-4 mr-3" /> Delete Training
+                                    {(user?.role === 'program_officer' || user?.role === 'medical_officer' || user?.role === 'master_admin') && (
+                                        <Button variant="outline" className="w-full justify-start border-white/10 hover:bg-white/10" onClick={() => setAttendanceModalOpen(true)}>
+                                            <Users className="mr-3 size-4" /> View Attendance
                                         </Button>
-                                    </>
-                                )}
+                                    )}
+
+                                    {isOwnerOrAdmin && (
+                                        <>
+                                            {training.status === 'completed' && !training.certificatesGenerated && (
+                                                <Button
+                                                    className="w-full justify-start bg-emerald-600 text-white hover:bg-emerald-700"
+                                                    onClick={handleGenerateCertificates}
+                                                    disabled={generating}
+                                                >
+                                                    {generating ? (
+                                                        <Clock className="mr-3 size-4 animate-spin" />
+                                                    ) : (
+                                                        <Award className="mr-3 size-4" />
+                                                    )}
+                                                    Generate Certificates
+                                                </Button>
+                                            )}
+
+                                            {training.status !== 'completed' && training.status !== 'cancelled' && (
+                                                <Button variant="outline" className="w-full justify-start border-white/10 hover:bg-white/10" onClick={() => navigate(`/trainings/${id}/edit`)}>
+                                                    <Edit className="mr-3 size-4" /> Edit Training
+                                                </Button>
+                                            )}
+
+                                            {(training.status === 'scheduled' || training.status === 'ongoing') && (
+                                                <>
+                                                    <Button
+                                                        variant="outline"
+                                                        className="w-full justify-start border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/10 hover:text-emerald-300"
+                                                        onClick={() => handleStatusUpdate('completed')}
+                                                    >
+                                                        <CheckCircle className="mr-3 size-4" /> Mark Completed
+                                                    </Button>
+                                                    <Button
+                                                        variant="outline"
+                                                        className="w-full justify-start border-orange-500/20 text-orange-400 hover:bg-orange-500/10 hover:text-orange-300"
+                                                        onClick={() => handleStatusUpdate('cancelled')}
+                                                    >
+                                                        <XCircle className="mr-3 size-4" /> Cancel Training
+                                                    </Button>
+                                                </>
+                                            )}
+
+                                            <Button
+                                                variant="outline"
+                                                className="w-full justify-start border-destructive/20 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                                                onClick={handleDelete}
+                                            >
+                                                <Trash2 className="mr-3 size-4" /> Delete Training
+                                            </Button>
+                                        </>
+                                    )}
+                                </div>
                             </CardContent>
                         </Card>
                     )}

@@ -154,7 +154,7 @@ export const login = async (req: Request, res: Response): Promise<void> => {
         const { email, password } = req.body;
 
         // Find user
-        const user = await User.findOne({ email });
+        const user = await User.findOne({ email, isDeleted: { $ne: true } });
 
         if (!user) {
             res.status(401).json({ message: 'Invalid credentials' });
@@ -203,7 +203,7 @@ export const login = async (req: Request, res: Response): Promise<void> => {
 export const getMe = async (req: AuthRequest, res: Response): Promise<void> => {
     try {
         const userId = req.user!.userId;
-        const user = await User.findById(userId).populate('institutionId').lean() as any;
+        const user = await User.findOne({ _id: userId, isDeleted: { $ne: true } }).populate('institutionId').lean() as any;
 
         if (!user) {
             res.status(404).json({ message: 'User not found' });

@@ -227,9 +227,9 @@ const Dashboard: React.FC = () => {
 
   return (
     <div className="pb-12 text-foreground">
-      <div className="flex flex-col lg:flex-row gap-8">
+      <div className="flex flex-col gap-8 lg:flex-row lg:items-start">
         {/* Main Content Area */}
-        <div className="flex-1 space-y-8">
+        <div className="min-w-0 flex-1 space-y-8">
           {/* Filters (YouTube Music style pill buttons) */}
           <div className="flex flex-wrap items-center justify-between gap-4">
             <FilterChips

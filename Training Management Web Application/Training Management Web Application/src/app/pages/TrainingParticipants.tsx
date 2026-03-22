@@ -12,12 +12,13 @@ import {
 import { Button } from '../components/ui/button';
 import { attendanceApi, nominationsApi, trainingsApi } from '../../services/api';
 import { Attendance, Nomination, Training } from '../../types';
-import { Loader2, UserMinus, ArrowLeft, Users } from 'lucide-react';
+import { UserMinus, ArrowLeft, Users, Clock3, UserCheck, FileDown } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { toast } from 'sonner';
 import LoadingAnimation from '../components/LoadingAnimation';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../components/ui/card';
 import { Checkbox } from '../components/ui/checkbox';
+import { generateAttendanceSheetPdf } from '../../utils/attendanceSheet';
 
 const TrainingParticipants: React.FC = () => {
     const { t } = useTranslation();
@@ -123,11 +124,153 @@ const TrainingParticipants: React.FC = () => {
             attendanceRecords.some((record) => record.participantId === participantId)
         );
 
+    const getAttendanceRecord = (participantId?: string) =>
+        attendanceRecords.find((record) => participantId && record.participantId === participantId);
+
     const getEffectiveParticipantStatus = (nomination: Nomination) => {
         if (hasAttendanceRecord(nomination.participantId)) {
             return 'attended';
         }
         return nomination.status === 'attended' ? 'approved' : nomination.status;
+    };
+
+    const getParticipantName = (nomination: Nomination) => {
+        const baseName = nomination.participant?.name || nomination.participantSnapshot?.fullName;
+        if (baseName) {
+            return nomination.participantSnapshot?.isDeleted || (!nomination.participant && nomination.participantSnapshot)
+                ? `${baseName} (Archived)`
+                : baseName;
+        }
+        return 'Participant (Removed)';
+    };
+
+    const getParticipantEmail = (nomination: Nomination) =>
+        nomination.participant?.email || nomination.participantSnapshot?.email || t('participantsManage.na');
+
+    const getParticipantDesignation = (nomination: Nomination) =>
+        nomination.participant?.designation || nomination.participantSnapshot?.designation || nomination.participantSnapshot?.role || t('participantsManage.na');
+
+    const getParticipantInstitution = (nomination: Nomination) =>
+        nomination.institution?.name || nomination.participantSnapshot?.institutionName || t('participantsManage.na');
+
+    const canManageAttendance = Boolean(
+        training &&
+        (user?.role === 'master_admin' || (user?.role === 'program_officer' && training.createdById === user.id))
+    );
+
+    const trainingStart = training
+        ? (() => {
+            const start = new Date(training.date);
+            const [hours = '0', minutes = '0'] = String(training.startTime || '0:0').split(':');
+            start.setHours(Number(hours), Number(minutes), 0, 0);
+            return start;
+        })()
+        : null;
+
+    const canGenerateAttendanceSheet = Boolean(training && canManageAttendance && training.status !== 'completed');
+    const canMarkManualAttendance = Boolean(training && canManageAttendance && training.status !== 'completed' && trainingStart && new Date() >= trainingStart);
+
+    const canMarkLateAttendance = (() => {
+        if (!training) return false;
+        if (training.status === 'completed') return false;
+        if (!canManageAttendance) return false;
+
+        const sessionEnd = training.attendanceSession?.endTime
+            ? new Date(training.attendanceSession.endTime)
+            : (() => {
+                const end = new Date(training.date);
+                const [hours = '0', minutes = '0'] = String(training.endTime || '0:0').split(':');
+                end.setHours(Number(hours), Number(minutes), 0, 0);
+                return end;
+            })();
+        const lateWindowHours = training.lateAttendanceWindowHours || 4;
+        const lateWindowEnd = new Date(sessionEnd.getTime() + lateWindowHours * 60 * 60 * 1000);
+        const now = new Date();
+        return now > sessionEnd && now <= lateWindowEnd;
+    })();
+
+    const handleGenerateAttendanceSheet = async () => {
+        if (!training) return;
+        try {
+            await generateAttendanceSheetPdf({
+                training,
+                participants,
+                generatedByName: user?.name,
+            });
+            toast.success('Attendance sheet generated successfully.');
+        } catch (error) {
+            console.error('Error generating attendance sheet:', error);
+            toast.error('Failed to generate attendance sheet');
+        }
+    };
+
+    const handleBulkManualAttendance = async () => {
+        const selectedNominations = participants.filter((nom) => selectedParticipantIds.includes(nom.id) && nom.participantId && !hasAttendanceRecord(nom.participantId));
+        if (selectedNominations.length === 0) {
+            toast.error('Select at least one participant who has not already been marked present.');
+            return;
+        }
+
+        const participantLabel = selectedNominations.length === 1
+            ? selectedNominations[0].participant?.name || 'this participant'
+            : `${selectedNominations.length} participants`;
+
+        if (!window.confirm(`Are you sure you want to mark ${participantLabel} from the sign-in sheet?`)) {
+            return;
+        }
+
+        setLoading(true);
+        try {
+            const result = await attendanceApi.markManualAttendance(
+                id || '',
+                selectedNominations.map((nom) => nom.participantId)
+            );
+            toast.success(
+                result.markedCount > 0
+                    ? `Manual attendance marked for ${result.markedCount} participant${result.markedCount === 1 ? '' : 's'}.`
+                    : 'No eligible participants were marked from the sign-in sheet.'
+            );
+            setSelectedParticipantIds([]);
+            fetchData();
+        } catch (error: any) {
+            console.error('Error marking manual attendance:', error);
+            toast.error(error?.response?.data?.message || 'Failed to mark manual attendance');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleBulkLateAttendance = async () => {
+        const selectedNominations = participants.filter((nom) => selectedParticipantIds.includes(nom.id) && nom.participantId);
+        if (selectedNominations.length === 0) return;
+
+        const participantLabel = selectedNominations.length === 1
+            ? selectedNominations[0].participant?.name || 'this participant'
+            : `${selectedNominations.length} participants`;
+
+        if (!window.confirm(`Are you sure you want to mark ${participantLabel} as late?`)) {
+            return;
+        }
+
+        setLoading(true);
+        try {
+            const result = await attendanceApi.markLateAttendance(
+                id || '',
+                selectedNominations.map((nom) => nom.participantId)
+            );
+            toast.success(
+                result.markedCount > 0
+                    ? `Late attendance marked for ${result.markedCount} participant${result.markedCount === 1 ? '' : 's'}.`
+                    : 'No eligible participants were marked late.'
+            );
+            setSelectedParticipantIds([]);
+            fetchData();
+        } catch (error: any) {
+            console.error('Error marking late attendance:', error);
+            toast.error(error?.response?.data?.message || 'Failed to mark late attendance');
+        } finally {
+            setLoading(false);
+        }
     };
 
     const toggleSelectAll = () => {
@@ -175,17 +318,62 @@ const TrainingParticipants: React.FC = () => {
                                 {t('participantsManage.totalAssigned')}: {participants.length}
                             </CardDescription>
                         </div>
-                        {selectedParticipantIds.length > 0 && (
-                            <Button
-                                variant="destructive"
-                                onClick={handleBulkRemove}
-                                className="font-medium"
-                                disabled={loading}
-                            >
-                                {t('participantsManage.bulkRemove', { count: selectedParticipantIds.length })}
-                            </Button>
-                        )}
+                        <div className="flex flex-wrap gap-2">
+                            {canGenerateAttendanceSheet && (
+                                <Button
+                                    variant="outline"
+                                    onClick={handleGenerateAttendanceSheet}
+                                    className="font-medium"
+                                    disabled={loading}
+                                >
+                                    <FileDown className="mr-2 size-4" />
+                                    Generate Attendance Sheet
+                                </Button>
+                            )}
+                            {canMarkManualAttendance && selectedParticipantIds.length > 0 && (
+                                <Button
+                                    variant="outline"
+                                    onClick={handleBulkManualAttendance}
+                                    className="border-emerald-500/30 bg-emerald-500/10 font-medium text-emerald-500 hover:bg-emerald-500/15 hover:text-emerald-400"
+                                    disabled={loading}
+                                >
+                                    <UserCheck className="mr-2 size-4" />
+                                    Mark from Sign-in Sheet ({selectedParticipantIds.length})
+                                </Button>
+                            )}
+                            {canMarkLateAttendance && selectedParticipantIds.length > 0 && (
+                                <Button
+                                    variant="outline"
+                                    onClick={handleBulkLateAttendance}
+                                    className="border-amber-500/30 bg-amber-500/10 font-medium text-amber-500 hover:bg-amber-500/15 hover:text-amber-400"
+                                    disabled={loading}
+                                >
+                                    <Clock3 className="mr-2 size-4" />
+                                    Mark Late Attendance ({selectedParticipantIds.length})
+                                </Button>
+                            )}
+                            {selectedParticipantIds.length > 0 && (
+                                <Button
+                                    variant="destructive"
+                                    onClick={handleBulkRemove}
+                                    className="font-medium"
+                                    disabled={loading}
+                                >
+                                    {t('participantsManage.bulkRemove', { count: selectedParticipantIds.length })}
+                                </Button>
+                            )}
+                        </div>
                     </div>
+                    {canMarkLateAttendance && (
+                        <div className="rounded-2xl border border-amber-500/20 bg-amber-500/10 px-4 py-3 text-sm text-amber-500">
+                            Late attendance is active. Program Officers can mark approved participants as present after the QR window closes.
+                        </div>
+                    )}
+                    {canGenerateAttendanceSheet && (
+                        <div className="rounded-2xl border border-primary/15 bg-primary/5 px-4 py-3 text-sm text-muted-foreground">
+                            Use <span className="font-medium text-foreground">Generate Attendance Sheet</span> before or during the session for offline signatures. After the training begins, you can use <span className="font-medium text-foreground">Mark from Sign-in Sheet</span> to record signed attendance.
+                        </div>
+                    )}
                 </CardHeader>
                 <CardContent>
                     {participants.length === 0 ? (
@@ -221,6 +409,16 @@ const TrainingParticipants: React.FC = () => {
                                             {(() => {
                                                 const effectiveStatus = getEffectiveParticipantStatus(nom);
                                                 const isAttended = effectiveStatus === 'attended';
+                                                const attendanceRecord = getAttendanceRecord(nom.participantId);
+                                                const isLateAttendance = attendanceRecord?.attendanceType === 'late';
+                                                const isManualAttendance = attendanceRecord?.method === 'manual' && attendanceRecord?.attendanceType !== 'late';
+                                                const statusLabel = isLateAttendance
+                                                    ? 'Present (Late)'
+                                                    : isManualAttendance
+                                                        ? 'Present (Manual)'
+                                                        : isAttended
+                                                            ? 'Present (QR)'
+                                                            : t(`common.statuses.${effectiveStatus}`, { defaultValue: effectiveStatus.charAt(0).toUpperCase() + effectiveStatus.slice(1) });
                                                 return (
                                                     <>
                                             <TableCell>
@@ -232,35 +430,91 @@ const TrainingParticipants: React.FC = () => {
                                                 />
                                             </TableCell>
                                             <TableCell>
-                                                <div className="font-medium">{nom.participant?.name || t('participantsManage.unknown')}</div>
+                                                <div className="font-medium">{getParticipantName(nom)}</div>
                                             </TableCell>
                                             <TableCell>
-                                                <div className="text-sm text-muted-foreground">{nom.participant?.email}</div>
-                                                <div className="text-xs text-muted-foreground mt-0.5">{nom.participant?.designation}</div>
+                                                <div className="text-sm text-muted-foreground">{getParticipantEmail(nom)}</div>
+                                                <div className="text-xs text-muted-foreground mt-0.5">{getParticipantDesignation(nom)}</div>
                                             </TableCell>
                                             <TableCell>
-                                                <div className="text-sm">{nom.institution?.name || t('participantsManage.na')}</div>
+                                                <div className="text-sm">{getParticipantInstitution(nom)}</div>
                                             </TableCell>
                                             <TableCell>
                                                 <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold
-                                                    ${isAttended ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300'
+                                                    ${isLateAttendance ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300'
+                                                        : isManualAttendance ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300'
+                                                        : isAttended ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300'
                                                         : 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300'}
                                                 `}>
-                                                    {t(`common.statuses.${effectiveStatus}`, { defaultValue: effectiveStatus.charAt(0).toUpperCase() + effectiveStatus.slice(1) })}
+                                                    {statusLabel}
                                                 </span>
+                                                {(isLateAttendance || isManualAttendance) && attendanceRecord?.markedByName && (
+                                                    <div className="mt-1 text-xs text-muted-foreground">
+                                                        Marked by {attendanceRecord.markedByName}
+                                                        {attendanceRecord.timestamp ? ` at ${new Date(attendanceRecord.timestamp).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}` : ''}
+                                                    </div>
+                                                )}
                                             </TableCell>
                                             <TableCell className="text-right">
-                                                <Button
-                                                    variant="destructive"
-                                                    size="sm"
-                                                    onClick={() => handleRemoveParticipant(nom.id, nom.participant?.name || t('participantsManage.unknown'))}
-                                                    className="h-8 gap-1.5"
-                                                    disabled={isAttended}
-                                                    title={isAttended ? t('participantsManage.cannotRemoveAttended') : t('participantsManage.removeUser')}
-                                                >
-                                                    <UserMinus className="size-3.5" />
-                                                    <span className="hidden sm:inline">{t('participantsManage.remove')}</span>
-                                                </Button>
+                                                <div className="flex justify-end gap-2">
+                                                    {canMarkManualAttendance && !isAttended && (
+                                                        <Button
+                                                            variant="outline"
+                                                            size="sm"
+                                                            onClick={async () => {
+                                                                const participantLabel = getParticipantName(nom);
+                                                                if (!window.confirm(`Are you sure you want to mark ${participantLabel} from the sign-in sheet?`)) {
+                                                                    return;
+                                                                }
+                                                                try {
+                                                                    await attendanceApi.markManualAttendance(id || '', [nom.participantId]);
+                                                                    toast.success('Manual attendance marked successfully.');
+                                                                    fetchData();
+                                                                } catch (error: any) {
+                                                                    toast.error(error?.response?.data?.message || 'Failed to mark manual attendance');
+                                                                }
+                                                            }}
+                                                            className="h-8 gap-1.5 border-emerald-500/30 bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/15 hover:text-emerald-400"
+                                                        >
+                                                            <UserCheck className="size-3.5" />
+                                                            <span className="hidden sm:inline">Mark from Sheet</span>
+                                                        </Button>
+                                                    )}
+                                                    {canMarkLateAttendance && !isAttended && (
+                                                        <Button
+                                                            variant="outline"
+                                                            size="sm"
+                                                            onClick={async () => {
+                                                                const participantLabel = getParticipantName(nom);
+                                                                if (!window.confirm(`Are you sure you want to mark ${participantLabel} as late?`)) {
+                                                                    return;
+                                                                }
+                                                                try {
+                                                                    await attendanceApi.markLateAttendance(id || '', [nom.participantId]);
+                                                                    toast.success('Late attendance marked successfully.');
+                                                                    fetchData();
+                                                                } catch (error: any) {
+                                                                    toast.error(error?.response?.data?.message || 'Failed to mark late attendance');
+                                                                }
+                                                            }}
+                                                            className="h-8 gap-1.5 border-amber-500/30 bg-amber-500/10 text-amber-500 hover:bg-amber-500/15 hover:text-amber-400"
+                                                        >
+                                                            <UserCheck className="size-3.5" />
+                                                            <span className="hidden sm:inline">Mark Late Attendance</span>
+                                                        </Button>
+                                                    )}
+                                                    <Button
+                                                        variant="destructive"
+                                                        size="sm"
+                                                        onClick={() => handleRemoveParticipant(nom.id, getParticipantName(nom))}
+                                                        className="h-8 gap-1.5"
+                                                        disabled={isAttended}
+                                                        title={isAttended ? t('participantsManage.cannotRemoveAttended') : t('participantsManage.removeUser')}
+                                                    >
+                                                        <UserMinus className="size-3.5" />
+                                                        <span className="hidden sm:inline">{t('participantsManage.remove')}</span>
+                                                    </Button>
+                                                </div>
                                             </TableCell>
                                                     </>
                                                 );

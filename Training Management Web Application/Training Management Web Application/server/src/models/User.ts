@@ -23,6 +23,8 @@ export interface IUser extends Omit<Document, '_id'> {
     fcmToken?: string;
     createdAt: Date;
     isApproved: boolean;
+    isDeleted?: boolean;
+    deletedAt?: Date;
 }
 
 import { v4 as uuidv4 } from 'uuid';
@@ -44,7 +46,9 @@ const UserSchema: Schema = new Schema({
     profilePicture: { type: String },
     fcmToken: { type: String },
     createdAt: { type: Date, default: Date.now },
-    isApproved: { type: Boolean, default: false }
+    isApproved: { type: Boolean, default: false },
+    isDeleted: { type: Boolean, default: false },
+    deletedAt: { type: Date }
 });
 
 // Need to handle _id generation if not provided. 

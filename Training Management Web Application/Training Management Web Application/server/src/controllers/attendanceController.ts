@@ -6,6 +6,37 @@ import User from '../models/User';
 import Notification from '../models/Notification';
 import { createAndSendNotification } from '../utils/notificationUtils';
 import { AuthRequest } from '../middleware/authMiddleware';
+import {
+    buildParticipantSnapshot,
+    mergeParticipantSnapshots,
+    toArchivedParticipantProfile,
+    upsertTrainingParticipantSnapshot,
+} from '../models/shared/participantSnapshot';
+
+const LATE_ATTENDANCE_WINDOW_HOURS = Math.max(2, Math.min(6, Number(process.env.LATE_ATTENDANCE_WINDOW_HOURS || 4)));
+
+const parseTrainingDateTime = (dateValue: Date | string, timeValue: string) => {
+    const date = new Date(dateValue);
+    const [hours = '0', minutes = '0'] = String(timeValue || '0:0').split(':');
+    date.setHours(Number(hours), Number(minutes), 0, 0);
+    return date;
+};
+
+const getLateAttendanceWindow = (training: any) => {
+    const sessionEnd = training.attendanceSession?.endTime
+        ? new Date(training.attendanceSession.endTime)
+        : parseTrainingDateTime(training.date, training.endTime);
+    const windowEnd = new Date(sessionEnd.getTime() + LATE_ATTENDANCE_WINDOW_HOURS * 60 * 60 * 1000);
+    return { sessionEnd, windowEnd };
+};
+
+const canManageLateAttendance = (training: any, requester?: AuthRequest['user']) => {
+    if (!requester) return false;
+    return requester.role === 'master_admin' || (requester.role === 'program_officer' && requester.userId === String(training.createdById));
+};
+
+const getTrainingStartDateTime = (training: any) =>
+    parseTrainingDateTime(training.date, training.startTime);
 
 // Mark attendance
 export const markAttendance = async (req: AuthRequest, res: Response): Promise<void> => {
@@ -101,11 +132,32 @@ export const markAttendance = async (req: AuthRequest, res: Response): Promise<v
             }
         }
 
+        const participant = await User.findOne({ _id: participantId, isDeleted: { $ne: true } })
+            .select('name email designation department phone role institutionId isDeleted deletedAt')
+            .populate('institutionId', 'name');
+        const participantSnapshot = mergeParticipantSnapshots(
+            nomination.participantSnapshot as any,
+            participant ? buildParticipantSnapshot(participant, (participant as any).institutionId) : undefined
+        );
+
+        if (!nomination.participantSnapshot && participantSnapshot) {
+            nomination.participantSnapshot = participantSnapshot as any;
+            await nomination.save();
+        }
+
+        upsertTrainingParticipantSnapshot(training, participantSnapshot);
+        await training.save();
+
         const attendance = await Attendance.create({
             trainingId,
             participantId,
             method,
+            status: 'present',
+            attendanceType: 'on_time',
+            markedBy: participantId,
+            markedByName: participantSnapshot?.fullName || participant?.name || 'Participant',
             qrData,
+            participantSnapshot,
         });
 
         // Also update nomination status if exists
@@ -124,8 +176,8 @@ export const markAttendance = async (req: AuthRequest, res: Response): Promise<v
         try {
             // 1. Notify Program Officer (Training Creator)
             // Get participant details for the message
-            const participant = await User.findById(participantId).select('name');
-            const notificationMessage = `${participant?.name || 'A participant'} has marked attendance for "${training.title}".`;
+            const participantName = participantSnapshot?.fullName || participant?.name || 'A participant';
+            const notificationMessage = `${participantName} has marked attendance for "${training.title}".`;
 
             // Identify recipients: 
             // - The creator of the training (Program Officer)
@@ -172,33 +224,276 @@ export const markAttendance = async (req: AuthRequest, res: Response): Promise<v
     }
 };
 
+export const markLateAttendance = async (req: AuthRequest, res: Response): Promise<void> => {
+    try {
+        const trainingId = req.params.trainingId as string;
+        const participantIds = Array.isArray(req.body?.participantIds)
+            ? req.body.participantIds.map((value: any) => String(value)).filter(Boolean)
+            : [];
+
+        if (participantIds.length === 0) {
+            res.status(400).json({ message: 'At least one participant is required' });
+            return;
+        }
+
+        const training = await Training.findById(trainingId);
+        if (!training) {
+            res.status(404).json({ message: 'Training not found' });
+            return;
+        }
+
+        if (!canManageLateAttendance(training, req.user)) {
+            res.status(403).json({ message: 'Not authorized to mark late attendance for this training' });
+            return;
+        }
+
+        if (training.status === 'completed') {
+            res.status(400).json({ message: 'Late attendance cannot be marked after the training is completed' });
+            return;
+        }
+
+        const { sessionEnd, windowEnd } = getLateAttendanceWindow(training);
+        const now = new Date();
+        if (now <= sessionEnd) {
+            res.status(400).json({ message: 'Late attendance becomes available only after the attendance window closes' });
+            return;
+        }
+
+        if (now > windowEnd) {
+            res.status(400).json({ message: `Late attendance can only be marked within ${LATE_ATTENDANCE_WINDOW_HOURS} hours after the attendance window closes` });
+            return;
+        }
+
+        const marker = await User.findOne({ _id: req.user!.userId, isDeleted: { $ne: true } }).select('name');
+        const nominations = await Nomination.find({
+            trainingId,
+            participantId: { $in: participantIds },
+            status: { $in: ['approved', 'attended'] },
+        } as any).populate('participantId', 'name email designation department phone role institutionId isDeleted deletedAt')
+            .lean() as any[];
+
+        const nominationsByParticipantId = new Map<string, any>(
+            nominations.map((nomination) => [String(nomination.participantId?._id || nomination.participantId), nomination])
+        );
+
+        const existingAttendance = await Attendance.find({
+            trainingId,
+            participantId: { $in: participantIds },
+        } as any).select('participantId').lean() as any[];
+        const alreadyMarked = new Set(existingAttendance.map((entry) => String(entry.participantId)));
+
+        const createdAttendances: any[] = [];
+        const skippedParticipants: string[] = [];
+
+        for (const participantId of participantIds) {
+            if (alreadyMarked.has(participantId)) {
+                skippedParticipants.push(participantId);
+                continue;
+            }
+
+            const nomination = nominationsByParticipantId.get(participantId);
+            if (!nomination) {
+                skippedParticipants.push(participantId);
+                continue;
+            }
+
+            const participantSnapshot = mergeParticipantSnapshots(
+                nomination.participantSnapshot,
+                nomination.participantId ? buildParticipantSnapshot(nomination.participantId, (nomination.participantId as any).institutionId) : undefined
+            );
+
+            upsertTrainingParticipantSnapshot(training, participantSnapshot);
+
+            const attendance = await Attendance.create({
+                trainingId,
+                participantId,
+                timestamp: now,
+                method: 'manual',
+                status: 'present',
+                attendanceType: 'late',
+                markedBy: req.user!.userId,
+                markedByName: marker?.name || 'Program Officer',
+                participantSnapshot,
+            });
+
+            await Nomination.updateMany(
+                { trainingId, participantId, status: 'approved' },
+                { status: 'attended' }
+            );
+
+            createdAttendances.push(attendance);
+        }
+
+        await training.save();
+
+        res.status(201).json({
+            message: 'Late attendance marked successfully',
+            markedCount: createdAttendances.length,
+            skippedCount: skippedParticipants.length,
+            lateAttendanceWindowHours: LATE_ATTENDANCE_WINDOW_HOURS,
+            records: createdAttendances.map((attendance) => ({
+                ...attendance.toObject(),
+                id: attendance._id,
+            })),
+        });
+    } catch (error) {
+        console.error('Late attendance error:', error);
+        res.status(500).json({ message: 'Error marking late attendance' });
+    }
+};
+
+export const markManualAttendance = async (req: AuthRequest, res: Response): Promise<void> => {
+    try {
+        const trainingId = req.params.trainingId as string;
+        const participantIds = Array.isArray(req.body?.participantIds)
+            ? req.body.participantIds.map((value: any) => String(value)).filter(Boolean)
+            : [];
+
+        if (participantIds.length === 0) {
+            res.status(400).json({ message: 'At least one participant is required' });
+            return;
+        }
+
+        const training = await Training.findById(trainingId);
+        if (!training) {
+            res.status(404).json({ message: 'Training not found' });
+            return;
+        }
+
+        if (!canManageLateAttendance(training, req.user)) {
+            res.status(403).json({ message: 'Not authorized to mark manual attendance for this training' });
+            return;
+        }
+
+        if (training.status === 'completed') {
+            res.status(400).json({ message: 'Manual attendance cannot be marked after the training is completed' });
+            return;
+        }
+
+        const trainingStart = getTrainingStartDateTime(training);
+        const now = new Date();
+        if (now < trainingStart) {
+            res.status(400).json({ message: 'Manual attendance from the sign-in sheet becomes available once the training starts' });
+            return;
+        }
+
+        const marker = await User.findOne({ _id: req.user!.userId, isDeleted: { $ne: true } }).select('name');
+        const nominations = await Nomination.find({
+            trainingId,
+            participantId: { $in: participantIds },
+            status: { $in: ['approved', 'attended'] },
+        } as any).populate('participantId', 'name email designation department phone role institutionId isDeleted deletedAt')
+            .lean() as any[];
+
+        const nominationsByParticipantId = new Map<string, any>(
+            nominations.map((nomination) => [String(nomination.participantId?._id || nomination.participantId), nomination])
+        );
+
+        const existingAttendance = await Attendance.find({
+            trainingId,
+            participantId: { $in: participantIds },
+        } as any).select('participantId').lean() as any[];
+        const alreadyMarked = new Set(existingAttendance.map((entry) => String(entry.participantId)));
+
+        const createdAttendances: any[] = [];
+        const skippedParticipants: string[] = [];
+
+        for (const participantId of participantIds) {
+            if (alreadyMarked.has(participantId)) {
+                skippedParticipants.push(participantId);
+                continue;
+            }
+
+            const nomination = nominationsByParticipantId.get(participantId);
+            if (!nomination) {
+                skippedParticipants.push(participantId);
+                continue;
+            }
+
+            const participantSnapshot = mergeParticipantSnapshots(
+                nomination.participantSnapshot,
+                nomination.participantId ? buildParticipantSnapshot(nomination.participantId, (nomination.participantId as any).institutionId) : undefined
+            );
+
+            upsertTrainingParticipantSnapshot(training, participantSnapshot);
+
+            const attendance = await Attendance.create({
+                trainingId,
+                participantId,
+                timestamp: now,
+                method: 'manual',
+                status: 'present',
+                attendanceType: 'on_time',
+                markedBy: req.user!.userId,
+                markedByName: marker?.name || 'Program Officer',
+                participantSnapshot,
+            });
+
+            await Nomination.updateMany(
+                { trainingId, participantId, status: 'approved' },
+                { status: 'attended' }
+            );
+
+            createdAttendances.push(attendance);
+        }
+
+        await training.save();
+
+        res.status(201).json({
+            message: 'Manual attendance marked successfully',
+            markedCount: createdAttendances.length,
+            skippedCount: skippedParticipants.length,
+            records: createdAttendances.map((attendance) => ({
+                ...attendance.toObject(),
+                id: attendance._id,
+            })),
+        });
+    } catch (error) {
+        console.error('Manual attendance error:', error);
+        res.status(500).json({ message: 'Error marking manual attendance' });
+    }
+};
+
 // Get attendance for a training
 export const getAttendance = async (req: AuthRequest, res: Response): Promise<void> => {
     try {
         const trainingId = req.params.trainingId as string;
+        const training = await Training.findById(trainingId).select('createdById participantSnapshots');
+
+        if (!training) {
+            res.status(404).json({ message: 'Training not found' });
+            return;
+        }
 
         const attendance = await Attendance.find({ trainingId })
-            .populate('participantId', 'name email designation')
+            .populate('participantId', 'name email designation department phone role institutionId isDeleted deletedAt')
             .lean() as any[];
 
         // Authorization check: If Program Officer, check ownership of training
         if (req.user?.role === 'program_officer') {
-            const training = await Training.findById(trainingId);
-            if (!training || training.createdById.toString() !== req.user.userId) {
+            if (training.createdById.toString() !== req.user.userId) {
                 res.status(403).json({ message: 'Not authorized to view attendance for this training' });
                 return;
             }
         }
 
-        const formattedAttendance = attendance.map((att: any) => ({
-            id: att._id,
-            ...att,
-            participantId: att.participantId?._id || att.participantId,
-            participant: {
-                ...att.participantId,
-                id: att.participantId?._id
-            }
-        }));
+        const trainingSnapshots = Array.isArray((training as any)?.participantSnapshots)
+            ? (training as any).participantSnapshots
+            : [];
+
+        const formattedAttendance = attendance.map((att: any) => {
+            const participantId = String(att.participantId?._id || att.participantId || att.participantSnapshot?.participantId || '');
+            const trainingSnapshot = trainingSnapshots.find((entry: any) => String(entry.participantId) === participantId);
+            const participantSnapshot = mergeParticipantSnapshots(att.participantSnapshot, trainingSnapshot);
+
+            return {
+                id: att._id,
+                ...att,
+                participantId,
+                participantSnapshot,
+                participant: toArchivedParticipantProfile(participantId, att.participantId, participantSnapshot),
+            };
+        });
 
         res.json(formattedAttendance);
     } catch (error) {
