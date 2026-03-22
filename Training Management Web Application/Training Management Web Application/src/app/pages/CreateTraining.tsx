@@ -70,6 +70,18 @@ const targetAudienceOptions = [
 
 const presetTargetAudienceOptions = targetAudienceOptions.filter((option) => option !== 'Other');
 
+const getTrainingSessionType = (startTime: string, endTime: string) => {
+  if (startTime === '10:00' && endTime === '13:30') return 'morning';
+  if (startTime === '14:00' && endTime === '17:00') return 'afternoon';
+  if (startTime === '10:00' && endTime === '17:00') return 'fullday';
+  if (startTime || endTime) return 'custom';
+  return '';
+};
+
+const isPresetTrainingSession = (startTime: string, endTime: string) =>
+  getTrainingSessionType(startTime, endTime) !== 'custom' &&
+  getTrainingSessionType(startTime, endTime) !== '';
+
 const normalizeTargetAudienceForForm = (value: string[] | string | undefined) => {
   const audienceList = Array.isArray(value) ? value.filter(Boolean) : value ? [value] : [];
   const presetSelections = audienceList.filter((audience) => presetTargetAudienceOptions.includes(audience));
@@ -251,6 +263,7 @@ const CreateTraining: React.FC = () => {
     ? `The selected hall can host only ${selectedHall.capacity} participants. Please reduce the training capacity to ${selectedHall.capacity} or choose a larger hall.`
     : '';
   const canCheckAvailability = Boolean(formData.date && formData.startTime && formData.endTime);
+  const selectedSessionType = getTrainingSessionType(formData.startTime, formData.endTime);
   const hallCards = useMemo(() => {
     const availableHallIds = new Set(availableHalls.map((hall) => hall.id));
 
@@ -650,12 +663,7 @@ const CreateTraining: React.FC = () => {
               <div>
                 <Label htmlFor="session">{t('createTraining.fields.session', 'Training Session *')}</Label>
                 <Select
-                  value={
-                    formData.startTime === '10:00' && formData.endTime === '13:30' ? 'morning' :
-                    formData.startTime === '14:00' && formData.endTime === '17:00' ? 'afternoon' :
-                    formData.startTime === '10:00' && formData.endTime === '17:00' ? 'fullday' : 
-                    (formData.startTime || formData.endTime ? 'custom' : '')
-                  }
+                  value={selectedSessionType}
                   onValueChange={(val) => {
                     if (val === 'morning') {
                       setFormData(prev => ({ ...prev, startTime: '10:00', endTime: '13:30' }));
@@ -667,11 +675,20 @@ const CreateTraining: React.FC = () => {
                       setFormData(prev => ({ ...prev, startTime: '10:00', endTime: '17:00' }));
                       setErrors(prev => ({ ...prev, startTime: '', endTime: '' }));
                     } else if (val === 'custom') {
-                      setFormData(prev => ({ 
-                        ...prev, 
-                        startTime: prev.startTime || '09:00', 
-                        endTime: prev.endTime || '17:00' 
-                      }));
+                      setFormData(prev => {
+                        const nextStartTime = isPresetTrainingSession(prev.startTime, prev.endTime)
+                          ? '09:00'
+                          : (prev.startTime || '09:00');
+                        const nextEndTime = isPresetTrainingSession(prev.startTime, prev.endTime)
+                          ? '16:00'
+                          : (prev.endTime || '17:00');
+
+                        return {
+                          ...prev,
+                          startTime: nextStartTime,
+                          endTime: nextEndTime,
+                        };
+                      });
                       setErrors(prev => ({ ...prev, startTime: '', endTime: '' }));
                     }
                   }}
@@ -690,10 +707,7 @@ const CreateTraining: React.FC = () => {
               </div>
             </div>
 
-            {(!(formData.startTime === '10:00' && formData.endTime === '13:30') &&
-              !(formData.startTime === '14:00' && formData.endTime === '17:00') &&
-              !(formData.startTime === '10:00' && formData.endTime === '17:00') &&
-              (formData.startTime || formData.endTime)) && (
+            {(selectedSessionType === 'custom') && (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="startTime">{t('createTraining.fields.startTime', 'Custom Start Time *')}</Label>
