@@ -9,6 +9,7 @@ import LoadingScreen from '../components/LoadingScreen';
 
 import FilterChips from '../components/FilterChips';
 import HorizontalScrollList from '../components/HorizontalScrollList';
+import LoginWelcomeOverlay from '../components/LoginWelcomeOverlay';
 import MediaCard from '../components/MediaCard';
 import { Calendar } from '../components/ui/calendar';
 import { Button } from '../components/ui/button';
@@ -23,6 +24,7 @@ const Dashboard: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [activeFilter, setActiveFilter] = useState('all');
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
+  const [showLoginWelcome, setShowLoginWelcome] = useState(false);
 
   const formatDateParam = (date: Date) => {
     const year = date.getFullYear();
@@ -51,6 +53,16 @@ const Dashboard: React.FC = () => {
     };
 
     fetchData();
+  }, [user]);
+
+  useEffect(() => {
+    if (!user) return;
+
+    const shouldShowWelcome = sessionStorage.getItem('dmo_show_login_welcome') === 'true';
+    if (!shouldShowWelcome) return;
+
+    setShowLoginWelcome(true);
+    sessionStorage.removeItem('dmo_show_login_welcome');
   }, [user]);
 
   if (loading || !stats) {
@@ -227,6 +239,11 @@ const Dashboard: React.FC = () => {
 
   return (
     <div className="pb-12 text-foreground">
+      <LoginWelcomeOverlay
+        user={user}
+        visible={showLoginWelcome}
+        onClose={() => setShowLoginWelcome(false)}
+      />
       <div className="flex flex-col gap-8 lg:flex-row lg:items-start">
         {/* Main Content Area */}
         <div className="min-w-0 flex-1 space-y-8">

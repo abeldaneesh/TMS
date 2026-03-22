@@ -50,6 +50,7 @@ const Login: React.FC<LoginProps> = ({ roleTitle = 'Sign In', allowedRoles }) =>
 
     try {
       await login(email, password, allowedRoles);
+      sessionStorage.setItem('dmo_show_login_welcome', 'true');
       navigate('/dashboard');
     } catch (err: any) {
       let message = t('auth.invalidCredentials', 'Invalid email or password');
