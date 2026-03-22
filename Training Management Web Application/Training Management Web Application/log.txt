@@ -1,0 +1,472 @@
+commit 396e266bcb64e3e2c43566149df9664e78b6cfd8
+Author: Their Name <their_github_email@example.com>
+Date:   Sun Mar 22 12:43:01 2026 +0530
+
+    Add empty out.txt placeholder
+
+A	Training Management Web Application/Training Management Web Application/out.txt
+
+commit b618a5729621321cc9a2135ada38251cc85483e1
+Author: Their Name <their_github_email@example.com>
+Date:   Sun Mar 22 12:38:49 2026 +0530
+
+    Remove Java crash log artifacts
+
+A	Training Management Web Application/Training Management Web Application/hs_err_pid1420.log
+A	Training Management Web Application/Training Management Web Application/replay_pid1420.log
+
+commit 4c0aa26ea98210d72f52e9d6bb4f753d99bcb00e
+Author: Their Name <their_github_email@example.com>
+Date:   Sun Mar 22 12:16:14 2026 +0530
+
+    Update app UI flows and mobile assets
+
+D	README.md
+D	Training Management Web Application.tar
+R100	Training Management Web Application/.env.production	Training Management Web Application/Training Management Web Application/.env.production
+R100	Training Management Web Application/.gitignore	Training Management Web Application/Training Management Web Application/.gitignore
+R100	Training Management Web Application/GLOBAL_DEPLOYMENT_GUIDE.md	Training Management Web Application/Training Management Web Application/GLOBAL_DEPLOYMENT_GUIDE.md
+R100	Training Management Web Application/QUICKSTART.md	Training Management Web Application/Training Management Web Application/QUICKSTART.md
+R100	Training Management Web Application/README.md	Training Management Web Application/Training Management Web Application/README.md
+R100	Training Management Web Application/SEED_DATA.md	Training Management Web Application/Training Management Web Application/SEED_DATA.md
+R100	Training Management Web Application/SETUP.md	Training Management Web Application/Training Management Web Application/SETUP.md
+R100	Training Management Web Application/TESTING_GUIDE.md	Training Management Web Application/Training Management Web Application/TESTING_GUIDE.md
+R100	Training Management Web Application/API_DOCUMENTATION.md	Training Management Web Application/Training Management Web Application/Training Management Web Application/API_DOCUMENTATION.md
+R100	Training Management Web Application/ATTRIBUTIONS.md	Training Management Web Application/Training Management Web Application/Training Management Web Application/ATTRIBUTIONS.md
+R100	Training Management Web Application/DEPLOYMENT_GUIDE.md	Training Management Web Application/Training Management Web Application/Training Management Web Application/DEPLOYMENT_GUIDE.md
+R100	Training Management Web Application/FEATURES.md	Training Management Web Application/Training Management Web Application/Training Management Web Application/FEATURES.md
+R100	Training Management Web Application/MOBILE_APP_GUIDE.md	Training Management Web Application/Training Management Web Application/Training Management Web Application/MOBILE_APP_GUIDE.md
+R100	Training Management Web Application/android/.gitignore	Training Management Web Application/Training Management Web Application/Training Management Web Application/android/.gitignore
+R100	Training Management Web Application/android/app/.gitignore	Training Management Web Application/Training Management Web Application/Training Management Web Application/android/app/.gitignore
+R100	Training Management Web Application/android/app/build.gradle	Training Management Web Application/Training Management Web Application/Training Management Web Application/android/app/build.gradle
+R062	Training Management Web Application/android/app/capacitor.build.gradle	Training Management Web Application/Training Management Web Application/Training Management Web Application/android/app/capacitor.build.gradle
+R100	Training Management Web Application/android/app/proguard-rules.pro	Training Management Web Application/Training Management Web Application/Training Management Web Application/android/app/proguard-rules.pro
+R100	Training Management Web Application/android/app/src/androidTest/java/com/getcapacitor/myapp/ExampleInstrumentedTest.java	Training Management Web Application/Training Management Web Application/Training Management Web Application/android/app/src/androidTest/java/com/getcapacitor/myapp/ExampleInstrumentedTest.java
+R079	Training Management Web Application/android/app/src/main/AndroidManifest.xml	Training Management Web Application/Training Management Web Application/Training Management Web Application/android/app/src/main/AndroidManifest.xml
+R100	Training Management Web Application/android/app/src/main/java/com/training/app/MainActivity.java	Training Management Web Application/Training Management Web Application/Training Management Web Application/android/app/src/main/java/com/training/app/MainActivity.java
+A	Training Management Web Application/Training Management Web Application/Training Management Web Application/android/app/src/main/res/drawable-land-hdpi/splash.png
+A	Training Management Web Application/Training Management Web Application/Training Management Web Application/android/app/src/main/res/drawable-land-mdpi/splash.png
+A	Training Management Web Application/Training Management Web Application/Training Management Web Application/android/app/src/main/res/drawable-land-xhdpi/splash.png
+A	Training Management Web Application/Training Management Web Application/Training Management Web Application/android/app/src/main/res/drawable-land-xxhdpi/splash.png
+A	Training Management Web Application/Training Management Web Application/Training Management Web Application/android/app/src/main/res/drawable-land-xxxhdpi/splash.png
+A	Training Management Web Application/Training Management Web Application/Training Management Web Application/android/app/src/main/res/drawable-port-hdpi/splash.png
+A	Training Management Web Application/Training Management Web Application/Training Management Web Application/android/app/src/main/res/drawable-port-mdpi/splash.png
+A	Training Management Web Application/Training Management Web Application/Training Management Web Application/android/app/src/main/res/drawable-port-xhdpi/splash.png
+A	Training Management Web Application/Training Management Web Application/Training Management Web Application/android/app/src/main/res/drawable-port-xxhdpi/splash.png
+A	Training Management Web Application/Training Management Web Application/Training Management Web Application/android/app/src/main/res/drawable-port-xxxhdpi/splash.png
+R100	Training Management Web Application/android/app/src/main/res/drawable-v24/ic_launcher_foreground.xml	Training Management Web Application/Training Management Web Application/Training Management Web Application/android/app/src/main/res/drawable-v24/ic_launcher_foreground.xml
+A	Training Management Web Application/Training Management Web Application/Training Management Web Application/android/app/src/main/res/drawable/ic_launcher_background.xml
+A	Training Management Web Application/Training Management Web Application/Training Management Web Application/android/app/src/main/res/drawable/splash.png
+R100	Training Management Web Application/android/app/src/main/res/layout/activity_main.xml	Training Management Web Application/Training Management Web Application/Training Management Web Application/android/app/src/main/res/layout/activity_main.xml
+R073	Training Management Web Application/android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml	Training Management Web Application/Training Management Web Application/Training Management Web Application/android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml
+R073	Training Management Web Application/android/app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml	Training Management Web Application/Training Management Web Application/Training Management Web Application/android/app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml
+R100	Training Management Web Application/Training Management Web Application/android/app/src/main/res/mipmap-hdpi/ic_launcher.png	Training Management Web Application/Training Management Web Application/Training Management Web Application/android/app/src/main/res/mipmap-hdpi/ic_launcher.png
+R100	Training Management Web Application/Training Management Web Application/android/app/src/main/res/mipmap-hdpi/ic_launcher_foreground.png	Training Management Web Application/Training Management Web Application/Training Management Web Application/android/app/src/main/res/mipmap-hdpi/ic_launcher_foreground.png
+R100	Training Management Web Application/Training Management Web Application/android/app/src/main/res/mipmap-hdpi/ic_launcher_round.png	Training Management Web Application/Training Management Web Application/Training Management Web Application/android/app/src/main/res/mipmap-hdpi/ic_launcher_round.png
+R100	Training Management Web Application/Training Management Web Application/android/app/src/main/res/mipmap-mdpi/ic_launcher.png	Training Management Web Application/Training Management Web Application/Training Management Web Application/android/app/src/main/res/mipmap-mdpi/ic_launcher.png
+R100	Training Management Web Application/Training Management Web Application/android/app/src/main/res/mipmap-mdpi/ic_launcher_foreground.png	Training Management Web Application/Training Management Web Application/Training Management Web Application/android/app/src/main/res/mipmap-mdpi/ic_launcher_foreground.png
+R100	Training Management Web Application/Training Management Web Application/android/app/src/main/res/mipmap-mdpi/ic_launcher_round.png	Training Management Web Application/Training Management Web Application/Training Management Web Application/android/app/src/main/res/mipmap-mdpi/ic_launcher_round.png
+R100	Training Management Web Application/Training Management Web Application/android/app/src/main/res/mipmap-xhdpi/ic_launcher.png	Training Management Web Application/Training Management Web Application/Training Management Web Application/android/app/src/main/res/mipmap-xhdpi/ic_launcher.png
+R100	Training Management Web Application/Training Management Web Application/android/app/src/main/res/mipmap-xhdpi/ic_launcher_foreground.png	Training Management Web Application/Training Management Web Application/Training Management Web Application/android/app/src/main/res/mipmap-xhdpi/ic_launcher_foreground.png
+R100	Training Management Web Application/Training Management Web Application/android/app/src/main/res/mipmap-xhdpi/ic_launcher_round.png	Training Management Web Application/Training Management Web Application/Training Management Web Application/android/app/src/main/res/mipmap-xhdpi/ic_launcher_round.png
+R100	Training Management Web Application/Training Management Web Application/android/app/src/main/res/mipmap-xxhdpi/ic_launcher.png	Training Management Web Application/Training Management Web Application/Training Management Web Application/android/app/src/main/res/mipmap-xxhdpi/ic_launcher.png
+R100	Training Management Web Application/Training Management Web Application/android/app/src/main/res/mipmap-xxhdpi/ic_launcher_foreground.png	Training Management Web Application/Training Management Web Application/Training Management Web Application/android/app/src/main/res/mipmap-xxhdpi/ic_launcher_foreground.png
+R100	Training Management Web Application/Training Management Web Application/android/app/src/main/res/mipmap-xxhdpi/ic_launcher_round.png	Training Management Web Application/Training Management Web Application/Training Management Web Application/android/app/src/main/res/mipmap-xxhdpi/ic_launcher_round.png
+R100	Training Management Web Application/Training Management Web Application/android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png	Training Management Web Application/Training Management Web Application/Training Management Web Application/android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png
+R100	Training Management Web Application/Training Management Web Application/android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_foreground.png	Training Management Web Application/Training Management Web Application/Training Management Web Application/android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_foreground.png
+R100	Training Management Web Application/Training Management Web Application/android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_round.png	Training Management Web Application/Training Management Web Application/Training Management Web Application/android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_round.png
+R100	Training Management Web Application/android/app/src/main/res/values/ic_launcher_background.xml	Training Management Web Application/Training Management Web Application/Training Management Web Application/android/app/src/main/res/values/ic_launcher_background.xml
+R062	Training Management Web Application/android/app/src/main/res/values/strings.xml	Training Management Web Application/Training Management Web Application/Training Management Web Application/android/app/src/main/res/values/strings.xml
+R100	Training Management Web Application/android/app/src/main/res/values/styles.xml	Training Management Web Application/Training Management Web Application/Training Management Web Application/android/app/src/main/res/values/styles.xml
+R100	Training Management Web Application/android/app/src/main/res/xml/file_paths.xml	Training Management Web Application/Training Management Web Application/Training Management Web Application/android/app/src/main/res/xml/file_paths.xml
+R100	Training Management Web Application/android/app/src/test/java/com/getcapacitor/myapp/ExampleUnitTest.java	Training Management Web Application/Training Management Web Application/Training Management Web Application/android/app/src/test/java/com/getcapacitor/myapp/ExampleUnitTest.java
+R079	Training Management Web Application/android/build.gradle	Training Management Web Application/Training Management Web Application/Training Management Web Application/android/build.gradle
+A	Training Management Web Application/Training Management Web Application/Training Management Web Application/android/capacitor.settings.gradle
+R100	Training Management Web Application/android/gradle.properties	Training Management Web Application/Training Management Web Application/Training Management Web Application/android/gradle.properties
+R100	Training Management Web Application/android/gradle/wrapper/gradle-wrapper.jar	Training Management Web Application/Training Management Web Application/Training Management Web Application/android/gradle/wrapper/gradle-wrapper.jar
+R100	Training Management Web Application/android/gradle/wrapper/gradle-wrapper.properties	Training Management Web Application/Training Management Web Application/Training Management Web Application/android/gradle/wrapper/gradle-wrapper.properties
+R100	Training Management Web Application/android/gradlew	Training Management Web Application/Training Management Web Application/Training Management Web Application/android/gradlew
+R100	Training Management Web Application/android/gradlew.bat	Training Management Web Application/Training Management Web Application/Training Management Web Application/android/gradlew.bat
+R100	Training Management Web Application/android/settings.gradle	Training Management Web Application/Training Management Web Application/Training Management Web Application/android/settings.gradle
+R100	Training Management Web Application/android/variables.gradle	Training Management Web Application/Training Management Web Application/Training Management Web Application/android/variables.gradle
+A	Training Management Web Application/Training Management Web Application/Training Management Web Application/capacitor.config.json
+R100	Training Management Web Application/guidelines/Guidelines.md	Training Management Web Application/Training Management Web Application/Training Management Web Application/guidelines/Guidelines.md
+A	Training Management Web Application/Training Management Web Application/Training Management Web Application/index.html
+M	Training Management Web Application/Training Management Web Application/android/app/capacitor.build.gradle
+R100	Training Management Web Application/android/app/google-services.json	Training Management Web Application/Training Management Web Application/android/app/google-services.json
+M	Training Management Web Application/Training Management Web Application/android/app/src/main/AndroidManifest.xml
+R100	Training Management Web Application/android/app/src/main/ic_launcher-playstore.png	Training Management Web Application/Training Management Web Application/android/app/src/main/ic_launcher-playstore.png
+M	Training Management Web Application/Training Management Web Application/android/app/src/main/res/drawable-land-hdpi/splash.png
+M	Training Management Web Application/Training Management Web Application/android/app/src/main/res/drawable-land-mdpi/splash.png
+M	Training Management Web Application/Training Management Web Application/android/app/src/main/res/drawable-land-xhdpi/splash.png
+M	Training Management Web Application/Training Management Web Application/android/app/src/main/res/drawable-land-xxhdpi/splash.png
+M	Training Management Web Application/Training Management Web Application/android/app/src/main/res/drawable-land-xxxhdpi/splash.png
+M	Training Management Web Application/Training Management Web Application/android/app/src/main/res/drawable-port-hdpi/splash.png
+M	Training Management Web Application/Training Management Web Application/android/app/src/main/res/drawable-port-mdpi/splash.png
+M	Training Management Web Application/Training Management Web Application/android/app/src/main/res/drawable-port-xhdpi/splash.png
+M	Training Management Web Application/Training Management Web Application/android/app/src/main/res/drawable-port-xxhdpi/splash.png
+M	Training Management Web Application/Training Management Web Application/android/app/src/main/res/drawable-port-xxxhdpi/splash.png
+M	Training Management Web Application/Training Management Web Application/android/app/src/main/res/drawable/ic_launcher_background.xml
+M	Training Management Web Application/Training Management Web Application/android/app/src/main/res/drawable/splash.png
+M	Training Management Web Application/Training Management Web Application/android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml
+M	Training Management Web Application/Training Management Web Application/android/app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml
+R100	Training Management Web Application/android/app/src/main/res/mipmap-hdpi/ic_launcher.webp	Training Management Web Application/Training Management Web Application/android/app/src/main/res/mipmap-hdpi/ic_launcher.webp
+R100	Training Management Web Application/android/app/src/main/res/mipmap-hdpi/ic_launcher_foreground.webp	Training Management Web Application/Training Management Web Application/android/app/src/main/res/mipmap-hdpi/ic_launcher_foreground.webp
+R100	Training Management Web Application/android/app/src/main/res/mipmap-hdpi/ic_launcher_round.webp	Training Management Web Application/Training Management Web Application/android/app/src/main/res/mipmap-hdpi/ic_launcher_round.webp
+R100	Training Management Web Application/android/app/src/main/res/mipmap-mdpi/ic_launcher.webp	Training Management Web Application/Training Management Web Application/android/app/src/main/res/mipmap-mdpi/ic_launcher.webp
+R100	Training Management Web Application/android/app/src/main/res/mipmap-mdpi/ic_launcher_foreground.webp	Training Management Web Application/Training Management Web Application/android/app/src/main/res/mipmap-mdpi/ic_launcher_foreground.webp
+R100	Training Management Web Application/android/app/src/main/res/mipmap-mdpi/ic_launcher_round.webp	Training Management Web Application/Training Management Web Application/android/app/src/main/res/mipmap-mdpi/ic_launcher_round.webp
+R100	Training Management Web Application/android/app/src/main/res/mipmap-xhdpi/ic_launcher.webp	Training Management Web Application/Training Management Web Application/android/app/src/main/res/mipmap-xhdpi/ic_launcher.webp
+R100	Training Management Web Application/android/app/src/main/res/mipmap-xhdpi/ic_launcher_foreground.webp	Training Management Web Application/Training Management Web Application/android/app/src/main/res/mipmap-xhdpi/ic_launcher_foreground.webp
+R100	Training Management Web Application/android/app/src/main/res/mipmap-xhdpi/ic_launcher_round.webp	Training Management Web Application/Training Management Web Application/android/app/src/main/res/mipmap-xhdpi/ic_launcher_round.webp
+R100	Training Management Web Application/android/app/src/main/res/mipmap-xxhdpi/ic_launcher.webp	Training Management Web Application/Training Management Web Application/android/app/src/main/res/mipmap-xxhdpi/ic_launcher.webp
+R100	Training Management Web Application/android/app/src/main/res/mipmap-xxhdpi/ic_launcher_foreground.webp	Training Management Web Application/Training Management Web Application/android/app/src/main/res/mipmap-xxhdpi/ic_launcher_foreground.webp
+R100	Training Management Web Application/android/app/src/main/res/mipmap-xxhdpi/ic_launcher_round.webp	Training Management Web Application/Training Management Web Application/android/app/src/main/res/mipmap-xxhdpi/ic_launcher_round.webp
+R100	Training Management Web Application/android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.webp	Training Management Web Application/Training Management Web Application/android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.webp
+R100	Training Management Web Application/android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_foreground.webp	Training Management Web Application/Training Management Web Application/android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_foreground.webp
+R100	Training Management Web Application/android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_round.webp	Training Management Web Application/Training Management Web Application/android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_round.webp
+R100	Training Management Web Application/android/app/src/main/res/raw/notification.mp3	Training Management Web Application/Training Management Web Application/android/app/src/main/res/raw/notification.mp3
+M	Training Management Web Application/Training Management Web Application/android/app/src/main/res/values/strings.xml
+R100	Training Management Web Application/android/app/src/main/res/xml/network_security_config.xml	Training Management Web Application/Training Management Web Application/android/app/src/main/res/xml/network_security_config.xml
+M	Training Management Web Application/Training Management Web Application/android/build.gradle
+M	Training Management Web Application/Training Management Web Application/android/capacitor.settings.gradle
+R100	Training Management Web Application/build.log	Training Management Web Application/Training Management Web Application/build.log
+R100	Training Management Web Application/build_output.txt	Training Management Web Application/Training Management Web Application/build_output.txt
+R100	Training Management Web Application/build_output2.txt	Training Management Web Application/Training Management Web Application/build_output2.txt
+M	Training Management Web Application/Training Management Web Application/capacitor.config.json
+R100	Training Management Web Application/check_users.cjs	Training Management Web Application/Training Management Web Application/check_users.cjs
+R100	Training Management Web Application/compile_errors.txt	Training Management Web Application/Training Management Web Application/compile_errors.txt
+R100	Training Management Web Application/fix_quotes.cjs	Training Management Web Application/Training Management Web Application/fix_quotes.cjs
+M	Training Management Web Application/Training Management Web Application/index.html
+R100	Training Management Web Application/package-lock.json	Training Management Web Application/Training Management Web Application/package-lock.json
+R100	Training Management Web Application/package.json	Training Management Web Application/Training Management Web Application/package.json
+R100	Training Management Web Application/postcss.config.mjs	Training Management Web Application/Training Management Web Application/postcss.config.mjs
+R100	Training Management Web Application/public/notification.mp3	Training Management Web Application/Training Management Web Application/public/notification.mp3
+R100	Training Management Web Application/public/tms-logo.jpg	Training Management Web Application/Training Management Web Application/public/tms-logo.jpg
+R100	Training Management Web Application/replace_scripts.js	Training Management Web Application/Training Management Web Application/replace_scripts.js
+R100	Training Management Web Application/replace_scripts.mjs	Training Management Web Application/Training Management Web Application/replace_scripts.mjs
+R100	Training Management Web Application/reset_password.cjs	Training Management Web Application/Training Management Web Application/reset_password.cjs
+R100	Training Management Web Application/seed-users.js	Training Management Web Application/Training Management Web Application/seed-users.js
+R100	Training Management Web Application/server/add_more_users.sql	Training Management Web Application/Training Management Web Application/server/add_more_users.sql
+R100	Training Management Web Application/server/approve-existing-users.ts	Training Management Web Application/Training Management Web Application/server/approve-existing-users.ts
+R100	Training Management Web Application/server/auditorium-blocks.json	Training Management Web Application/Training Management Web Application/server/auditorium-blocks.json
+R100	Training Management Web Application/server/auditorium-trainings.json	Training Management Web Application/Training Management Web Application/server/auditorium-trainings.json
+R100	Training Management Web Application/server/auditorium.json	Training Management Web Application/Training Management Web Application/server/auditorium.json
+R100	Training Management Web Application/server/break-test.txt	Training Management Web Application/Training Management Web Application/server/break-test.txt
+R100	Training Management Web Application/server/check-auditorium.js	Training Management Web Application/Training Management Web Application/server/check-auditorium.js
+R100	Training Management Web Application/server/check-data.ts	Training Management Web Application/Training Management Web Application/server/check-data.ts
+R100	Training Management Web Application/server/check-institutions.ts	Training Management Web Application/Training Management Web Application/server/check-institutions.ts
+R100	Training Management Web Application/server/check-live-api-2.js	Training Management Web Application/Training Management Web Application/server/check-live-api-2.js
+R100	Training Management Web Application/server/check-live-api.js	Training Management Web Application/Training Management Web Application/server/check-live-api.js
+R100	Training Management Web Application/server/check-mongo-users.ts	Training Management Web Application/Training Management Web Application/server/check-mongo-users.ts
+R100	Training Management Web Application/server/check-users.ts	Training Management Web Application/Training Management Web Application/server/check-users.ts
+R100	Training Management Web Application/server/check_march2.js	Training Management Web Application/Training Management Web Application/server/check_march2.js
+R100	Training Management Web Application/server/errors.log	Training Management Web Application/Training Management Web Application/server/errors.log
+R100	Training Management Web Application/server/fix_alpha_wing.js	Training Management Web Application/Training Management Web Application/server/fix_alpha_wing.js
+R100	Training Management Web Application/server/fix_password.js	Training Management Web Application/Training Management Web Application/server/fix_password.js
+R100	Training Management Web Application/server/full_database_dump.sql	Training Management Web Application/Training Management Web Application/server/full_database_dump.sql
+R100	Training Management Web Application/server/full_setup.sql	Training Management Web Application/Training Management Web Application/server/full_setup.sql
+R100	Training Management Web Application/server/init_db.sql	Training Management Web Application/Training Management Web Application/server/init_db.sql
+R100	Training Management Web Application/server/investigate-availability.js	Training Management Web Application/Training Management Web Application/server/investigate-availability.js
+R100	Training Management Web Application/server/list_data.sql	Training Management Web Application/Training Management Web Application/server/list_data.sql
+R100	Training Management Web Application/server/migrate-local-to-cloud.ts	Training Management Web Application/Training Management Web Application/server/migrate-local-to-cloud.ts
+R100	Training Management Web Application/server/migration_error.txt	Training Management Web Application/Training Management Web Application/server/migration_error.txt
+R100	Training Management Web Application/server/migration_error_2.txt	Training Management Web Application/Training Management Web Application/server/migration_error_2.txt
+R100	Training Management Web Application/server/migration_output.txt	Training Management Web Application/Training Management Web Application/server/migration_output.txt
+R100	Training Management Web Application/server/migration_output_2.txt	Training Management Web Application/Training Management Web Application/server/migration_output_2.txt
+R100	Training Management Web Application/server/package-lock.json	Training Management Web Application/Training Management Web Application/server/package-lock.json
+R100	Training Management Web Application/server/package.json	Training Management Web Application/Training Management Web Application/server/package.json
+R100	Training Management Web Application/server/prisma/migrations/20260207084336_init/migration.sql	Training Management Web Application/Training Management Web Application/server/prisma/migrations/20260207084336_init/migration.sql
+R100	Training Management Web Application/server/prisma/migrations/20260207084704_add_nomination_fields/migration.sql	Training Management Web Application/Training Management Web Application/server/prisma/migrations/20260207084704_add_nomination_fields/migration.sql
+R100	Training Management Web Application/server/prisma/migrations/migration_lock.toml	Training Management Web Application/Training Management Web Application/server/prisma/migrations/migration_lock.toml
+R100	Training Management Web Application/server/prisma/schema.prisma	Training Management Web Application/Training Management Web Application/server/prisma/schema.prisma
+R100	Training Management Web Application/server/restore-db.ts	Training Management Web Application/Training Management Web Application/server/restore-db.ts
+R100	Training Management Web Application/server/schema.sql	Training Management Web Application/Training Management Web Application/server/schema.sql
+R100	Training Management Web Application/server/scripts/cleanup-test-data.js	Training Management Web Application/Training Management Web Application/server/scripts/cleanup-test-data.js
+R100	Training Management Web Application/server/scripts/create-table.js	Training Management Web Application/Training Management Web Application/server/scripts/create-table.js
+R100	Training Management Web Application/server/scripts/debug-db.js	Training Management Web Application/Training Management Web Application/server/scripts/debug-db.js
+R100	Training Management Web Application/server/scripts/fix-schema-halls.js	Training Management Web Application/Training Management Web Application/server/scripts/fix-schema-halls.js
+R100	Training Management Web Application/server/scripts/list-tables.js	Training Management Web Application/Training Management Web Application/server/scripts/list-tables.js
+R100	Training Management Web Application/server/scripts/migrate-to-mongo.ts	Training Management Web Application/Training Management Web Application/server/scripts/migrate-to-mongo.ts
+R100	Training Management Web Application/server/scripts/test-server-ping.js	Training Management Web Application/Training Management Web Application/server/scripts/test-server-ping.js
+R100	Training Management Web Application/server/scripts/verify-backend.js	Training Management Web Application/Training Management Web Application/server/scripts/verify-backend.js
+R100	Training Management Web Application/server/scripts/verify-blocking-reasons.js	Training Management Web Application/Training Management Web Application/server/scripts/verify-blocking-reasons.js
+R100	Training Management Web Application/server/scripts/verify-fix.js	Training Management Web Application/Training Management Web Application/server/scripts/verify-fix.js
+R100	Training Management Web Application/server/scripts/verify-hall-blocks-api.js	Training Management Web Application/Training Management Web Application/server/scripts/verify-hall-blocks-api.js
+R100	Training Management Web Application/server/scripts/verify-hall-request-flow.js	Training Management Web Application/Training Management Web Application/server/scripts/verify-hall-request-flow.js
+R100	Training Management Web Application/server/scripts/verify-halls-availability.js	Training Management Web Application/Training Management Web Application/server/scripts/verify-halls-availability.js
+R100	Training Management Web Application/server/scripts/verify-my-attendance.js	Training Management Web Application/Training Management Web Application/server/scripts/verify-my-attendance.js
+R100	Training Management Web Application/server/scripts/verify-new-delete-routes.js	Training Management Web Application/Training Management Web Application/server/scripts/verify-new-delete-routes.js
+R100	Training Management Web Application/server/scripts/verify-nomination-fix.ts	Training Management Web Application/Training Management Web Application/server/scripts/verify-nomination-fix.ts
+R100	Training Management Web Application/server/scripts/verify-qr-session.js	Training Management Web Application/Training Management Web Application/server/scripts/verify-qr-session.js
+R100	Training Management Web Application/server/scripts/verify-report-data.js	Training Management Web Application/Training Management Web Application/server/scripts/verify-report-data.js
+R100	Training Management Web Application/server/scripts/verify-restrictions.js	Training Management Web Application/Training Management Web Application/server/scripts/verify-restrictions.js
+R100	Training Management Web Application/server/scripts/verify-scheduling.js	Training Management Web Application/Training Management Web Application/server/scripts/verify-scheduling.js
+R100	Training Management Web Application/server/scripts/verify-status-update.js	Training Management Web Application/Training Management Web Application/server/scripts/verify-status-update.js
+R100	Training Management Web Application/server/scripts/verify-training-details-api.js	Training Management Web Application/Training Management Web Application/server/scripts/verify-training-details-api.js
+R100	Training Management Web Application/server/scripts/verify_availability.ts	Training Management Web Application/Training Management Web Application/server/scripts/verify_availability.ts
+R100	Training Management Web Application/server/seed-all-mongo.ts	Training Management Web Application/Training Management Web Application/server/seed-all-mongo.ts
+R100	Training Management Web Application/server/seed-fix.ts	Training Management Web Application/Training Management Web Application/server/seed-fix.ts
+R100	Training Management Web Application/server/seed-institutions-only.ts	Training Management Web Application/Training Management Web Application/server/seed-institutions-only.ts
+R100	Training Management Web Application/server/seed-mongo.ts	Training Management Web Application/Training Management Web Application/server/seed-mongo.ts
+R100	Training Management Web Application/server/seed.sql	Training Management Web Application/Training Management Web Application/server/seed.sql
+R100	Training Management Web Application/server/server-debug.log	Training Management Web Application/Training Management Web Application/server/server-debug.log
+R100	Training Management Web Application/server/server-log-3001.txt	Training Management Web Application/Training Management Web Application/server/server-log-3001.txt
+R100	Training Management Web Application/server/server-log-3002.txt	Training Management Web Application/Training Management Web Application/server/server-log-3002.txt
+R100	Training Management Web Application/server/server-log-3003.txt	Training Management Web Application/Training Management Web Application/server/server-log-3003.txt
+R100	Training Management Web Application/server/server-log-3005.txt	Training Management Web Application/Training Management Web Application/server/server-log-3005.txt
+R100	Training Management Web Application/server/server-log-3006.txt	Training Management Web Application/Training Management Web Application/server/server-log-3006.txt
+R100	Training Management Web Application/server/server-log-3007.txt	Training Management Web Application/Training Management Web Application/server/server-log-3007.txt
+R100	Training Management Web Application/server/server-log-3008-2.txt	Training Management Web Application/Training Management Web Application/server/server-log-3008-2.txt
+R100	Training Management Web Application/server/server-log-3008-3.txt	Training Management Web Application/Training Management Web Application/server/server-log-3008-3.txt
+R100	Training Management Web Application/server/server-log-3008-4.txt	Training Management Web Application/Training Management Web Application/server/server-log-3008-4.txt
+R100	Training Management Web Application/server/server-log-3008-5.txt	Training Management Web Application/Training Management Web Application/server/server-log-3008-5.txt
+R100	Training Management Web Application/server/server-log-3008.txt	Training Management Web Application/Training Management Web Application/server/server-log-3008.txt
+R100	Training Management Web Application/server/server-log-3009.txt	Training Management Web Application/Training Management Web Application/server/server-log-3009.txt
+R100	Training Management Web Application/server/server-log-3010.txt	Training Management Web Application/Training Management Web Application/server/server-log-3010.txt
+R100	Training Management Web Application/server/server-log-3011.txt	Training Management Web Application/Training Management Web Application/server/server-log-3011.txt
+R100	Training Management Web Application/server/server-log-3012.txt	Training Management Web Application/Training Management Web Application/server/server-log-3012.txt
+R100	Training Management Web Application/server/server-log-3013.txt	Training Management Web Application/Training Management Web Application/server/server-log-3013.txt
+R100	Training Management Web Application/server/server-log.txt	Training Management Web Application/Training Management Web Application/server/server-log.txt
+R100	Training Management Web Application/server/server_3001.log	Training Management Web Application/Training Management Web Application/server/server_3001.log
+R100	Training Management Web Application/server/server_clean.log	Training Management Web Application/Training Management Web Application/server/server_clean.log
+R100	Training Management Web Application/server/server_debug.log	Training Management Web Application/Training Management Web Application/server/server_debug.log
+R100	Training Management Web Application/server/server_logs.txt	Training Management Web Application/Training Management Web Application/server/server_logs.txt
+R100	Training Management Web Application/server/server_logs_session.txt	Training Management Web Application/Training Management Web Application/server/server_logs_session.txt
+R100	Training Management Web Application/server/src/config/cloudinary.ts	Training Management Web Application/Training Management Web Application/server/src/config/cloudinary.ts
+R100	Training Management Web Application/server/src/config/db.ts	Training Management Web Application/Training Management Web Application/server/src/config/db.ts
+R100	Training Management Web Application/server/src/config/firebase.ts	Training Management Web Application/Training Management Web Application/server/src/config/firebase.ts
+R100	Training Management Web Application/server/src/controllers/analyticsController.ts	Training Management Web Application/Training Management Web Application/server/src/controllers/analyticsController.ts
+R100	Training Management Web Application/server/src/controllers/attendanceController.ts	Training Management Web Application/Training Management Web Application/server/src/controllers/attendanceController.ts
+R096	Training Management Web Application/server/src/controllers/authController.ts	Training Management Web Application/Training Management Web Application/server/src/controllers/authController.ts
+R100	Training Management Web Application/server/src/controllers/feedbackController.ts	Training Management Web Application/Training Management Web Application/server/src/controllers/feedbackController.ts
+R100	Training Management Web Application/server/src/controllers/hallBlockController.ts	Training Management Web Application/Training Management Web Application/server/src/controllers/hallBlockController.ts
+R100	Training Management Web Application/server/src/controllers/hallController.ts	Training Management Web Application/Training Management Web Application/server/src/controllers/hallController.ts
+R100	Training Management Web Application/server/src/controllers/hallRequestController.ts	Training Management Web Application/Training Management Web Application/server/src/controllers/hallRequestController.ts
+R100	Training Management Web Application/server/src/controllers/institutionController.ts	Training Management Web Application/Training Management Web Application/server/src/controllers/institutionController.ts
+R084	Training Management Web Application/server/src/controllers/nominationController.ts	Training Management Web Application/Training Management Web Application/server/src/controllers/nominationController.ts
+R100	Training Management Web Application/server/src/controllers/notificationController.ts	Training Management Web Application/Training Management Web Application/server/src/controllers/notificationController.ts
+R095	Training Management Web Application/server/src/controllers/trainingController.ts	Training Management Web Application/Training Management Web Application/server/src/controllers/trainingController.ts
+R094	Training Management Web Application/server/src/controllers/userController.ts	Training Management Web Application/Training Management Web Application/server/src/controllers/userController.ts
+R100	Training Management Web Application/server/src/index.ts	Training Management Web Application/Training Management Web Application/server/src/index.ts
+R100	Training Management Web Application/server/src/middleware/authMiddleware.ts	Training Management Web Application/Training Management Web Application/server/src/middleware/authMiddleware.ts
+R100	Training Management Web Application/server/src/models/Attendance.ts	Training Management Web Application/Training Management Web Application/server/src/models/Attendance.ts
+R100	Training Management Web Application/server/src/models/Hall.ts	Training Management Web Application/Training Management Web Application/server/src/models/Hall.ts
+R100	Training Management Web Application/server/src/models/HallBlock.ts	Training Management Web Application/Training Management Web Application/server/src/models/HallBlock.ts
+R100	Training Management Web Application/server/src/models/HallBookingRequest.ts	Training Management Web Application/Training Management Web Application/server/src/models/HallBookingRequest.ts
+R100	Training Management Web Application/server/src/models/Institution.ts	Training Management Web Application/Training Management Web Application/server/src/models/Institution.ts
+R100	Training Management Web Application/server/src/models/Nomination.ts	Training Management Web Application/Training Management Web Application/server/src/models/Nomination.ts
+R100	Training Management Web Application/server/src/models/Notification.ts	Training Management Web Application/Training Management Web Application/server/src/models/Notification.ts
+R100	Training Management Web Application/server/src/models/PendingUser.ts	Training Management Web Application/Training Management Web Application/server/src/models/PendingUser.ts
+R100	Training Management Web Application/server/src/models/Training.ts	Training Management Web Application/Training Management Web Application/server/src/models/Training.ts
+R100	Training Management Web Application/server/src/models/TrainingFeedback.ts	Training Management Web Application/Training Management Web Application/server/src/models/TrainingFeedback.ts
+R100	Training Management Web Application/server/src/models/User.ts	Training Management Web Application/Training Management Web Application/server/src/models/User.ts
+R100	Training Management Web Application/server/src/routes/analyticsRoutes.ts	Training Management Web Application/Training Management Web Application/server/src/routes/analyticsRoutes.ts
+R100	Training Management Web Application/server/src/routes/attendanceRoutes.ts	Training Management Web Application/Training Management Web Application/server/src/routes/attendanceRoutes.ts
+R100	Training Management Web Application/server/src/routes/authRoutes.ts	Training Management Web Application/Training Management Web Application/server/src/routes/authRoutes.ts
+R100	Training Management Web Application/server/src/routes/feedbackRoutes.ts	Training Management Web Application/Training Management Web Application/server/src/routes/feedbackRoutes.ts
+R100	Training Management Web Application/server/src/routes/hallBlockRoutes.ts	Training Management Web Application/Training Management Web Application/server/src/routes/hallBlockRoutes.ts
+R100	Training Management Web Application/server/src/routes/hallRequestRoutes.ts	Training Management Web Application/Training Management Web Application/server/src/routes/hallRequestRoutes.ts
+R100	Training Management Web Application/server/src/routes/hallRoutes.ts	Training Management Web Application/Training Management Web Application/server/src/routes/hallRoutes.ts
+R100	Training Management Web Application/server/src/routes/institutionRoutes.ts	Training Management Web Application/Training Management Web Application/server/src/routes/institutionRoutes.ts
+R100	Training Management Web Application/server/src/routes/nominationRoutes.ts	Training Management Web Application/Training Management Web Application/server/src/routes/nominationRoutes.ts
+R100	Training Management Web Application/server/src/routes/notificationRoutes.ts	Training Management Web Application/Training Management Web Application/server/src/routes/notificationRoutes.ts
+R100	Training Management Web Application/server/src/routes/trainingRoutes.ts	Training Management Web Application/Training Management Web Application/server/src/routes/trainingRoutes.ts
+R100	Training Management Web Application/server/src/routes/uploadRoutes.ts	Training Management Web Application/Training Management Web Application/server/src/routes/uploadRoutes.ts
+R100	Training Management Web Application/server/src/routes/userRoutes.ts	Training Management Web Application/Training Management Web Application/server/src/routes/userRoutes.ts
+R100	Training Management Web Application/server/src/scripts/migrate-images-cloudinary.ts	Training Management Web Application/Training Management Web Application/server/src/scripts/migrate-images-cloudinary.ts
+R100	Training Management Web Application/server/src/scripts/migrate-images.ts	Training Management Web Application/Training Management Web Application/server/src/scripts/migrate-images.ts
+R100	Training Management Web Application/server/src/utils/emailService.ts	Training Management Web Application/Training Management Web Application/server/src/utils/emailService.ts
+R100	Training Management Web Application/server/src/utils/notificationUtils.ts	Training Management Web Application/Training Management Web Application/server/src/utils/notificationUtils.ts
+R100	Training Management Web Application/server/test-api-institutions.js	Training Management Web Application/Training Management Web Application/server/test-api-institutions.js
+R100	Training Management Web Application/server/test-db.ts	Training Management Web Application/Training Management Web Application/server/test-db.ts
+R100	Training Management Web Application/server/test-email.ts	Training Management Web Application/Training Management Web Application/server/test-email.ts
+R100	Training Management Web Application/server/test-fcm-render.js	Training Management Web Application/Training Management Web Application/server/test-fcm-render.js
+R100	Training Management Web Application/server/test-get.js	Training Management Web Application/Training Management Web Application/server/test-get.js
+R100	Training Management Web Application/server/test-mongo.ts	Training Management Web Application/Training Management Web Application/server/test-mongo.ts
+R100	Training Management Web Application/server/test-notification-integration.js	Training Management Web Application/Training Management Web Application/server/test-notification-integration.js
+R100	Training Management Web Application/server/test-notification-integration.ts	Training Management Web Application/Training Management Web Application/server/test-notification-integration.ts
+R100	Training Management Web Application/server/test-notification-logic.js	Training Management Web Application/Training Management Web Application/server/test-notification-logic.js
+R100	Training Management Web Application/server/test-notification-logic.ts	Training Management Web Application/Training Management Web Application/server/test-notification-logic.ts
+R100	Training Management Web Application/server/test-notifications.ts	Training Management Web Application/Training Management Web Application/server/test-notifications.ts
+R100	Training Management Web Application/server/test-otp-endpoint.js	Training Management Web Application/Training Management Web Application/server/test-otp-endpoint.js
+R100	Training Management Web Application/server/test-output-10.txt	Training Management Web Application/Training Management Web Application/server/test-output-10.txt
+R100	Training Management Web Application/server/test-output-11.txt	Training Management Web Application/Training Management Web Application/server/test-output-11.txt
+R100	Training Management Web Application/server/test-output-12.txt	Training Management Web Application/Training Management Web Application/server/test-output-12.txt
+R100	Training Management Web Application/server/test-output-13.txt	Training Management Web Application/Training Management Web Application/server/test-output-13.txt
+R100	Training Management Web Application/server/test-output-14.txt	Training Management Web Application/Training Management Web Application/server/test-output-14.txt
+R100	Training Management Web Application/server/test-output-15.txt	Training Management Web Application/Training Management Web Application/server/test-output-15.txt
+R100	Training Management Web Application/server/test-output-16.txt	Training Management Web Application/Training Management Web Application/server/test-output-16.txt
+R100	Training Management Web Application/server/test-output-17.txt	Training Management Web Application/Training Management Web Application/server/test-output-17.txt
+R100	Training Management Web Application/server/test-output-18.txt	Training Management Web Application/Training Management Web Application/server/test-output-18.txt
+R100	Training Management Web Application/server/test-output-19.txt	Training Management Web Application/Training Management Web Application/server/test-output-19.txt
+R100	Training Management Web Application/server/test-output-2.txt	Training Management Web Application/Training Management Web Application/server/test-output-2.txt
+R100	Training Management Web Application/server/test-output-20.txt	Training Management Web Application/Training Management Web Application/server/test-output-20.txt
+R100	Training Management Web Application/server/test-output-21.txt	Training Management Web Application/Training Management Web Application/server/test-output-21.txt
+R100	Training Management Web Application/server/test-output-22.txt	Training Management Web Application/Training Management Web Application/server/test-output-22.txt
+R100	Training Management Web Application/server/test-output-23.txt	Training Management Web Application/Training Management Web Application/server/test-output-23.txt
+R100	Training Management Web Application/server/test-output-3.txt	Training Management Web Application/Training Management Web Application/server/test-output-3.txt
+R100	Training Management Web Application/server/test-output-4.txt	Training Management Web Application/Training Management Web Application/server/test-output-4.txt
+R100	Training Management Web Application/server/test-output-5.txt	Training Management Web Application/Training Management Web Application/server/test-output-5.txt
+R100	Training Management Web Application/server/test-output-6.txt	Training Management Web Application/Training Management Web Application/server/test-output-6.txt
+R100	Training Management Web Application/server/test-output-7.txt	Training Management Web Application/Training Management Web Application/server/test-output-7.txt
+R100	Training Management Web Application/server/test-output-8.txt	Training Management Web Application/Training Management Web Application/server/test-output-8.txt
+R100	Training Management Web Application/server/test-output-9.txt	Training Management Web Application/Training Management Web Application/server/test-output-9.txt
+R100	Training Management Web Application/server/test-output.txt	Training Management Web Application/Training Management Web Application/server/test-output.txt
+R100	Training Management Web Application/server/test-pass-spaces.js	Training Management Web Application/Training Management Web Application/server/test-pass-spaces.js
+R100	Training Management Web Application/server/test-reproduce-fail.js	Training Management Web Application/Training Management Web Application/server/test-reproduce-fail.js
+R100	Training Management Web Application/server/test-update.js	Training Management Web Application/Training Management Web Application/server/test-update.js
+R100	Training Management Web Application/server/test-user-api.js	Training Management Web Application/Training Management Web Application/server/test-user-api.js
+R100	Training Management Web Application/server/tsconfig.json	Training Management Web Application/Training Management Web Application/server/tsconfig.json
+R100	Training Management Web Application/server/typescript_error.log	Training Management Web Application/Training Management Web Application/server/typescript_error.log
+R100	Training Management Web Application/server/update_avatars.js	Training Management Web Application/Training Management Web Application/server/update_avatars.js
+R100	Training Management Web Application/server/uploads/profiles/profilePicture-1771083380540-113301075.jpg	Training Management Web Application/Training Management Web Application/server/uploads/profiles/profilePicture-1771083380540-113301075.jpg
+R100	Training Management Web Application/server/uploads/profiles/profilePicture-1771083442628-863534041.jpg	Training Management Web Application/Training Management Web Application/server/uploads/profiles/profilePicture-1771083442628-863534041.jpg
+R100	Training Management Web Application/server/uploads/profiles/profilePicture-1771146903387-941569193.jpg	Training Management Web Application/Training Management Web Application/server/uploads/profiles/profilePicture-1771146903387-941569193.jpg
+R100	Training Management Web Application/server/verification_output.txt	Training Management Web Application/Training Management Web Application/server/verification_output.txt
+R100	Training Management Web Application/server/verification_output_2.txt	Training Management Web Application/Training Management Web Application/server/verification_output_2.txt
+R100	Training Management Web Application/server/verification_output_final.txt	Training Management Web Application/Training Management Web Application/server/verification_output_final.txt
+R100	Training Management Web Application/server/verify-firebase.js	Training Management Web Application/Training Management Web Application/server/verify-firebase.js
+R100	Training Management Web Application/server/verify-firebase.ts	Training Management Web Application/Training Management Web Application/server/verify-firebase.ts
+R100	Training Management Web Application/server/verify-notifications.ts	Training Management Web Application/Training Management Web Application/server/verify-notifications.ts
+R100	Training Management Web Application/server/verify-registration-flow.ts	Training Management Web Application/Training Management Web Application/server/verify-registration-flow.ts
+R100	Training Management Web Application/server/verify_output.txt	Training Management Web Application/Training Management Web Application/server/verify_output.txt
+R100	Training Management Web Application/server/verify_output_2.txt	Training Management Web Application/Training Management Web Application/server/verify_output_2.txt
+R100	Training Management Web Application/server/verify_output_3.txt	Training Management Web Application/Training Management Web Application/server/verify_output_3.txt
+R100	Training Management Web Application/server/verify_output_3001.txt	Training Management Web Application/Training Management Web Application/server/verify_output_3001.txt
+R100	Training Management Web Application/server/verify_output_4.txt	Training Management Web Application/Training Management Web Application/server/verify_output_4.txt
+R100	Training Management Web Application/server/verify_output_5.txt	Training Management Web Application/Training Management Web Application/server/verify_output_5.txt
+R100	Training Management Web Application/server/verify_output_db_check.txt	Training Management Web Application/Training Management Web Application/server/verify_output_db_check.txt
+R100	Training Management Web Application/server/verify_output_debug.txt	Training Management Web Application/Training Management Web Application/server/verify_output_debug.txt
+R100	Training Management Web Application/server/verify_output_final.txt	Training Management Web Application/Training Management Web Application/server/verify_output_final.txt
+R100	Training Management Web Application/server/verify_qr_output.txt	Training Management Web Application/Training Management Web Application/server/verify_qr_output.txt
+R100	Training Management Web Application/server/verify_qr_output_exec.txt	Training Management Web Application/Training Management Web Application/server/verify_qr_output_exec.txt
+R100	Training Management Web Application/src/app/App.tsx	Training Management Web Application/Training Management Web Application/src/app/App.tsx
+R100	Training Management Web Application/src/app/components/AttendanceListModal.tsx	Training Management Web Application/Training Management Web Application/src/app/components/AttendanceListModal.tsx
+R100	Training Management Web Application/src/app/components/AttendanceSessionManager.tsx	Training Management Web Application/Training Management Web Application/src/app/components/AttendanceSessionManager.tsx
+R100	Training Management Web Application/src/app/components/BottomNav.tsx	Training Management Web Application/Training Management Web Application/src/app/components/BottomNav.tsx
+R100	Training Management Web Application/src/app/components/FeedbackSubmissionDialog.tsx	Training Management Web Application/Training Management Web Application/src/app/components/FeedbackSubmissionDialog.tsx
+R100	Training Management Web Application/src/app/components/FilterChips.tsx	Training Management Web Application/Training Management Web Application/src/app/components/FilterChips.tsx
+R100	Training Management Web Application/src/app/components/HorizontalScrollList.tsx	Training Management Web Application/Training Management Web Application/src/app/components/HorizontalScrollList.tsx
+R100	Training Management Web Application/src/app/components/Layout.tsx	Training Management Web Application/Training Management Web Application/src/app/components/Layout.tsx
+R100	Training Management Web Application/src/app/components/LoadingAnimation.tsx	Training Management Web Application/Training Management Web Application/src/app/components/LoadingAnimation.tsx
+R100	Training Management Web Application/src/app/components/LoadingScreen.tsx	Training Management Web Application/Training Management Web Application/src/app/components/LoadingScreen.tsx
+R100	Training Management Web Application/src/app/components/MediaCard.tsx	Training Management Web Application/Training Management Web Application/src/app/components/MediaCard.tsx
+R100	Training Management Web Application/src/app/components/PageTransition.tsx	Training Management Web Application/Training Management Web Application/src/app/components/PageTransition.tsx
+R100	Training Management Web Application/src/app/components/TmsLogo.tsx	Training Management Web Application/Training Management Web Application/src/app/components/TmsLogo.tsx
+R100	Training Management Web Application/src/app/components/figma/ImageWithFallback.tsx	Training Management Web Application/Training Management Web Application/src/app/components/figma/ImageWithFallback.tsx
+R100	Training Management Web Application/src/app/components/ui/accordion.tsx	Training Management Web Application/Training Management Web Application/src/app/components/ui/accordion.tsx
+R100	Training Management Web Application/src/app/components/ui/alert-dialog.tsx	Training Management Web Application/Training Management Web Application/src/app/components/ui/alert-dialog.tsx
+R100	Training Management Web Application/src/app/components/ui/alert.tsx	Training Management Web Application/Training Management Web Application/src/app/components/ui/alert.tsx
+R100	Training Management Web Application/src/app/components/ui/aspect-ratio.tsx	Training Management Web Application/Training Management Web Application/src/app/components/ui/aspect-ratio.tsx
+R100	Training Management Web Application/src/app/components/ui/avatar.tsx	Training Management Web Application/Training Management Web Application/src/app/components/ui/avatar.tsx
+R100	Training Management Web Application/src/app/components/ui/badge.tsx	Training Management Web Application/Training Management Web Application/src/app/components/ui/badge.tsx
+R100	Training Management Web Application/src/app/components/ui/breadcrumb.tsx	Training Management Web Application/Training Management Web Application/src/app/components/ui/breadcrumb.tsx
+R100	Training Management Web Application/src/app/components/ui/button.tsx	Training Management Web Application/Training Management Web Application/src/app/components/ui/button.tsx
+R100	Training Management Web Application/src/app/components/ui/calendar.tsx	Training Management Web Application/Training Management Web Application/src/app/components/ui/calendar.tsx
+R100	Training Management Web Application/src/app/components/ui/card.tsx	Training Management Web Application/Training Management Web Application/src/app/components/ui/card.tsx
+R100	Training Management Web Application/src/app/components/ui/carousel.tsx	Training Management Web Application/Training Management Web Application/src/app/components/ui/carousel.tsx
+R100	Training Management Web Application/src/app/components/ui/chart.tsx	Training Management Web Application/Training Management Web Application/src/app/components/ui/chart.tsx
+R100	Training Management Web Application/src/app/components/ui/checkbox.tsx	Training Management Web Application/Training Management Web Application/src/app/components/ui/checkbox.tsx
+R100	Training Management Web Application/src/app/components/ui/clock-time-picker.tsx	Training Management Web Application/Training Management Web Application/src/app/components/ui/clock-time-picker.tsx
+R100	Training Management Web Application/src/app/components/ui/collapsible.tsx	Training Management Web Application/Training Management Web Application/src/app/components/ui/collapsible.tsx
+R100	Training Management Web Application/src/app/components/ui/command.tsx	Training Management Web Application/Training Management Web Application/src/app/components/ui/command.tsx
+R100	Training Management Web Application/src/app/components/ui/context-menu.tsx	Training Management Web Application/Training Management Web Application/src/app/components/ui/context-menu.tsx
+R100	Training Management Web Application/src/app/components/ui/dialog.tsx	Training Management Web Application/Training Management Web Application/src/app/components/ui/dialog.tsx
+R100	Training Management Web Application/src/app/components/ui/drawer.tsx	Training Management Web Application/Training Management Web Application/src/app/components/ui/drawer.tsx
+R100	Training Management Web Application/src/app/components/ui/dropdown-menu.tsx	Training Management Web Application/Training Management Web Application/src/app/components/ui/dropdown-menu.tsx
+R100	Training Management Web Application/src/app/components/ui/form.tsx	Training Management Web Application/Training Management Web Application/src/app/components/ui/form.tsx
+R100	Training Management Web Application/src/app/components/ui/hover-card.tsx	Training Management Web Application/Training Management Web Application/src/app/components/ui/hover-card.tsx
+R100	Training Management Web Application/src/app/components/ui/input-otp.tsx	Training Management Web Application/Training Management Web Application/src/app/components/ui/input-otp.tsx
+R100	Training Management Web Application/src/app/components/ui/input.tsx	Training Management Web Application/Training Management Web Application/src/app/components/ui/input.tsx
+R100	Training Management Web Application/src/app/components/ui/label.tsx	Training Management Web Application/Training Management Web Application/src/app/components/ui/label.tsx
+R100	Training Management Web Application/src/app/components/ui/menubar.tsx	Training Management Web Application/Training Management Web Application/src/app/components/ui/menubar.tsx
+R100	Training Management Web Application/src/app/components/ui/multi-select.tsx	Training Management Web Application/Training Management Web Application/src/app/components/ui/multi-select.tsx
+R100	Training Management Web Application/src/app/components/ui/navigation-menu.tsx	Training Management Web Application/Training Management Web Application/src/app/components/ui/navigation-menu.tsx
+R100	Training Management Web Application/src/app/components/ui/pagination.tsx	Training Management Web Application/Training Management Web Application/src/app/components/ui/pagination.tsx
+R100	Training Management Web Application/src/app/components/ui/popover.tsx	Training Management Web Application/Training Management Web Application/src/app/components/ui/popover.tsx
+R100	Training Management Web Application/src/app/components/ui/progress.tsx	Training Management Web Application/Training Management Web Application/src/app/components/ui/progress.tsx
+R100	Training Management Web Application/src/app/components/ui/radio-group.tsx	Training Management Web Application/Training Management Web Application/src/app/components/ui/radio-group.tsx
+R100	Training Management Web Application/src/app/components/ui/resizable.tsx	Training Management Web Application/Training Management Web Application/src/app/components/ui/resizable.tsx
+R100	Training Management Web Application/src/app/components/ui/scroll-area.tsx	Training Management Web Application/Training Management Web Application/src/app/components/ui/scroll-area.tsx
+R100	Training Management Web Application/src/app/components/ui/select.tsx	Training Management Web Application/Training Management Web Application/src/app/components/ui/select.tsx
+R100	Training Management Web Application/src/app/components/ui/separator.tsx	Training Management Web Application/Training Management Web Application/src/app/components/ui/separator.tsx
+R100	Training Management Web Application/src/app/components/ui/sheet.tsx	Training Management Web Application/Training Management Web Application/src/app/components/ui/sheet.tsx
+R100	Training Management Web Application/src/app/components/ui/sidebar.tsx	Training Management Web Application/Training Management Web Application/src/app/components/ui/sidebar.tsx
+R100	Training Management Web Application/src/app/components/ui/skeleton.tsx	Training Management Web Application/Training Management Web Application/src/app/components/ui/skeleton.tsx
+R100	Training Management Web Application/src/app/components/ui/slider.tsx	Training Management Web Application/Training Management Web Application/src/app/components/ui/slider.tsx
+R100	Training Management Web Application/src/app/components/ui/sonner.tsx	Training Management Web Application/Training Management Web Application/src/app/components/ui/sonner.tsx
+R100	Training Management Web Application/src/app/components/ui/switch.tsx	Training Management Web Application/Training Management Web Application/src/app/components/ui/switch.tsx
+R100	Training Management Web Application/src/app/components/ui/table.tsx	Training Management Web Application/Training Management Web Application/src/app/components/ui/table.tsx
+R100	Training Management Web Application/src/app/components/ui/tabs.tsx	Training Management Web Application/Training Management Web Application/src/app/components/ui/tabs.tsx
+R100	Training Management Web Application/src/app/components/ui/textarea.tsx	Training Management Web Application/Training Management Web Application/src/app/components/ui/textarea.tsx
+R100	Training Management Web Application/src/app/components/ui/toggle-group.tsx	Training Management Web Application/Training Management Web Application/src/app/components/ui/toggle-group.tsx
+R100	Training Management Web Application/src/app/components/ui/toggle.tsx	Training Management Web Application/Training Management Web Application/src/app/components/ui/toggle.tsx
+R100	Training Management Web Application/src/app/components/ui/tooltip.tsx	Training Management Web Application/Training Management Web Application/src/app/components/ui/tooltip.tsx
+R100	Training Management Web Application/src/app/components/ui/use-mobile.ts	Training Management Web Application/Training Management Web Application/src/app/components/ui/use-mobile.ts
+R100	Training Management Web Application/src/app/components/ui/utils.ts	Training Management Web Application/Training Management Web Application/src/app/components/ui/utils.ts
+R100	Training Management Web Application/src/app/pages/Analytics.tsx	Training Management Web Application/Training Management Web Application/src/app/pages/Analytics.tsx
+R091	Training Management Web Application/src/app/pages/CreateTraining.tsx	Training Management Web Application/Training Management Web Application/src/app/pages/CreateTraining.tsx
+R100	Training Management Web Application/src/app/pages/Dashboard.tsx	Training Management Web Application/Training Management Web Application/src/app/pages/Dashboard.tsx
+R100	Training Management Web Application/src/app/pages/HallAvailability.tsx	Training Management Web Application/Training Management Web Application/src/app/pages/HallAvailability.tsx
+R100	Training Management Web Application/src/app/pages/HallRequests.tsx	Training Management Web Application/Training Management Web Application/src/app/pages/HallRequests.tsx
+R100	Training Management Web Application/src/app/pages/Halls.tsx	Training Management Web Application/Training Management Web Application/src/app/pages/Halls.tsx
+R100	Training Management Web Application/src/app/pages/Institutions.tsx	Training Management Web Application/Training Management Web Application/src/app/pages/Institutions.tsx
+R100	Training Management Web Application/src/app/pages/Login.tsx	Training Management Web Application/Training Management Web Application/src/app/pages/Login.tsx
+R100	Training Management Web Application/src/app/pages/MyAttendance.tsx	Training Management Web Application/Training Management Web Application/src/app/pages/MyAttendance.tsx
+R088	Training Management Web Application/src/app/pages/Nominations.tsx	Training Management Web Application/Training Management Web Application/src/app/pages/Nominations.tsx
+R100	Training Management Web Application/src/app/pages/NotificationsMobile.tsx	Training Management Web Application/Training Management Web Application/src/app/pages/NotificationsMobile.tsx
+R100	Training Management Web Application/src/app/pages/Participants.tsx	Training Management Web Application/Training Management Web Application/src/app/pages/Participants.tsx
+R100	Training Management Web Application/src/app/pages/Personnel.tsx	Training Management Web Application/Training Management Web Application/src/app/pages/Personnel.tsx
+R100	Training Management Web Application/src/app/pages/PortalSelection.tsx	Training Management Web Application/Training Management Web Application/src/app/pages/PortalSelection.tsx
+R100	Training Management Web Application/src/app/pages/ProgramOfficers.tsx	Training Management Web Application/Training Management Web Application/src/app/pages/ProgramOfficers.tsx
+R086	Training Management Web Application/src/app/pages/Register.tsx	Training Management Web Application/Training Management Web Application/src/app/pages/Register.tsx
+R083	Training Management Web Application/src/app/pages/Reports.tsx	Training Management Web Application/Training Management Web Application/src/app/pages/Reports.tsx
+A	Training Management Web Application/Training Management Web Application/src/app/pages/ScanQR.tsx
+R088	Training Management Web Application/src/app/pages/Settings.tsx	Training Management Web Application/Training Management Web Application/src/app/pages/Settings.tsx
+R100	Training Management Web Application/src/app/pages/TrainingDetails.tsx	Training Management Web Application/Training Management Web Application/src/app/pages/TrainingDetails.tsx
+R100	Training Management Web Application/src/app/pages/TrainingParticipants.tsx	Training Management Web Application/Training Management Web Application/src/app/pages/TrainingParticipants.tsx
+R096	Training Management Web Application/src/app/pages/Trainings.tsx	Training Management Web Application/Training Management Web Application/src/app/pages/Trainings.tsx
+A	Training Management Web Application/Training Management Web Application/src/app/pages/UserApprovals.tsx
+R091	Training Management Web Application/src/app/pages/UserDetails.tsx	Training Management Web Application/Training Management Web Application/src/app/pages/UserDetails.tsx
+R100	Training Management Web Application/src/contexts/AuthContext.tsx	Training Management Web Application/Training Management Web Application/src/contexts/AuthContext.tsx
+R100	Training Management Web Application/src/contexts/ThemeContext.tsx	Training Management Web Application/Training Management Web Application/src/contexts/ThemeContext.tsx
+R100	Training Management Web Application/src/i18n.ts	Training Management Web Application/Training Management Web Application/src/i18n.ts
+R090	Training Management Web Application/src/locales/en/translation.json	Training Management Web Application/Training Management Web Application/src/locales/en/translation.json
+R098	Training Management Web Application/src/locales/ml/translation.json	Training Management Web Application/Training Management Web Application/src/locales/ml/translation.json
+R100	Training Management Web Application/src/main.tsx	Training Management Web Application/Training Management Web Application/src/main.tsx
+R100	Training Management Web Application/src/services/api.ts	Training Management Web Application/Training Management Web Application/src/services/api.ts
+R100	Training Management Web Application/src/styles/fonts.css	Training Management Web Application/Training Management Web Application/src/styles/fonts.css
+R100	Training Management Web Application/src/styles/index.css	Training Management Web Application/Training Management Web Application/src/styles/index.css
+R100	Training Management Web Application/src/styles/tailwind.css	Training Management Web Application/Training Management Web Application/src/styles/tailwind.css
+R100	Training Management Web Application/src/styles/theme.css	Training Management Web Application/Training Management Web Application/src/styles/theme.css
+R098	Training Management Web Application/src/types/index.ts	Training Management Web Application/Training Management Web Application/src/types/index.ts
+R100	Training Management Web Application/src/utils/certificateGenerator.ts	Training Management Web Application/Training Management Web Application/src/utils/certificateGenerator.ts
+R100	Training Management Web Application/src/utils/date.ts	Training Management Web Application/Training Management Web Application/src/utils/date.ts
+R100	Training Management Web Application/src/utils/fileDownloader.ts	Training Management Web Application/Training Management Web Application/src/utils/fileDownloader.ts
+R100	Training Management Web Application/src/utils/mockData.ts	Training Management Web Application/Training Management Web Application/src/utils/mockData.ts
+R100	Training Management Web Application/test-login.js	Training Management Web Application/Training Management Web Application/test-login.js
+R100	Training Management Web Application/ts_errors.log	Training Management Web Application/Training Management Web Application/ts_errors.log
+R100	Training Management Web Application/unlock_firewall.ps1	Training Management Web Application/Training Management Web Application/unlock_firewall.ps1
+R100	Training Management Web Application/update_translations.py	Training Management Web Application/Training Management Web Application/update_translations.py
+R100	Training Management Web Application/vercel.json	Training Management Web Application/Training Management Web Application/vercel.json
+R100	Training Management Web Application/vite.config.ts	Training Management Web Application/Training Management Web Application/vite.config.ts
+R100	Training Management Web Application/vite_build.log	Training Management Web Application/Training Management Web Application/vite_build.log
+D	Training Management Web Application/android/app/src/main/res/drawable-land-hdpi/splash.png
+D	Training Management Web Application/android/app/src/main/res/drawable-land-mdpi/splash.png
+D	Training Management Web Application/android/app/src/main/res/drawable-land-xhdpi/splash.png
+D	Training Management Web Application/android/app/src/main/res/drawable-land-xxhdpi/splash.png
+D	Training Management Web Application/android/app/src/main/res/drawable-land-xxxhdpi/splash.png
+D	Training Management Web Application/android/app/src/main/res/drawable-port-hdpi/splash.png
+D	Training Management Web Application/android/app/src/main/res/drawable-port-mdpi/splash.png
+D	Training Management Web Application/android/app/src/main/res/drawable-port-xhdpi/splash.png
+D	Training Management Web Application/android/app/src/main/res/drawable-port-xxhdpi/splash.png
+D	Training Management Web Application/android/app/src/main/res/drawable-port-xxxhdpi/splash.png
+D	Training Management Web Application/android/app/src/main/res/drawable/ic_launcher_background.xml
+D	Training Management Web Application/android/app/src/main/res/drawable/splash.png
+D	Training Management Web Application/android/capacitor.settings.gradle
+D	Training Management Web Application/capacitor.config.json
+D	Training Management Web Application/index.html
+D	Training Management Web Application/src/app/pages/ScanQR.tsx
+D	Training Management Web Application/src/app/pages/UserApprovals.tsx
+D	git-diff.txt
