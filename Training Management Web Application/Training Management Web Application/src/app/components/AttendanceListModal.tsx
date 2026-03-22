@@ -25,6 +25,44 @@ import { toast } from 'sonner';
 import { useAuth } from '../../contexts/AuthContext';
 import { generateAttendanceSheetPdf } from '../../utils/attendanceSheet';
 
+const nominationStatusPriority: Record<string, number> = {
+    attended: 3,
+    approved: 2,
+    nominated: 1,
+    rejected: 0,
+};
+
+const getNominationTimestamp = (nomination: Nomination) =>
+    new Date(nomination.approvedAt || nomination.nominatedAt || 0).getTime();
+
+const dedupeParticipantNominations = (nominations: Nomination[]) => {
+    const byParticipant = new Map<string, Nomination>();
+
+    nominations.forEach((nomination) => {
+        const participantKey = nomination.participantId || nomination.id;
+        const existing = byParticipant.get(participantKey);
+
+        if (!existing) {
+            byParticipant.set(participantKey, nomination);
+            return;
+        }
+
+        const existingPriority = nominationStatusPriority[existing.status] ?? -1;
+        const nextPriority = nominationStatusPriority[nomination.status] ?? -1;
+
+        if (nextPriority > existingPriority) {
+            byParticipant.set(participantKey, nomination);
+            return;
+        }
+
+        if (nextPriority === existingPriority && getNominationTimestamp(nomination) > getNominationTimestamp(existing)) {
+            byParticipant.set(participantKey, nomination);
+        }
+    });
+
+    return Array.from(byParticipant.values());
+};
+
 interface AttendanceListModalProps {
     isOpen: boolean;
     onClose: () => void;
@@ -59,7 +97,7 @@ const AttendanceListModal: React.FC<AttendanceListModalProps> = ({
             setAttendances(attendanceData);
             setParticipants(
                 Array.isArray(nominationsData)
-                    ? nominationsData.filter((nom) => nom.status === 'approved' || nom.status === 'attended')
+                    ? dedupeParticipantNominations(nominationsData.filter((nom) => nom.status === 'approved' || nom.status === 'attended' || nom.status === 'nominated'))
                     : []
             );
             setTraining(trainingData);

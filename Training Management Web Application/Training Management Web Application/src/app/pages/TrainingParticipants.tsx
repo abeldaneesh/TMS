@@ -20,6 +20,44 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../co
 import { Checkbox } from '../components/ui/checkbox';
 import { generateAttendanceSheetPdf } from '../../utils/attendanceSheet';
 
+const nominationStatusPriority: Record<string, number> = {
+    attended: 3,
+    approved: 2,
+    nominated: 1,
+    rejected: 0,
+};
+
+const getNominationTimestamp = (nomination: Nomination) =>
+    new Date(nomination.approvedAt || nomination.nominatedAt || 0).getTime();
+
+const dedupeParticipantNominations = (nominations: Nomination[]) => {
+    const byParticipant = new Map<string, Nomination>();
+
+    nominations.forEach((nomination) => {
+        const participantKey = nomination.participantId || nomination.id;
+        const existing = byParticipant.get(participantKey);
+
+        if (!existing) {
+            byParticipant.set(participantKey, nomination);
+            return;
+        }
+
+        const existingPriority = nominationStatusPriority[existing.status] ?? -1;
+        const nextPriority = nominationStatusPriority[nomination.status] ?? -1;
+
+        if (nextPriority > existingPriority) {
+            byParticipant.set(participantKey, nomination);
+            return;
+        }
+
+        if (nextPriority === existingPriority && getNominationTimestamp(nomination) > getNominationTimestamp(existing)) {
+            byParticipant.set(participantKey, nomination);
+        }
+    });
+
+    return Array.from(byParticipant.values());
+};
+
 const TrainingParticipants: React.FC = () => {
     const { t } = useTranslation();
     const { id } = useParams<{ id: string }>();
@@ -57,10 +95,11 @@ const TrainingParticipants: React.FC = () => {
             setTraining(trainingData);
             setAttendanceRecords(Array.isArray(attendanceData) ? attendanceData : []);
 
-            // Only show approved and attended participants
-            const activeParticipants = nominationsData.filter(nom =>
-                nom.status === 'approved' || nom.status === 'attended'
-            );
+            // The API call is already scoped to this training.
+            // Keep all assigned participants visible except those explicitly removed/rejected.
+            const activeParticipants = dedupeParticipantNominations(nominationsData.filter((nom) =>
+                nom.status !== 'rejected'
+            ));
             setParticipants(activeParticipants);
         } catch (error) {
             console.error('Failed to fetch data:', error);

@@ -92,6 +92,7 @@ export interface Training {
   assignedParticipantsCount?: number;
   remainingCapacity?: number;
   lateAttendanceWindowHours?: number;
+  creator?: Pick<User, 'id' | 'name' | 'email'> | null;
   createdAt: Date;
   updatedAt: Date;
 }

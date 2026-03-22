@@ -7,6 +7,60 @@ import { createAndSendNotification } from '../utils/notificationUtils';
 
 const LATE_ATTENDANCE_WINDOW_HOURS = Math.max(2, Math.min(6, Number(process.env.LATE_ATTENDANCE_WINDOW_HOURS || 4)));
 
+const buildTimeOverlapQuery = (startTime: string, endTime: string) => ([
+    { startTime: { $lt: endTime } },
+    { endTime: { $gt: startTime } }
+]);
+
+const resolveTrainerId = (trainingLike: { trainerId?: unknown; createdById?: unknown }, fallbackUserId?: string) => {
+    if (typeof trainingLike.trainerId === 'string' && trainingLike.trainerId) {
+        return trainingLike.trainerId;
+    }
+
+    if (trainingLike.trainerId && typeof trainingLike.trainerId === 'object' && '_id' in (trainingLike.trainerId as Record<string, unknown>)) {
+        return String((trainingLike.trainerId as Record<string, unknown>)._id);
+    }
+
+    if (typeof trainingLike.createdById === 'string' && trainingLike.createdById) {
+        return trainingLike.createdById;
+    }
+
+    if (trainingLike.createdById && typeof trainingLike.createdById === 'object' && '_id' in (trainingLike.createdById as Record<string, unknown>)) {
+        return String((trainingLike.createdById as Record<string, unknown>)._id);
+    }
+
+    return fallbackUserId || undefined;
+};
+
+const findTrainerConflict = async ({
+    trainerId,
+    startOfDay,
+    endOfDay,
+    startTime,
+    endTime,
+    excludeTrainingId,
+}: {
+    trainerId: string;
+    startOfDay: Date;
+    endOfDay: Date;
+    startTime: string;
+    endTime: string;
+    excludeTrainingId?: string;
+}) => {
+    const query: any = {
+        trainerId,
+        date: { $gte: startOfDay, $lte: endOfDay },
+        $and: buildTimeOverlapQuery(startTime, endTime),
+        status: { $in: ['scheduled', 'ongoing'] }
+    };
+
+    if (excludeTrainingId) {
+        query._id = { $ne: excludeTrainingId };
+    }
+
+    return Training.findOne(query);
+};
+
 // Get all trainings
 export const getTrainings = async (req: Request, res: Response): Promise<void> => {
     try {
@@ -58,7 +112,10 @@ export const getTrainings = async (req: Request, res: Response): Promise<void> =
         let userStatusMap: Record<string, string> = {};
         if (authReq.user?.role === 'participant') {
             const Nomination = require('../models/Nomination').default;
-            const nominations = await Nomination.find({ participantId: authReq.user.userId });
+            const nominations = await Nomination.find({
+                participantId: authReq.user.userId,
+                status: { $in: ['nominated', 'approved', 'attended'] }
+            });
             nominations.forEach((n: any) => {
                 userStatusMap[n.trainingId] = n.status;
             });
@@ -113,7 +170,8 @@ export const getTrainingById = async (req: Request, res: Response): Promise<void
             const Nomination = require('../models/Nomination').default;
             const nomination = await Nomination.findOne({
                 trainingId: id,
-                participantId: authReq.user.userId
+                participantId: authReq.user.userId,
+                status: { $in: ['nominated', 'approved', 'attended'] }
             });
             userStatus = nomination?.status || null;
         }
@@ -161,6 +219,12 @@ export const createTraining = async (req: AuthRequest, res: Response): Promise<v
             requiredInstitutions,
             status // Extract status
         } = req.body;
+        const effectiveTrainerId = resolveTrainerId({ trainerId, createdById: req.user!.userId }, req.user!.userId);
+
+        if (!effectiveTrainerId) {
+            res.status(400).json({ message: 'Trainer could not be resolved for this training.' });
+            return;
+        }
 
         const trainingDateObj = new Date(date);
         const startOfDay = new Date(trainingDateObj);
@@ -173,10 +237,7 @@ export const createTraining = async (req: AuthRequest, res: Response): Promise<v
             const conflictingTraining = await Training.findOne({
                 hallId,
                 date: { $gte: startOfDay, $lte: endOfDay },
-                $and: [
-                    { startTime: { $lt: endTime } },
-                    { endTime: { $gt: startTime } }
-                ],
+                $and: buildTimeOverlapQuery(startTime, endTime),
                 status: { $in: ['scheduled', 'ongoing'] } // Only check confirmed
             });
 
@@ -199,6 +260,19 @@ export const createTraining = async (req: AuthRequest, res: Response): Promise<v
                 res.status(403).json({ message: 'This hall slot is blocked by admin and cannot be booked.' });
                 return;
             }
+
+            const conflictingTrainerSchedule = await findTrainerConflict({
+                trainerId: effectiveTrainerId,
+                startOfDay,
+                endOfDay,
+                startTime,
+                endTime,
+            });
+
+            if (conflictingTrainerSchedule) {
+                res.status(409).json({ message: 'Trainer is already assigned to another training during this time slot.' });
+                return;
+            }
         }
 
         const training = await Training.create({
@@ -210,7 +284,7 @@ export const createTraining = async (req: AuthRequest, res: Response): Promise<v
             endTime,
             hallId,
             capacity,
-            trainerId,
+            trainerId: effectiveTrainerId,
             targetAudience,
             createdById: req.user!.userId,
             status: status || 'scheduled',
@@ -230,7 +304,7 @@ export const createTraining = async (req: AuthRequest, res: Response): Promise<v
 // Update training details
 export const updateTraining = async (req: AuthRequest, res: Response): Promise<void> => {
     try {
-        const id = req.params.id;
+        const id = String(req.params.id);
         const userId = req.user!.userId;
         const userRole = req.user!.role;
         const {
@@ -279,6 +353,14 @@ export const updateTraining = async (req: AuthRequest, res: Response): Promise<v
         startOfDay.setHours(0, 0, 0, 0);
         const endOfDay = new Date(trainingDateObj);
         endOfDay.setHours(23, 59, 59, 999);
+        const nextStartTime = startTime || training.startTime;
+        const nextEndTime = endTime || training.endTime;
+        const nextTrainerId = resolveTrainerId(training, req.user!.userId);
+
+        if (!nextTrainerId) {
+            res.status(400).json({ message: 'Trainer could not be resolved for this training.' });
+            return;
+        }
 
         // Check conflicts
         if (status !== 'draft') {
@@ -286,10 +368,7 @@ export const updateTraining = async (req: AuthRequest, res: Response): Promise<v
                 _id: { $ne: id },
                 hallId: hallId || training.hallId,
                 date: { $gte: startOfDay, $lte: endOfDay },
-                $and: [
-                    { startTime: { $lt: endTime || training.endTime } },
-                    { endTime: { $gt: startTime || training.startTime } }
-                ],
+                $and: buildTimeOverlapQuery(nextStartTime, nextEndTime),
                 status: { $in: ['scheduled', 'ongoing'] }
             });
 
@@ -301,14 +380,25 @@ export const updateTraining = async (req: AuthRequest, res: Response): Promise<v
             const conflictingBlock = await HallBlock.findOne({
                 hallId: hallId || training.hallId,
                 date: { $gte: startOfDay, $lte: endOfDay },
-                $and: [
-                    { startTime: { $lt: endTime || training.endTime } },
-                    { endTime: { $gt: startTime || training.startTime } }
-                ]
+                $and: buildTimeOverlapQuery(nextStartTime, nextEndTime)
             });
 
             if (conflictingBlock) {
                 res.status(403).json({ message: 'This hall slot is blocked by admin and cannot be booked.' });
+                return;
+            }
+
+            const conflictingTrainerSchedule = await findTrainerConflict({
+                trainerId: nextTrainerId,
+                startOfDay,
+                endOfDay,
+                startTime: nextStartTime,
+                endTime: nextEndTime,
+                excludeTrainingId: id,
+            });
+
+            if (conflictingTrainerSchedule) {
+                res.status(409).json({ message: 'Trainer is already assigned to another training during this time slot.' });
                 return;
             }
 
@@ -331,10 +421,7 @@ export const updateTraining = async (req: AuthRequest, res: Response): Promise<v
                     const conflictingTrainings = await Training.find({
                         _id: { $ne: id },
                         date: { $gte: startOfDay, $lte: endOfDay },
-                        $and: [
-                            { startTime: { $lt: endTime || training.endTime } },
-                            { endTime: { $gt: startTime || training.startTime } }
-                        ],
+                        $and: buildTimeOverlapQuery(nextStartTime, nextEndTime),
                         status: { $in: ['scheduled', 'ongoing'] }
                     }).select('_id');
 
@@ -369,6 +456,7 @@ export const updateTraining = async (req: AuthRequest, res: Response): Promise<v
         if (capacity !== undefined) training.capacity = capacity;
         if (requiredInstitutions !== undefined) training.requiredInstitutions = requiredInstitutions;
         if (status !== undefined) training.status = status;
+        if (!training.trainerId && nextTrainerId) training.trainerId = nextTrainerId;
 
         await training.save();
 

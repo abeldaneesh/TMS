@@ -224,8 +224,16 @@ export const getNominations = async (req: AuthRequest, res: Response): Promise<v
             where.nominatedBy = req.user.userId;
         } else if (req.user?.role === 'program_officer') {
             // PO can only see nominations for trainings they created
-            const poTrainingIds = await Training.find({ createdById: req.user.userId }).distinct('_id');
-            where.trainingId = { $in: poTrainingIds };
+            const poTrainingIds = (await Training.find({ createdById: req.user.userId }).distinct('_id')).map((entry: any) => String(entry));
+
+            if (trainingId) {
+                const requestedTrainingId = String(trainingId);
+                where.trainingId = poTrainingIds.includes(requestedTrainingId)
+                    ? requestedTrainingId
+                    : '__no_match__';
+            } else {
+                where.trainingId = { $in: poTrainingIds };
+            }
         }
 
         const nominations = await Nomination.find(where)
@@ -318,11 +326,27 @@ export const updateNominationStatus = async (req: AuthRequest, res: Response): P
             updateData.approvedAt = new Date();
         }
 
-        const updatedNomination = await Nomination.findByIdAndUpdate(
-            id,
-            updateData,
-            { new: true, runValidators: true }
-        ).populate('trainingId', 'title');
+        const trainingId = String((nomination.trainingId as any)?._id || nomination.trainingId);
+        const participantId = String(nomination.participantId);
+
+        if (status === 'rejected') {
+            await Nomination.updateMany(
+                {
+                    trainingId,
+                    participantId,
+                    status: { $in: ['nominated', 'approved', 'attended'] }
+                },
+                updateData
+            );
+        } else {
+            await Nomination.findByIdAndUpdate(
+                id,
+                updateData,
+                { new: false, runValidators: true }
+            );
+        }
+
+        const updatedNomination = await Nomination.findById(id).populate('trainingId', 'title');
 
         if (!updatedNomination) {
             res.status(404).json({ message: 'Nomination update failed' });
@@ -331,8 +355,9 @@ export const updateNominationStatus = async (req: AuthRequest, res: Response): P
 
         // Send Notification to Participant
         try {
-            const trainingTitle = (updatedNomination.trainingId as any)?.title || 'Training';
             const action = status === 'approved' ? 'approved' : 'rejected';
+            const trainingTitle = (nomination.trainingId as any)?.title || (updatedNomination.trainingId as any)?.title || 'Training';
+            const isRemoval = status === 'rejected' && typeof rejectionReason === 'string' && rejectionReason.toLowerCase().includes('removed from training');
 
             // The instruction provides a specific payload for 'approved' status.
             // If the status is 'approved', use the provided payload.
@@ -347,14 +372,15 @@ export const updateNominationStatus = async (req: AuthRequest, res: Response): P
                     actionUrl: `/trainings/${(nomination.trainingId as any)._id.toString()}`
                 });
             } else {
-                // Existing logic for other statuses like 'rejected'
                 await createAndSendNotification({
-                    userId: updatedNomination.participantId.toString(),
-                    title: `Nomination ${status.charAt(0).toUpperCase() + status.slice(1)}`,
-                    message: `Your nomination for "${trainingTitle}" has been ${action}.`,
-                    type: 'nomination_status',
-                    relatedId: updatedNomination._id.toString(),
-                    actionUrl: `/nominations`
+                    userId: participantId,
+                    title: isRemoval ? 'Removed From Training' : `Nomination ${status.charAt(0).toUpperCase() + status.slice(1)}`,
+                    message: isRemoval
+                        ? `You have been removed from "${trainingTitle}".`
+                        : `Your nomination for "${trainingTitle}" has been ${action}.`,
+                    type: isRemoval ? 'warning' : 'nomination_status',
+                    relatedId: trainingId,
+                    actionUrl: `/dashboard`
                 });
             }
         } catch (notifErr) {

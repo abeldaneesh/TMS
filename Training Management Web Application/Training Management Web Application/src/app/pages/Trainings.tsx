@@ -88,8 +88,17 @@ const Trainings: React.FC = () => {
     return halls.find(h => h.id === hallId)?.name || 'Unknown Hall';
   };
 
-  const getTrainerName = (trainerId: string) => {
-    return trainers.find(t => t.id === trainerId)?.name || 'Unknown Trainer';
+  const getTrainerName = (training: Training) => {
+    const activeTrainer = trainers.find((trainer) => trainer.id === training.trainerId);
+    if (activeTrainer?.name) {
+      return activeTrainer.name;
+    }
+
+    if (training.creator?.name && training.createdById === training.trainerId) {
+      return `${training.creator.name} (Archived)`;
+    }
+
+    return 'Trainer (Archived)';
   };
 
   const getStatusBadge = (status: string) => {
@@ -329,7 +338,7 @@ const Trainings: React.FC = () => {
                     {training.title}
                   </h3>
                   <p className="text-sm text-muted-foreground truncate mt-0.5">
-                    {training.program} • {getTrainerName(training.trainerId)}
+                    {training.program} • {getTrainerName(training)}
                   </p>
                 </div>
               </div>
