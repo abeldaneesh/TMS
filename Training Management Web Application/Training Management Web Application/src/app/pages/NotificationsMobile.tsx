@@ -22,6 +22,8 @@ const NotificationsMobile: React.FC = () => {
             }
         };
         fetchNotifications();
+        const interval = setInterval(fetchNotifications, 15000);
+        return () => clearInterval(interval);
     }, []);
 
     const navigate = useNavigate();

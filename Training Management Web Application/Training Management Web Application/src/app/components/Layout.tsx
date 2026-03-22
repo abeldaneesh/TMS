@@ -343,7 +343,11 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         {/* Right Section */}
         <div className="flex items-center gap-2 sm:gap-4 flex-shrink-0">
 
-          <DropdownMenu>
+          <DropdownMenu onOpenChange={(open) => {
+            if (open) {
+              fetchNotifications();
+            }
+          }}>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon" className="relative text-foreground hover:bg-accent hover:text-accent-foreground hidden sm:flex">
                 <Bell className="size-5" />

@@ -631,21 +631,25 @@ export const startAttendanceSession = async (req: AuthRequest, res: Response): P
                 status: { $in: ['nominated', 'approved'] }
             }).select('participantId');
 
-            const participantIds = assignedNominations.map((n: any) => n.participantId);
+            const participantIds = Array.from(
+                new Set(assignedNominations.map((n: any) => String(n.participantId)).filter(Boolean))
+            );
 
             if (participantIds.length > 0) {
                 const message = `An attendance session has started for "${training.title}". Please scan the QR code to mark your attendance.`;
 
-                await Promise.all(participantIds.map((userId: any) =>
+                const notificationResults = await Promise.allSettled(participantIds.map((userId: string) =>
                     createAndSendNotification({
-                        userId: userId.toString(),
+                        userId,
                         title: 'Attendance Session Started',
                         message: message,
                         type: 'info',
                         actionUrl: `/scan-qr`
                     })
                 ));
-                console.log(`[DEBUG] Sent notifications to ${participantIds.length} participants for training ${trainingId}`);
+                const successCount = notificationResults.filter((result) => result.status === 'fulfilled').length;
+                const failedCount = notificationResults.length - successCount;
+                console.log(`[DEBUG] Attendance session notifications for training ${trainingId}: ${successCount} sent, ${failedCount} failed`);
             }
         } catch (notifError) {
             console.error('Error sending session start notifications:', notifError);
