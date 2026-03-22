@@ -439,10 +439,9 @@ const Nominations: React.FC = () => {
       // Safety check: ensure the nomination is relevant to the user's role/scope
       if (user.role === 'participant') {
         if (getEntityId(nom.participantId) !== user.id) return false;
-      } else if (user.role === 'medical_officer' || user.role === 'institutional_admin') {
+      } else if (user.role === 'institutional_admin') {
         const nomParticipant = getParticipantRecord(nom.participantId);
         if (nomParticipant && getEntityId(nomParticipant.institutionId) !== currentUserInstitutionId) {
-          // MOs see their own institution's people OR anything they NOMINATED themselves
           if (getEntityId(nom.nominatedBy) !== user.id) return false;
         }
       }
@@ -461,7 +460,7 @@ const Nominations: React.FC = () => {
     const selectableTrainings = trainings.filter((training) => {
       if (training.status === 'cancelled' || training.status === 'completed') return false;
 
-      if ((user.role === 'medical_officer' || user.role === 'institutional_admin') && currentUserInstitutionId) {
+      if (user.role === 'institutional_admin' && currentUserInstitutionId) {
         const trainingInstitutionIds = normalizeStringList(training.requiredInstitutions);
         if (trainingInstitutionIds.length > 0 && !trainingInstitutionIds.includes(currentUserInstitutionId)) {
           return false;
@@ -513,14 +512,13 @@ const Nominations: React.FC = () => {
       const participantInstitutionId = getEntityId(participant.institutionId);
       const participantDesignation = normalizeMatchValue(participant.designation);
 
-      if ((user.role === 'medical_officer' || user.role === 'institutional_admin') && participantInstitutionId !== currentUserInstitutionId) {
+      if (user.role === 'institutional_admin' && participantInstitutionId !== currentUserInstitutionId) {
         return false;
       }
 
       const matchesInstitution =
         selectedTrainingInstitutionIds.length === 0 || 
-        selectedTrainingInstitutionIds.includes(participantInstitutionId) ||
-        (user.role === 'medical_officer' && participantInstitutionId === currentUserInstitutionId);
+        selectedTrainingInstitutionIds.includes(participantInstitutionId);
         
       const matchesAudience =
         selectedAudienceTokens.length === 0 || 

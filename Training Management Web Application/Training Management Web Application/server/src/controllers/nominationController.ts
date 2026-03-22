@@ -24,7 +24,7 @@ export const nominateParticipant = async (req: AuthRequest, res: Response): Prom
         let institutionId = bodyInstitutionId;
 
         // If not provided in body or forced by role logic
-        if (req.user?.role === 'institutional_admin' || req.user?.role === 'medical_officer') {
+        if (req.user?.role === 'institutional_admin') {
             institutionId = req.user.institutionId;
         }
 
@@ -56,7 +56,7 @@ export const nominateParticipant = async (req: AuthRequest, res: Response): Prom
             : ((participant as any).institutionId?._id?.toString() || '');
         const participantDesignation = participant.designation?.trim() || '';
 
-        if ((req.user?.role === 'institutional_admin' || req.user?.role === 'medical_officer') &&
+        if (req.user?.role === 'institutional_admin' &&
             req.user.institutionId &&
             participantInstitutionId !== req.user.institutionId) {
             res.status(403).json({ message: `${participantName} does not belong to your institution` });
@@ -229,9 +229,6 @@ export const getNominations = async (req: AuthRequest, res: Response): Promise<v
             if (user?.institutionId) {
                 where.institutionId = user.institutionId;
             }
-        } else if (req.user?.role === 'medical_officer') {
-            // Medical officers should see the nominations they created across sessions.
-            where.nominatedBy = req.user.userId;
         } else if (req.user?.role === 'program_officer') {
             // PO can only see nominations for trainings they created
             const poTrainingIds = (await Training.find({ createdById: req.user.userId }).distinct('_id')).map((entry: any) => String(entry));
@@ -252,34 +249,36 @@ export const getNominations = async (req: AuthRequest, res: Response): Promise<v
             .populate('institutionId', 'name')
             .lean() as any[];
 
-        const validNominations = nominations.filter((nom) =>
-            nom.trainingId && typeof nom.trainingId === 'object'
-        );
-
-        const formattedNominations = validNominations.map((nom) => {
+        const formattedNominations = nominations.map((nom) => {
             const participantId = String(nom.participantId?._id || nom.participantId || nom.participantSnapshot?.participantId || '');
-            const trainingSnapshot = Array.isArray(nom.trainingId?.participantSnapshots)
-                ? nom.trainingId.participantSnapshots.find((entry: any) => String(entry.participantId) === participantId)
+            const trainingRecord = nom.trainingId && typeof nom.trainingId === 'object' ? nom.trainingId : null;
+            const institutionRecord = nom.institutionId && typeof nom.institutionId === 'object' ? nom.institutionId : null;
+            const trainingSnapshot = Array.isArray(trainingRecord?.participantSnapshots)
+                ? trainingRecord.participantSnapshots.find((entry: any) => String(entry.participantId) === participantId)
                 : undefined;
             const participantSnapshot = mergeParticipantSnapshots(nom.participantSnapshot, trainingSnapshot);
             const participantProfile = toArchivedParticipantProfile(participantId, nom.participantId, participantSnapshot);
+            const resolvedTrainingId = String(trainingRecord?._id || nom.trainingId || '');
+            const resolvedInstitutionId = String(institutionRecord?._id || nom.institutionId || participantSnapshot?.institutionId || '');
 
             return {
                 id: nom._id,
                 ...nom,
                 participantId,
-                trainingId: nom.trainingId?._id || nom.trainingId,
-                institutionId: nom.institutionId?._id || nom.institutionId || participantSnapshot?.institutionId,
+                trainingId: resolvedTrainingId,
+                institutionId: resolvedInstitutionId,
                 participantSnapshot,
                 participant: participantProfile,
-                training: {
-                    ...nom.trainingId,
-                    id: nom.trainingId?._id,
-                },
-                institution: nom.institutionId
+                training: trainingRecord
                     ? {
-                        ...nom.institutionId,
-                        id: nom.institutionId?._id
+                        ...trainingRecord,
+                        id: trainingRecord?._id,
+                    }
+                    : null,
+                institution: institutionRecord
+                    ? {
+                        ...institutionRecord,
+                        id: institutionRecord?._id
                     }
                     : participantSnapshot?.institutionName
                         ? {
