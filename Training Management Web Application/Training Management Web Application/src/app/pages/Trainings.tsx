@@ -18,6 +18,7 @@ import { toast } from 'sonner';
 import FilterChips from '../components/FilterChips';
 import AttendanceListModal from '../components/AttendanceListModal';
 import LoadingScreen from '../components/LoadingScreen';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../components/ui/dialog';
 
 const Trainings: React.FC = () => {
   const { user } = useAuth();
@@ -39,6 +40,7 @@ const Trainings: React.FC = () => {
   const [attendanceModalOpen, setAttendanceModalOpen] = useState(false);
   const [selectedTrainingId, setSelectedTrainingId] = useState<string | null>(null);
   const [selectedTrainingTitle, setSelectedTrainingTitle] = useState('');
+  const [cancelledTraining, setCancelledTraining] = useState<Training | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -160,6 +162,28 @@ const Trainings: React.FC = () => {
 
   const handleViewParticipants = (training: Training) => {
     navigate(`/trainings/${training.id}/participants`);
+  };
+
+  const formatDateParam = (date: Date | string) => {
+    const parsed = new Date(date);
+    const year = parsed.getFullYear();
+    const month = `${parsed.getMonth() + 1}`.padStart(2, '0');
+    const day = `${parsed.getDate()}`.padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  const openReplacementFlow = (training: Training, useSameDay: boolean) => {
+    const selectedDate = useSameDay ? formatDateParam(training.date) : undefined;
+    navigate(
+      useSameDay ? `/trainings/create?date=${selectedDate}` : '/trainings/create',
+      {
+        state: {
+          prefilledTraining: training,
+          ...(selectedDate ? { selectedDate } : {}),
+        },
+      }
+    );
+    setCancelledTraining(null);
   };
 
   if (loading) {
@@ -285,10 +309,10 @@ const Trainings: React.FC = () => {
           {sortedTrainings.map((training, index) => (
             <div
               key={training.id}
-              className="group flex flex-col sm:flex-row sm:items-center py-3 px-2 sm:px-4 hover:bg-white/5 rounded-lg transition-colors border-b border-border/30 cursor-pointer"
+              className="group flex flex-col sm:min-h-[84px] sm:flex-row sm:items-center py-3 px-2 sm:px-4 hover:bg-white/5 rounded-lg transition-colors border-b border-border/30 cursor-pointer"
               onClick={() => navigate(`/trainings/${training.id}`)}
             >
-              <div className="flex items-center flex-1 min-w-0">
+              <div className="flex flex-1 items-center min-w-0">
                 <div className="text-muted-foreground w-8 mr-4 text-center text-sm font-medium hidden md:block">
                   {index + 1}
                 </div>
@@ -300,7 +324,7 @@ const Trainings: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="flex-1 min-w-0 pr-4">
+                <div className="flex min-h-[56px] flex-1 min-w-0 flex-col justify-center pr-4">
                   <h3 className="text-base font-semibold text-foreground truncate group-hover:text-primary transition-colors">
                     {training.title}
                   </h3>
@@ -310,25 +334,25 @@ const Trainings: React.FC = () => {
                 </div>
               </div>
 
-              <div className="hidden md:flex items-center px-4 w-48 shrink-0">
+              <div className="hidden md:flex h-full items-center px-4 w-48 shrink-0">
                 <span className="text-sm font-medium text-foreground/90 truncate" title={getHallName(training.hallId)}>
                   {getHallName(training.hallId)}
                 </span>
               </div>
 
-              <div className="hidden md:flex flex-col items-end px-4 w-48 shrink-0">
+              <div className="hidden md:flex h-full flex-col items-end justify-center px-4 w-48 shrink-0">
                 <span className="text-sm font-medium text-foreground/90">{safeFormatDate(training.date)}</span>
                 <span className="text-xs text-muted-foreground">{training.startTime} - {training.endTime}</span>
               </div>
 
-              <div className="hidden lg:flex items-center w-32 shrink-0 px-4">
+              <div className="hidden lg:flex h-full items-center w-32 shrink-0 px-4">
                 <span className={`text-xs font-medium uppercase tracking-wider ${getStatusBadge(training.status)}`}>
                   {training.status}
                 </span>
               </div>
 
               {/* Actions */}
-              <div className="flex items-center justify-end sm:w-48 shrink-0 gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity mt-4 sm:mt-0" onClick={e => e.stopPropagation()}>
+              <div className="flex items-center justify-end sm:h-full sm:w-48 shrink-0 gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity mt-4 sm:mt-0" onClick={e => e.stopPropagation()}>
                 <Button variant="ghost" size="icon" onClick={() => navigate(`/trainings/${training.id}`)} className="text-muted-foreground hover:text-white hover:bg-white/10 rounded-full size-9" title={t('trainings.actions.details', 'View Details')}>
                   <Eye className="size-4" />
                 </Button>
@@ -388,6 +412,7 @@ const Trainings: React.FC = () => {
                                 await api.patch(`/trainings/${training.id}/status`, { status: 'cancelled' });
                                 setTrainings(trainings.map(t => t.id === training.id ? { ...t, status: 'cancelled' } : t));
                                 toast.success(t('trainings.abortedSuccess', 'Aborted'));
+                                setCancelledTraining({ ...training, status: 'cancelled' });
                               } catch (e) {
                                 toast.error('Failed');
                               }
@@ -418,6 +443,37 @@ const Trainings: React.FC = () => {
           />
         </>
       )}
+
+      <Dialog open={Boolean(cancelledTraining)} onOpenChange={(open) => !open && setCancelledTraining(null)}>
+        <DialogContent className="border-border bg-background text-foreground">
+          <DialogHeader>
+            <DialogTitle>Create a replacement training?</DialogTitle>
+            <DialogDescription>
+              {cancelledTraining
+                ? `“${cancelledTraining.title}” was cancelled. You can create a replacement session with the same details for the same day or choose another day.`
+                : 'Create a replacement session.'}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="sm:justify-between">
+            <Button variant="outline" onClick={() => setCancelledTraining(null)}>
+              Not now
+            </Button>
+            <div className="flex flex-col-reverse gap-2 sm:flex-row">
+              <Button
+                variant="outline"
+                onClick={() => cancelledTraining && openReplacementFlow(cancelledTraining, false)}
+              >
+                Create for another day
+              </Button>
+              <Button
+                onClick={() => cancelledTraining && openReplacementFlow(cancelledTraining, true)}
+              >
+                Create for same day
+              </Button>
+            </div>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
     </div>
   );

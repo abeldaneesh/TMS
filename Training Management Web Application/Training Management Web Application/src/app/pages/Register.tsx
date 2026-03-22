@@ -54,6 +54,31 @@ const Register: React.FC = () => {
             : 'Field Personnel';
     const { t, i18n } = useTranslation();
     const { theme, toggleTheme } = useTheme();
+    const isDarkMode = theme === 'dark';
+
+    const pageBackgroundClass = isDarkMode
+        ? 'bg-background'
+        : 'bg-[radial-gradient(circle_at_top,rgba(79,70,229,0.08),transparent_30%),linear-gradient(180deg,#f8fafc_0%,#f3f6fb_100%)]';
+
+    const floatingButtonClass = isDarkMode
+        ? 'bg-background/80 backdrop-blur-md rounded-full shadow-md'
+        : 'bg-white/90 border-slate-200 text-slate-700 backdrop-blur-md rounded-full shadow-sm shadow-slate-200/80';
+
+    const authCardClass = isDarkMode
+        ? 'w-full max-w-md border bg-card text-center shadow-lg relative z-10 overflow-hidden'
+        : 'w-full max-w-md border border-slate-200/90 bg-white text-center shadow-[0_24px_55px_-24px_rgba(15,23,42,0.30)] relative z-10 overflow-hidden';
+
+    const registerCardClass = isDarkMode
+        ? 'w-full max-w-2xl border bg-card shadow-lg relative z-10 overflow-hidden'
+        : 'w-full max-w-2xl border border-slate-200/90 bg-white shadow-[0_24px_55px_-24px_rgba(15,23,42,0.30)] relative z-10 overflow-hidden';
+
+    const inputClass = isDarkMode
+        ? 'pl-10 h-11 bg-background'
+        : 'pl-10 h-11 bg-slate-50 border-slate-200 focus-visible:bg-white focus-visible:border-primary/40';
+
+    const plainInputClass = isDarkMode
+        ? 'h-11 bg-background'
+        : 'h-11 bg-slate-50 border-slate-200 focus-visible:bg-white focus-visible:border-primary/40';
 
     const [formData, setFormData] = useState({
         name: '',
@@ -178,22 +203,18 @@ const Register: React.FC = () => {
 
     if (success) {
         return (
-            <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4 }}
-                className="min-h-screen bg-background flex items-center justify-center p-4 relative"
-            >
+            <div className={`min-h-screen flex items-center justify-center p-4 relative ${pageBackgroundClass}`}>
                 {/* Floating Action Buttons */}
                 <div className="absolute top-4 right-4 z-50 flex gap-2">
-                    <Button variant="outline" size="icon" className="bg-background/80 backdrop-blur-md rounded-full shadow-md" onClick={() => i18n.changeLanguage(i18n.language.startsWith('ml') ? 'en' : 'ml')}>
+                    <Button variant="outline" size="icon" className={floatingButtonClass} onClick={() => i18n.changeLanguage(i18n.language.startsWith('ml') ? 'en' : 'ml')}>
                         <span className="text-lg">🌐</span>
                     </Button>
-                    <Button variant="outline" size="icon" className="bg-background/80 backdrop-blur-md rounded-full shadow-md" onClick={toggleTheme}>
+                    <Button variant="outline" size="icon" className={floatingButtonClass} onClick={toggleTheme}>
                         {theme === 'dark' ? <Sun className="size-5 text-yellow-500" /> : <Moon className="size-5 text-slate-700" />}
                     </Button>
                 </div>
-                <Card className="w-full max-w-md border bg-card text-center shadow-lg relative z-10 overflow-hidden">
+                {!isDarkMode && <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(255,255,255,0.72),rgba(255,255,255,0.94))]" />}
+                <Card className={authCardClass}>
                     <div className="relative z-10 flex flex-col items-center justify-center w-full p-10 bg-primary/5 rounded-t-xl">
                         <div className="mb-6">
                             <TmsLogo className="size-24 text-primary" />
@@ -219,23 +240,19 @@ const Register: React.FC = () => {
                         </Button>
                     </CardFooter>
                 </Card>
-            </motion.div>
+            </div>
         );
     }
 
 
 
     return (
-        <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4 }}
-            className="min-h-screen bg-background flex items-center justify-center p-4 py-8 relative"
-        >
-            <Card className="w-full max-w-2xl border bg-card shadow-lg relative z-10 overflow-hidden">
+        <div className={`min-h-screen flex items-center justify-center p-4 py-8 relative ${pageBackgroundClass}`}>
+            {!isDarkMode && <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(255,255,255,0.72),rgba(255,255,255,0.94))]" />}
+            <Card className={registerCardClass}>
                 <CardHeader className="space-y-4 pb-6">
                     <div className="flex items-center gap-4">
-                        <Link to="/login" className="text-muted-foreground hover:text-foreground p-2 transition-colors">
+                        <Link to="/login" className={isDarkMode ? 'text-muted-foreground hover:text-foreground p-2 transition-colors' : 'text-slate-500 hover:text-slate-900 p-2 transition-colors'}>
                             <ChevronLeft className="size-5" />
                         </Link>
                         <div>
@@ -259,7 +276,7 @@ const Register: React.FC = () => {
                                         placeholder="John Doe"
                                         value={formData.name}
                                         onChange={handleChange}
-                                        className="pl-10 h-11 bg-background"
+                                        className={inputClass}
                                         required
                                     />
                                 </div>
@@ -279,7 +296,7 @@ const Register: React.FC = () => {
                                                 value={formData.email}
                                                 onChange={handleChange}
                                                 disabled={emailVerified || sendingOtp}
-                                                className={`pl-10 h-11 bg-background ${emailVerified ? 'border-green-500 bg-green-50/50' : ''}`}
+                                                className={`${inputClass} ${emailVerified ? 'border-green-500 bg-green-50/50' : ''}`}
                                                 required
                                             />
                                         </div>
@@ -312,7 +329,7 @@ const Register: React.FC = () => {
                                                 value={otp}
                                                 onChange={(e) => setOtp(e.target.value)}
                                                 maxLength={6}
-                                                className="h-11 bg-background text-center tracking-widest font-mono font-bold flex-1"
+                                                className={`${isDarkMode ? 'h-11 bg-background' : 'h-11 bg-slate-50 border-slate-200 focus-visible:bg-white focus-visible:border-primary/40'} text-center tracking-widest font-mono font-bold flex-1`}
                                                 required
                                             />
                                             <Button
@@ -339,7 +356,7 @@ const Register: React.FC = () => {
                                         placeholder="••••••••"
                                         value={formData.password}
                                         onChange={handleChange}
-                                        className="pl-10 h-11 bg-background"
+                                        className={inputClass}
                                         required
                                     />
                                 </div>
@@ -356,7 +373,7 @@ const Register: React.FC = () => {
                                         placeholder="••••••••"
                                         value={formData.confirmPassword}
                                         onChange={handleChange}
-                                        className="pl-10 h-11 bg-background"
+                                        className={inputClass}
                                         required
                                     />
                                 </div>
@@ -367,7 +384,7 @@ const Register: React.FC = () => {
                             <div className="space-y-2 md:col-span-2">
                                 <Label htmlFor="institutionId" className="text-sm font-medium">{t('auth.register.institution', 'Institution')}</Label>
                                 <Select onValueChange={handleSelectChange('institutionId')} value={formData.institutionId}>
-                                    <SelectTrigger className="h-11 bg-background">
+                                    <SelectTrigger className={plainInputClass}>
                                         <SelectValue placeholder="Select your institution" />
                                     </SelectTrigger>
                                     <SelectContent>
@@ -392,7 +409,7 @@ const Register: React.FC = () => {
                                     <div className="relative">
                                         <Briefcase className="absolute left-3 top-3 size-4 text-muted-foreground z-10 pointer-events-none" />
                                         <Select onValueChange={handleSelectChange('designation')} value={formData.designation}>
-                                            <SelectTrigger className="pl-10 h-11 bg-background">
+                                            <SelectTrigger className={isDarkMode ? 'pl-10 h-11 bg-background' : 'pl-10 h-11 bg-slate-50 border-slate-200 focus-visible:bg-white focus-visible:border-primary/40'}>
                                                 <SelectValue placeholder="Select operational rank" />
                                             </SelectTrigger>
                                             <SelectContent>
@@ -417,7 +434,7 @@ const Register: React.FC = () => {
                                         placeholder="9876543210"
                                         value={formData.phone}
                                         onChange={handleChange}
-                                        className="pl-10 h-11 bg-background"
+                                        className={inputClass}
                                         inputMode="numeric"
                                         maxLength={10}
                                         pattern="\d{10}"
@@ -433,7 +450,7 @@ const Register: React.FC = () => {
                                     placeholder="Pediatrics"
                                     value={formData.department}
                                     onChange={handleChange}
-                                    className="h-11 bg-background"
+                                    className={plainInputClass}
                                 />
                             </div>
                         </div>
@@ -452,7 +469,7 @@ const Register: React.FC = () => {
                     </p>
                 </CardFooter>
             </Card>
-        </motion.div>
+        </div>
     );
 };
 

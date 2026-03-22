@@ -184,6 +184,9 @@ const CreateTraining: React.FC = () => {
             customProgram: isCustomProgram ? training.program : '',
             targetAudience: normalizedTargetAudience.targetAudience,
             customTargetAudience: normalizedTargetAudience.customTargetAudience,
+            date: /^\d{4}-\d{2}-\d{2}$/.test(prefilledDateFromRoute)
+              ? prefilledDateFromRoute
+              : prev.date,
             capacity: training.capacity?.toString() || '',
             requiredInstitutions: training.requiredInstitutions || [],
           }));

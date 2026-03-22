@@ -1,14 +1,15 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Building2, ShieldCheck, UserCog, Users, Database, Cpu, Activity } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../components/ui/card';
+import { ShieldCheck, UserCog, Users, Database, Cpu, Activity } from 'lucide-react';
+import { Card } from '../components/ui/card';
 import { motion } from 'framer-motion';
 import TmsLogo from '../components/TmsLogo';
 
 const PortalSelection: React.FC = () => {
     const navigate = useNavigate();
     const { t } = useTranslation();
+    const [activePortalPath, setActivePortalPath] = useState<string | null>(null);
 
     const portals = [
         {
@@ -42,9 +43,11 @@ const PortalSelection: React.FC = () => {
     ];
 
     const handlePortalClick = (path: string) => {
+        if (activePortalPath) return;
+        setActivePortalPath(path);
         setTimeout(() => {
             navigate(path);
-        }, 150); // slight delay to allow the tap animation to be visible
+        }, 240);
     };
 
     return (
@@ -61,10 +64,18 @@ const PortalSelection: React.FC = () => {
                     <div className="mb-8">
                         <TmsLogo className="size-28 text-white" />
                     </div>
-                    <h1 className="text-4xl font-semibold tracking-tight text-center text-white">
+                    <h1
+                        className="text-4xl font-semibold tracking-tight text-center text-white drop-shadow-[0_6px_24px_rgba(0,0,0,0.65)]"
+                        style={{ color: '#ffffff' }}
+                    >
                         DMO TMS
                     </h1>
-                    <p className="text-xl mt-4 font-medium opacity-90 text-center">Training Management System</p>
+                    <p
+                        className="text-xl mt-4 font-medium opacity-90 text-center text-white drop-shadow-[0_4px_18px_rgba(0,0,0,0.5)]"
+                        style={{ color: '#ffffff' }}
+                    >
+                        Training Management System
+                    </p>
                     <div className="mt-8 h-1 w-32 bg-primary/50 rounded-full" />
                 </div>
             </div>
@@ -74,12 +85,22 @@ const PortalSelection: React.FC = () => {
                 <div className="absolute inset-0 cyber-grid opacity-10 pointer-events-none" />
 
                 {/* Mobile Header */}
-                <div className="flex md:hidden flex-col items-center mb-10 relative z-10">
+                <div className="flex md:hidden flex-col items-center mb-10 relative z-10 rounded-3xl bg-slate-950/55 px-8 py-6 backdrop-blur-sm">
                     <div className="mb-4">
                         <TmsLogo className="size-16" />
                     </div>
-                    <h1 className="text-3xl font-bold text-foreground text-center tracking-tight">DMO TMS</h1>
-                    <p className="text-sm text-muted-foreground mt-1 text-center font-medium">Training Management System</p>
+                    <h1
+                        className="text-3xl font-bold text-white text-center tracking-tight drop-shadow-[0_6px_24px_rgba(0,0,0,0.65)]"
+                        style={{ color: '#ffffff' }}
+                    >
+                        DMO TMS
+                    </h1>
+                    <p
+                        className="text-sm text-white/80 mt-1 text-center font-medium drop-shadow-[0_4px_18px_rgba(0,0,0,0.5)]"
+                        style={{ color: 'rgba(255,255,255,0.92)' }}
+                    >
+                        Training Management System
+                    </p>
                 </div>
 
                 <div className="w-full max-w-lg space-y-8 relative z-10">
@@ -97,17 +118,33 @@ const PortalSelection: React.FC = () => {
 
                     <div className="space-y-4">
                         {portals.map((portal, index) => (
-                            <motion.div
+                            <motion.button
                                 key={portal.title}
+                                type="button"
                                 initial={{ opacity: 0, y: 15 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ duration: 0.3, delay: index * 0.1 }}
-                                whileHover={{ scale: 1.02 }}
-                                whileTap={{ scale: 0.98 }}
+                                whileHover={activePortalPath ? undefined : { scale: 1.01, y: -2 }}
+                                whileTap={activePortalPath ? undefined : { scale: 0.985 }}
+                                onClick={() => handlePortalClick(portal.path)}
+                                disabled={Boolean(activePortalPath)}
+                                className="group relative block w-full text-left"
                             >
+                                <motion.div
+                                    initial={false}
+                                    animate={activePortalPath === portal.path
+                                        ? { opacity: [0, 0.55, 0], scale: [0.98, 1.015, 1.03] }
+                                        : { opacity: 0, scale: 0.98 }}
+                                    transition={{ duration: 0.28, ease: [0.4, 0, 0.2, 1] }}
+                                    className="pointer-events-none absolute inset-0 rounded-2xl bg-primary/10 ring-1 ring-primary/30"
+                                />
                                 <Card
                                     className="border bg-card hover:bg-accent transition-all cursor-pointer overflow-hidden shadow-sm hover:shadow-md"
-                                    onClick={() => handlePortalClick(portal.path)}
+                                    style={{
+                                        transform: activePortalPath === portal.path ? 'scale(0.97)' : 'scale(1)',
+                                        opacity: activePortalPath && activePortalPath !== portal.path ? 0.7 : 1,
+                                        transition: 'transform 220ms cubic-bezier(0.4, 0, 0.2, 1), opacity 220ms cubic-bezier(0.4, 0, 0.2, 1)',
+                                    }}
                                 >
                                     <div className="flex items-center p-5">
                                         <div className={`p-4 rounded-xl ${portal.color} transition-colors`}>
@@ -123,7 +160,7 @@ const PortalSelection: React.FC = () => {
                                         </div>
                                     </div>
                                 </Card>
-                            </motion.div>
+                            </motion.button>
                         ))}
                     </div>
 

@@ -58,8 +58,8 @@ const getStatusMeta = (status: SlotStatus) => {
     case 'available':
       return {
         label: 'Available',
-        accent: 'text-emerald-300',
-        badge: 'border-emerald-500/30 bg-emerald-500/10 text-emerald-200',
+        accent: 'text-emerald-600 dark:text-emerald-300',
+        badge: 'border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-200',
         glow: 'hover:border-emerald-500/40 hover:shadow-md',
         border: 'border-emerald-500/20',
         progress: 'bg-gradient-to-r from-emerald-400 via-teal-400 to-cyan-400',
@@ -67,8 +67,8 @@ const getStatusMeta = (status: SlotStatus) => {
     case 'partial':
       return {
         label: 'Partial',
-        accent: 'text-amber-300',
-        badge: 'border-amber-500/30 bg-amber-500/10 text-amber-200',
+        accent: 'text-amber-600 dark:text-amber-300',
+        badge: 'border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-200',
         glow: 'hover:border-amber-500/40 hover:shadow-md',
         border: 'border-amber-500/20',
         progress: 'bg-gradient-to-r from-amber-300 via-orange-300 to-yellow-300',
@@ -76,8 +76,8 @@ const getStatusMeta = (status: SlotStatus) => {
     default:
       return {
         label: 'Booked',
-        accent: 'text-rose-300',
-        badge: 'border-rose-500/30 bg-rose-500/10 text-rose-200',
+        accent: 'text-rose-600 dark:text-rose-300',
+        badge: 'border-rose-500/30 bg-rose-500/10 text-rose-700 dark:text-rose-200',
         glow: 'hover:border-rose-500/40 hover:shadow-md',
         border: 'border-rose-500/20',
         progress: 'bg-gradient-to-r from-rose-400 via-pink-400 to-red-400',
@@ -356,7 +356,7 @@ const HallAvailability: React.FC = () => {
                             <div>
                               <div className="mb-1 flex items-center justify-between text-[11px] text-muted-foreground">
                                 <span className="flex items-center gap-1.5">
-                                  <Sun className="size-3.5 text-amber-300" />
+                                  <Sun className="size-3.5 text-amber-500 dark:text-amber-300" />
                                   Morning
                                 </span>
                                 <span>{breakdown.morning.availablePercent}% free</span>
@@ -370,7 +370,7 @@ const HallAvailability: React.FC = () => {
                             <div>
                               <div className="mb-1 flex items-center justify-between text-[11px] text-muted-foreground">
                                 <span className="flex items-center gap-1.5">
-                                  <Sunset className="size-3.5 text-violet-300" />
+                                  <Sunset className="size-3.5 text-violet-500 dark:text-violet-300" />
                                   Evening
                                 </span>
                                 <span>{breakdown.evening.availablePercent}% free</span>
@@ -394,12 +394,12 @@ const HallAvailability: React.FC = () => {
                             <p className="mt-1 text-sm font-medium text-foreground">{hall.name}</p>
                           </div>
                           {allEvents.length === 0 ? (
-                            <p className="text-sm text-emerald-200">Open across both standard slots.</p>
+                            <p className="text-sm text-emerald-700 dark:text-emerald-200">Open across both standard slots.</p>
                           ) : (
                             <div className="space-y-2">
                               {breakdown.events.blocks.map((block) => (
-                                <div key={block.id} className="rounded-xl border border-rose-400/15 bg-rose-400/10 px-3 py-2">
-                                  <p className="text-xs font-medium text-rose-200">{block.reason}</p>
+                                <div key={block.id} className="rounded-xl border border-rose-400/25 bg-rose-500/10 px-3 py-2">
+                                  <p className="text-xs font-medium text-rose-700 dark:text-rose-200">{block.reason}</p>
                                   <p className="mt-1 text-[11px] text-muted-foreground">
                                     {block.startTime} - {block.endTime}
                                   </p>
@@ -624,7 +624,7 @@ const HallAvailability: React.FC = () => {
                     <div className="space-y-2">
                       <div className="flex items-center justify-between text-sm text-muted-foreground">
                         <span className="flex items-center gap-2">
-                          <Sun className="size-4 text-amber-300" />
+                          <Sun className="size-4 text-amber-500 dark:text-amber-300" />
                           Morning
                         </span>
                         <span>{breakdown.morning.availablePercent}% free</span>
@@ -639,7 +639,7 @@ const HallAvailability: React.FC = () => {
                     <div className="space-y-2">
                       <div className="flex items-center justify-between text-sm text-muted-foreground">
                         <span className="flex items-center gap-2">
-                          <Sunset className="size-4 text-violet-300" />
+                          <Sunset className="size-4 text-violet-500 dark:text-violet-300" />
                           Evening
                         </span>
                         <span>{breakdown.evening.availablePercent}% free</span>
@@ -673,13 +673,13 @@ const HallAvailability: React.FC = () => {
                   ) : (
                     <div className="space-y-3">
                       {events.blocks.map((block) => (
-                        <div key={block.id} className="rounded-[18px] border border-rose-500/20 bg-rose-500/10 px-4 py-3">
+                        <div key={block.id} className="rounded-[18px] border border-rose-500/25 bg-rose-500/10 px-4 py-3">
                           <div className="flex items-center justify-between gap-4">
                             <div>
-                              <p className="text-sm font-medium text-rose-100">{block.reason}</p>
-                              <p className="mt-1 text-xs text-rose-200/70">Operational block</p>
+                              <p className="text-sm font-medium text-rose-700 dark:text-rose-100">{block.reason}</p>
+                              <p className="mt-1 text-xs text-rose-600 dark:text-rose-200/70">Operational block</p>
                             </div>
-                            <p className="text-xs font-medium text-rose-100">
+                            <p className="text-xs font-medium text-rose-700 dark:text-rose-100">
                               {block.startTime} - {block.endTime}
                             </p>
                           </div>
@@ -707,7 +707,7 @@ const HallAvailability: React.FC = () => {
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="mt-6 h-11 w-full rounded-2xl border border-rose-500/20 bg-rose-500/10 text-rose-100 transition-all duration-200 hover:scale-[1.01] hover:border-rose-500/40 hover:bg-rose-500/15 active:scale-[0.98]"
+                    className="mt-6 h-11 w-full rounded-2xl border border-rose-500/25 bg-rose-500/10 text-rose-700 transition-all duration-200 hover:scale-[1.01] hover:border-rose-500/40 hover:bg-rose-500/15 hover:text-rose-800 active:scale-[0.98] dark:text-rose-100"
                     onClick={() => {
                       setBlockingHall(hall);
                       setShowBlockDialog(true);

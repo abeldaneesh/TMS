@@ -4,7 +4,6 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../contexts/ThemeContext';
 import { Mail, Lock, AlertCircle, ArrowLeft, ShieldCheck, Database, Cpu, Sun, Moon } from 'lucide-react';
-import { motion } from 'framer-motion';
 import TmsLogo from '../components/TmsLogo';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
@@ -26,6 +25,23 @@ const Login: React.FC<LoginProps> = ({ roleTitle = 'Sign In', allowedRoles }) =>
   const navigate = useNavigate();
   const { t, i18n } = useTranslation();
   const { theme, toggleTheme } = useTheme();
+  const isDarkMode = theme === 'dark';
+
+  const floatingButtonClass = isDarkMode
+    ? 'bg-background/80 backdrop-blur-md rounded-full shadow-md'
+    : 'bg-white/90 border-slate-200 text-slate-700 backdrop-blur-md rounded-full shadow-sm shadow-slate-200/80';
+
+  const formPanelClass = isDarkMode
+    ? 'bg-background text-foreground'
+    : 'bg-[radial-gradient(circle_at_top,rgba(79,70,229,0.08),transparent_30%),linear-gradient(180deg,#f8fafc_0%,#f3f6fb_100%)] text-slate-900';
+
+  const authCardClass = isDarkMode
+    ? 'border shadow-lg bg-card'
+    : 'border-slate-200/90 bg-white shadow-[0_24px_55px_-24px_rgba(15,23,42,0.30)]';
+
+  const inputClass = isDarkMode
+    ? 'pl-10 h-11 bg-background'
+    : 'pl-10 h-11 bg-slate-50 border-slate-200 focus-visible:bg-white focus-visible:border-primary/40';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -53,18 +69,13 @@ const Login: React.FC<LoginProps> = ({ roleTitle = 'Sign In', allowedRoles }) =>
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
-      className="min-h-screen flex flex-col md:flex-row bg-background"
-    >
+    <div className="min-h-screen flex flex-col md:flex-row bg-background">
       {/* Floating Action Buttons */}
       <div className="absolute top-4 right-4 z-50 flex gap-2">
-        <Button variant="outline" size="icon" className="bg-background/80 backdrop-blur-md rounded-full shadow-md" onClick={() => i18n.changeLanguage(i18n.language.startsWith('ml') ? 'en' : 'ml')}>
+        <Button variant="outline" size="icon" className={floatingButtonClass} onClick={() => i18n.changeLanguage(i18n.language.startsWith('ml') ? 'en' : 'ml')}>
           <span className="text-lg">🌐</span>
         </Button>
-        <Button variant="outline" size="icon" className="bg-background/80 backdrop-blur-md rounded-full shadow-md" onClick={toggleTheme}>
+        <Button variant="outline" size="icon" className={floatingButtonClass} onClick={toggleTheme}>
           {theme === 'dark' ? <Sun className="size-5 text-yellow-500" /> : <Moon className="size-5 text-slate-700" />}
         </Button>
       </div>
@@ -76,26 +87,34 @@ const Login: React.FC<LoginProps> = ({ roleTitle = 'Sign In', allowedRoles }) =>
           alt="Institutional Campus"
           className="absolute inset-0 w-full h-full object-cover"
         />
-        <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" />
+        <div className="absolute inset-0 bg-slate-900/58 backdrop-blur-sm" />
         <div className="relative z-10 flex flex-col items-center justify-center w-full p-12 text-white">
           <div className="mb-8">
             <TmsLogo className="size-28 text-white" />
           </div>
-          <h1 className="text-4xl font-semibold tracking-tight text-center text-white">
+          <h1
+            className="text-4xl font-semibold tracking-tight text-center text-white drop-shadow-[0_6px_24px_rgba(0,0,0,0.65)]"
+            style={{ color: '#ffffff' }}
+          >
             DMO TMS
           </h1>
         </div>
       </div>
 
       {/* Right Column: Login Form */}
-      <div className="flex-1 flex flex-col items-center justify-center p-8 md:p-12 overflow-y-auto relative bg-background text-foreground">
+      <div className={`flex-1 flex flex-col items-center justify-center p-8 md:p-12 overflow-y-auto relative ${formPanelClass}`}>
+        {!isDarkMode && <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(255,255,255,0.72),rgba(255,255,255,0.94))]" />}
         <div className="w-full max-w-md relative z-10">
-          <Button variant="ghost" className="mb-6 -ml-2 text-muted-foreground hover:text-foreground" onClick={() => navigate('/login')}>
+          <Button
+            variant="ghost"
+            className={isDarkMode ? 'mb-6 -ml-2 text-muted-foreground hover:text-foreground' : 'mb-6 -ml-2 text-slate-500 hover:text-slate-900 hover:bg-white/70'}
+            onClick={() => navigate('/login')}
+          >
             <ArrowLeft className="size-4 mr-2" />
             {t('auth.goBack', 'Back')}
           </Button>
 
-          <Card className="border shadow-lg bg-card">
+          <Card className={authCardClass}>
             <CardHeader className="space-y-1 text-center pb-6 pt-8">
               <div className="flex justify-center mb-4">
                 <TmsLogo className="size-14" />
@@ -121,7 +140,7 @@ const Login: React.FC<LoginProps> = ({ roleTitle = 'Sign In', allowedRoles }) =>
                       placeholder="name@example.com"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      className="pl-10 h-11 bg-background"
+                      className={inputClass}
                       required
                     />
                   </div>
@@ -137,7 +156,7 @@ const Login: React.FC<LoginProps> = ({ roleTitle = 'Sign In', allowedRoles }) =>
                       placeholder="••••••••"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      className="pl-10 h-11 bg-background"
+                      className={inputClass}
                       required
                     />
                   </div>
@@ -165,7 +184,7 @@ const Login: React.FC<LoginProps> = ({ roleTitle = 'Sign In', allowedRoles }) =>
           </Card>
         </div>
       </div>
-    </motion.div>
+    </div>
   );
 };
 

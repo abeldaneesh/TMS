@@ -10,8 +10,8 @@ import {
     TableRow,
 } from '../components/ui/table';
 import { Button } from '../components/ui/button';
-import { nominationsApi, trainingsApi } from '../../services/api';
-import { Nomination, Training } from '../../types';
+import { attendanceApi, nominationsApi, trainingsApi } from '../../services/api';
+import { Attendance, Nomination, Training } from '../../types';
 import { Loader2, UserMinus, ArrowLeft, Users } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { toast } from 'sonner';
@@ -27,6 +27,7 @@ const TrainingParticipants: React.FC = () => {
 
     const [training, setTraining] = useState<Training | null>(null);
     const [participants, setParticipants] = useState<Nomination[]>([]);
+    const [attendanceRecords, setAttendanceRecords] = useState<Attendance[]>([]);
     const [selectedParticipantIds, setSelectedParticipantIds] = useState<string[]>([]);
     const [loading, setLoading] = useState(true);
 
@@ -40,9 +41,10 @@ const TrainingParticipants: React.FC = () => {
         if (!id) return;
         setLoading(true);
         try {
-            const [trainingData, nominationsData] = await Promise.all([
+            const [trainingData, nominationsData, attendanceData] = await Promise.all([
                 trainingsApi.getById(id),
-                nominationsApi.getAll({ trainingId: id })
+                nominationsApi.getAll({ trainingId: id }),
+                attendanceApi.getAll({ trainingId: id }).catch(() => []),
             ]);
 
             if (!checkAuthorization(trainingData)) {
@@ -52,6 +54,7 @@ const TrainingParticipants: React.FC = () => {
             }
 
             setTraining(trainingData);
+            setAttendanceRecords(Array.isArray(attendanceData) ? attendanceData : []);
 
             // Only show approved and attended participants
             const activeParticipants = nominationsData.filter(nom =>
@@ -114,8 +117,21 @@ const TrainingParticipants: React.FC = () => {
         );
     };
 
+    const hasAttendanceRecord = (participantId?: string) =>
+        Boolean(
+            participantId &&
+            attendanceRecords.some((record) => record.participantId === participantId)
+        );
+
+    const getEffectiveParticipantStatus = (nomination: Nomination) => {
+        if (hasAttendanceRecord(nomination.participantId)) {
+            return 'attended';
+        }
+        return nomination.status === 'attended' ? 'approved' : nomination.status;
+    };
+
     const toggleSelectAll = () => {
-        const removableParticipants = participants.filter(nom => nom.status !== 'attended');
+        const removableParticipants = participants.filter(nom => getEffectiveParticipantStatus(nom) !== 'attended');
         if (selectedParticipantIds.length === removableParticipants.length) {
             setSelectedParticipantIds([]);
         } else {
@@ -202,11 +218,16 @@ const TrainingParticipants: React.FC = () => {
                                 <TableBody>
                                     {participants.map((nom) => (
                                         <TableRow key={nom.id} className={selectedParticipantIds.includes(nom.id) ? "bg-muted/50" : ""}>
+                                            {(() => {
+                                                const effectiveStatus = getEffectiveParticipantStatus(nom);
+                                                const isAttended = effectiveStatus === 'attended';
+                                                return (
+                                                    <>
                                             <TableCell>
                                                 <Checkbox
                                                     checked={selectedParticipantIds.includes(nom.id)}
                                                     onCheckedChange={() => toggleParticipantSelection(nom.id)}
-                                                    disabled={nom.status === 'attended'}
+                                                    disabled={isAttended}
                                                     aria-label={`Select ${nom.participant?.name}`}
                                                 />
                                             </TableCell>
@@ -222,10 +243,10 @@ const TrainingParticipants: React.FC = () => {
                                             </TableCell>
                                             <TableCell>
                                                 <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold
-                                                    ${nom.status === 'attended' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300'
+                                                    ${isAttended ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300'
                                                         : 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300'}
                                                 `}>
-                                                    {t(`common.statuses.${nom.status}`, { defaultValue: nom.status.charAt(0).toUpperCase() + nom.status.slice(1) })}
+                                                    {t(`common.statuses.${effectiveStatus}`, { defaultValue: effectiveStatus.charAt(0).toUpperCase() + effectiveStatus.slice(1) })}
                                                 </span>
                                             </TableCell>
                                             <TableCell className="text-right">
@@ -234,13 +255,16 @@ const TrainingParticipants: React.FC = () => {
                                                     size="sm"
                                                     onClick={() => handleRemoveParticipant(nom.id, nom.participant?.name || t('participantsManage.unknown'))}
                                                     className="h-8 gap-1.5"
-                                                    disabled={nom.status === 'attended'}
-                                                    title={nom.status === 'attended' ? t('participantsManage.cannotRemoveAttended') : t('participantsManage.removeUser')}
+                                                    disabled={isAttended}
+                                                    title={isAttended ? t('participantsManage.cannotRemoveAttended') : t('participantsManage.removeUser')}
                                                 >
                                                     <UserMinus className="size-3.5" />
                                                     <span className="hidden sm:inline">{t('participantsManage.remove')}</span>
                                                 </Button>
                                             </TableCell>
+                                                    </>
+                                                );
+                                            })()}
                                         </TableRow>
                                     ))}
                                 </TableBody>

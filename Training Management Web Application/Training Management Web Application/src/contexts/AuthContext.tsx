@@ -65,7 +65,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   if (loading) {
-    return <LoadingScreen />;
+    return <LoadingScreen fullscreen />;
   }
 
   const updateUser = (userData: User) => {

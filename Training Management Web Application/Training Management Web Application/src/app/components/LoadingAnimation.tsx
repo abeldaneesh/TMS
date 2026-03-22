@@ -7,38 +7,61 @@ interface LoadingAnimationProps {
 
 const LoadingAnimation: React.FC<LoadingAnimationProps> = ({ className = '', text }) => {
     return (
-        <div className={`flex flex-col items-center justify-center ${className}`}>
-            <div className={`relative flex items-center justify-center ${text ? 'mb-6' : ''}`}>
-                {/* Circle */}
-                <svg className="loading-symbol-inline" viewBox="0 0 32 32">
-                    <circle cx="16" cy="16" r="14" className="stroke" pathLength="100" />
-                    <circle cx="16" cy="26" r="1.5" className="dot delay-0" />
-                </svg>
+        <div className={`flex flex-col items-center justify-center text-center ${className}`}>
+            <div className={`relative flex flex-col items-center ${text ? 'gap-6' : ''}`}>
+                <div className="loading-symbol-row" aria-hidden="true">
+                    <div className="loading-symbol-slot">
+                        <svg className="loading-symbol-inline" viewBox="0 0 32 32">
+                            <circle cx="16" cy="16" r="14" className="stroke" pathLength="100" />
+                            <circle cx="16" cy="26" r="1.5" className="dot delay-0" />
+                        </svg>
+                    </div>
 
-                {/* Triangle */}
-                <svg className="loading-symbol-inline triangle-symbol-inline" viewBox="0 0 32 32">
-                    <path d="M 16 3 L 29 27 L 3 27 Z" className="stroke" pathLength="100" />
-                    <circle cx="16" cy="23" r="1.5" className="dot delay-1" />
-                </svg>
+                    <div className="loading-symbol-slot">
+                        <svg className="loading-symbol-inline triangle-symbol-inline" viewBox="0 0 32 32">
+                            <path d="M 16 3 L 29 27 L 3 27 Z" className="stroke" pathLength="100" />
+                            <circle cx="16" cy="23" r="1.5" className="dot delay-1" />
+                        </svg>
+                    </div>
 
-                {/* Square */}
-                <svg className="loading-symbol-inline square-symbol-inline" viewBox="0 0 32 32">
-                    <rect x="3" y="3" width="26" height="26" rx="1.5" className="stroke" pathLength="100" />
-                    <circle cx="16" cy="25" r="1.5" className="dot delay-2" />
-                </svg>
+                    <div className="loading-symbol-slot">
+                        <svg className="loading-symbol-inline square-symbol-inline" viewBox="0 0 32 32">
+                            <rect x="3" y="3" width="26" height="26" rx="1.5" className="stroke" pathLength="100" />
+                            <circle cx="16" cy="25" r="1.5" className="dot delay-2" />
+                        </svg>
+                    </div>
+                </div>
+
+                {text && (
+                    <p className="text-primary font-mono text-xs tracking-widest uppercase animate-pulse">
+                        {text}
+                    </p>
+                )}
             </div>
 
-            {text && (
-                <p className="text-primary font-mono text-xs tracking-widest uppercase animate-pulse">
-                    {text}
-                </p>
-            )}
-
             <style>{`
+                .loading-symbol-row {
+                    display: inline-grid;
+                    grid-template-columns: repeat(3, 40px);
+                    align-items: center;
+                    justify-content: center;
+                    column-gap: 16px;
+                    width: max-content;
+                    margin: 0 auto;
+                }
+
+                .loading-symbol-slot {
+                    width: 40px;
+                    height: 40px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                }
+
                 .loading-symbol-inline {
+                    display: block;
                     width: 32px;
                     height: 32px;
-                    margin: 0 12px;
                     overflow: visible;
                 }
                 

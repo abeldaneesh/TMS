@@ -1,4 +1,0 @@
-396e266 Add empty out.txt placeholder
-b618a57 Remove Java crash log artifacts
-4c0aa26 Update app UI flows and mobile assets
-aa43ce0 Add hall capacity warning

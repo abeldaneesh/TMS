@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { PushNotifications, Token, PushNotificationSchema, ActionPerformed } from '@capacitor/push-notifications';
 import { LocalNotifications } from '@capacitor/local-notifications';
 import { Capacitor } from '@capacitor/core';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useTranslation } from 'react-i18next';
@@ -30,7 +30,7 @@ import {
 } from './ui/dropdown-menu';
 
 interface LayoutProps {
-  children: React.ReactNode;
+  children?: React.ReactNode;
 }
 
 const Layout: React.FC<LayoutProps> = ({ children }) => {
@@ -290,6 +290,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   };
 
   const [globalSearchTerm, setGlobalSearchTerm] = useState('');
+  const pageContent = children ?? <Outlet />;
 
   const handleGlobalSearch = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && globalSearchTerm.trim()) {
@@ -502,7 +503,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           <div className="px-4 sm:px-6 lg:px-10 pb-24 lg:pb-12 h-full">
             <AnimatePresence mode="wait">
               <PageTransition key={location.pathname}>
-                {children}
+                {pageContent}
               </PageTransition>
             </AnimatePresence>
           </div>

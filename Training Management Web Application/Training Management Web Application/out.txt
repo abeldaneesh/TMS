@@ -1,7 +1,0 @@
-remote: error: Trace: 3da8ab37c77989d20ef98b2db3f13b36ee3a193e0987857f561189d1885a975a        
-remote: error: See https://gh.io/lfs for more information.        
-remote: error: File Training Management Web Application.tar is 982.74 MB; this exceeds GitHub's file size limit of 100.00 MB        
-remote: error: GH001: Large files detected. You may want to try Git Large File Storage - https://git-lfs.github.com.        
-To https://github.com/abeldaneesh/TMS.git
- ! [remote rejected] main -> main (pre-receive hook declined)
-error: failed to push some refs to 'https://github.com/abeldaneesh/TMS.git'

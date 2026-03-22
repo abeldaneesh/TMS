@@ -1,9 +1,9 @@
 import React from 'react';
-
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { AuthProvider, useAuth } from '../contexts/AuthContext';
 import { Toaster } from './components/ui/sonner';
 import Layout from './components/Layout';
+import PageTransition from './components/PageTransition';
 import PortalSelection from './pages/PortalSelection';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
@@ -12,7 +12,6 @@ import TrainingDetails from './pages/TrainingDetails';
 import CreateTraining from './pages/CreateTraining';
 import MyAttendance from './pages/MyAttendance';
 import TrainingParticipants from './pages/TrainingParticipants';
-
 import ScanQR from './pages/ScanQR';
 import Reports from './pages/Reports';
 import Nominations from './pages/Nominations';
@@ -30,8 +29,6 @@ import HallRequests from './pages/HallRequests';
 import Personnel from './pages/Personnel';
 import UserDetails from './pages/UserDetails';
 
-// Protected Route Component
-// Protected Route Component
 const ProtectedRoute: React.FC<{ children: React.ReactNode; allowedRoles?: string[] }> = ({ children, allowedRoles }) => {
   const { isAuthenticated, user } = useAuth();
 
@@ -44,295 +41,94 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode; allowedRoles?: strin
   return <>{children}</>;
 };
 
-// Public Route Component (redirect if authenticated)
 const PublicRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { isAuthenticated } = useAuth();
   return !isAuthenticated ? <>{children}</> : <Navigate to="/dashboard" replace />;
 };
 
+const RootRedirect: React.FC = () => {
+  const { isAuthenticated } = useAuth();
+  return <Navigate to={isAuthenticated ? '/dashboard' : '/login'} replace />;
+};
+
+const PublicShell: React.FC = () => (
+  <PublicRoute>
+    <PageTransition>
+      <Outlet />
+    </PageTransition>
+  </PublicRoute>
+);
+
+const ProtectedShell: React.FC = () => (
+  <ProtectedRoute>
+    <Layout />
+  </ProtectedRoute>
+);
+
 const AppRoutes: React.FC = () => {
   return (
     <Routes>
-      {/* Public Routes */}
-      <Route
-        path="/login"
-        element={
-          <PublicRoute>
-            <PortalSelection />
-          </PublicRoute>
-        }
-      />
-      <Route
-        path="/login/admin"
-        element={
-          <PublicRoute>
-            <Login roleTitle="Admin Login" allowedRoles={['master_admin', 'institutional_admin']} />
-          </PublicRoute>
-        }
-      />
-      <Route
-        path="/login/officer"
-        element={
-          <PublicRoute>
-            <Login roleTitle="Program Officer Login" allowedRoles={['program_officer']} />
-          </PublicRoute>
-        }
-      />
-      <Route
-        path="/login/participant"
-        element={
-          <PublicRoute>
-            <Login roleTitle="Participant Login" allowedRoles={['participant']} />
-          </PublicRoute>
-        }
-      />
-      <Route
-        path="/login/medical_officer"
-        element={
-          <PublicRoute>
-            <Login roleTitle="Medical Officer Login" allowedRoles={['medical_officer']} />
-          </PublicRoute>
-        }
-      />
-      <Route
-        path="/register"
-        element={
-          <PublicRoute>
-            <Register />
-          </PublicRoute>
-        }
-      />
+      <Route path="/" element={<RootRedirect />} />
 
-      {/* Protected Routes */}
-      <Route
-        path="/dashboard"
-        element={
-          <ProtectedRoute>
-            <Layout>
-              <Dashboard />
-            </Layout>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/trainings"
-        element={
-          <ProtectedRoute>
-            <Layout>
-              <Trainings />
-            </Layout>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/trainings/create"
-        element={
-          <ProtectedRoute>
-            <Layout>
-              <CreateTraining />
-            </Layout>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/trainings/:id"
-        element={
-          <ProtectedRoute>
-            <Layout>
-              <TrainingDetails />
-            </Layout>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/trainings/:id/edit"
-        element={
-          <ProtectedRoute>
-            <Layout>
-              <CreateTraining />
-            </Layout>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/trainings/:id/participants"
-        element={
-          <ProtectedRoute>
-            <Layout>
-              <TrainingParticipants />
-            </Layout>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/hall-availability"
-        element={
-          <ProtectedRoute>
-            <Layout>
-              <HallAvailability />
-            </Layout>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/my-attendance"
+      <Route element={<PublicShell />}>
+        <Route path="/login" element={<PortalSelection />} />
+        <Route path="/login/admin" element={<Login roleTitle="Admin Login" allowedRoles={['master_admin', 'institutional_admin']} />} />
+        <Route path="/login/officer" element={<Login roleTitle="Program Officer Login" allowedRoles={['program_officer']} />} />
+        <Route path="/login/participant" element={<Login roleTitle="Participant Login" allowedRoles={['participant']} />} />
+        <Route path="/login/medical_officer" element={<Login roleTitle="Medical Officer Login" allowedRoles={['medical_officer']} />} />
+        <Route path="/register" element={<Register />} />
+      </Route>
 
-        element={
-          <ProtectedRoute>
-            <Layout>
-              <MyAttendance />
-            </Layout>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/notifications-mobile"
-        element={
-          <ProtectedRoute>
-            <Layout>
-              <NotificationsMobile />
-            </Layout>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/scan-qr"
-        element={
-          <ProtectedRoute>
-            <Layout>
-              <ScanQR />
-            </Layout>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/nominations"
-        element={
-          <ProtectedRoute allowedRoles={['medical_officer']}>
-            <Layout>
+      <Route element={<ProtectedShell />}>
+        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/trainings" element={<Trainings />} />
+        <Route path="/trainings/create" element={<CreateTraining />} />
+        <Route path="/trainings/:id" element={<TrainingDetails />} />
+        <Route path="/trainings/:id/edit" element={<CreateTraining />} />
+        <Route path="/trainings/:id/participants" element={<TrainingParticipants />} />
+        <Route path="/hall-availability" element={<HallAvailability />} />
+        <Route path="/my-attendance" element={<MyAttendance />} />
+        <Route path="/notifications-mobile" element={<NotificationsMobile />} />
+        <Route path="/scan-qr" element={<ScanQR />} />
+        <Route
+          path="/nominations"
+          element={
+            <ProtectedRoute allowedRoles={['medical_officer']}>
               <Nominations />
-            </Layout>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/analytics"
-        element={
-          <ProtectedRoute>
-            <Layout>
-              <Analytics />
-            </Layout>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/reports"
-        element={
-          <ProtectedRoute>
-            <Layout>
-              <Reports />
-            </Layout>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/admin/approvals"
-        element={
-          <ProtectedRoute>
-            <Layout>
-              <UserApprovals />
-            </Layout>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/officers"
-        element={
-          <ProtectedRoute>
-            <Layout>
-              <ProgramOfficers />
-            </Layout>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/participants"
-        element={
-          <ProtectedRoute>
-            <Layout>
-              <Participants />
-            </Layout>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/institutions"
-        element={
-          <ProtectedRoute>
-            <Layout>
-              <Institutions />
-            </Layout>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/halls"
-        element={
-          <ProtectedRoute>
-            <Layout>
-              <Halls />
-            </Layout>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/hall-requests"
-        element={
-          <ProtectedRoute>
-            <Layout>
-              <HallRequests />
-            </Layout>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/settings"
-        element={
-          <ProtectedRoute>
-            <Layout>
-              <Settings />
-            </Layout>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/personnel"
-        element={
-          <ProtectedRoute allowedRoles={['master_admin', 'institutional_admin', 'medical_officer']}>
-            <Layout>
+            </ProtectedRoute>
+          }
+        />
+        <Route path="/analytics" element={<Analytics />} />
+        <Route path="/reports" element={<Reports />} />
+        <Route path="/admin/approvals" element={<UserApprovals />} />
+        <Route path="/officers" element={<ProgramOfficers />} />
+        <Route path="/participants" element={<Participants />} />
+        <Route path="/institutions" element={<Institutions />} />
+        <Route path="/halls" element={<Halls />} />
+        <Route path="/hall-requests" element={<HallRequests />} />
+        <Route path="/settings" element={<Settings />} />
+        <Route
+          path="/personnel"
+          element={
+            <ProtectedRoute allowedRoles={['master_admin', 'institutional_admin', 'medical_officer']}>
               <Personnel />
-            </Layout>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/user/:id"
-        element={
-          <ProtectedRoute allowedRoles={['master_admin', 'institutional_admin', 'medical_officer']}>
-            <Layout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/user/:id"
+          element={
+            <ProtectedRoute allowedRoles={['master_admin', 'institutional_admin', 'medical_officer']}>
               <UserDetails />
-            </Layout>
-          </ProtectedRoute>
-        }
-      />
+            </ProtectedRoute>
+          }
+        />
+      </Route>
 
-      {/* Default Route */}
-      <Route path="/" element={<Navigate to="/dashboard" replace />} />
-      <Route path="*" element={<Navigate to="/dashboard" replace />} />
+      <Route path="*" element={<RootRedirect />} />
     </Routes>
   );
 };
-
 
 export default function App() {
   return (

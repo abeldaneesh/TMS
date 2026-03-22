@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/table';
 import { Badge } from '../components/ui/badge';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../components/ui/dialog';
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '../components/ui/dialog';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
@@ -88,71 +88,72 @@ const Institutions: React.FC = () => {
         <div className="space-y-6">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div>
-                    <h1 className="text-2xl md:text-3xl font-extrabold tracking-tighter text-foreground flex items-center gap-3">
-                        <Building2 className="size-6 md:size-8 text-primary animate-pulse-glow" />
+                    <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-foreground flex items-center gap-3">
+                        <Building2 className="size-8 sm:size-10 text-primary" />
                         {t('institutions.title', 'INSTITUTIONS')}
-                        <div className="h-1 w-20 bg-gradient-to-r from-primary to-transparent rounded-full ml-4 hidden md:block" />
                     </h1>
-                    <p className="text-muted-foreground mt-1 font-mono text-[10px] md:text-xs uppercase tracking-widest opacity-70">{t('institutions.subtitle', 'Sector Registry & Organizational Matrix')}</p>
+                    <p className="text-muted-foreground mt-2 text-sm">
+                        {t('institutions.subtitle', 'Sector Registry & Organizational Matrix')}
+                    </p>
                 </div>
                 {isMasterAdmin && (
                     <Button
                         onClick={() => setShowCreateDialog(true)}
-                        className="w-full md:w-auto bg-primary hover:bg-primary/90 text-primary-foreground font-bold tracking-widest uppercase rounded-xl border border-primary/20 shadow-[0_0_20px_rgba(0,236,255,0.2)]"
+                        className="w-full md:w-auto rounded-full px-6 bg-foreground text-background hover:bg-white/90 font-semibold"
                     >
                         <Plus className="size-4 mr-2" />
-                        {t('institutions.registerNew', 'REGISTER NEW INSTITUTION')}
+                        {t('institutions.registerNew', 'Register New Institution')}
                     </Button>
                 )}
             </div>
 
-            <Card className="glass-card overflow-hidden">
-                <CardHeader className="pb-4 border-b border-primary/10 bg-primary/5">
-                    <CardTitle className="text-sm font-bold text-primary tracking-[0.2em] flex items-center gap-2 uppercase">
+            <Card className="overflow-hidden border-border/60 bg-card/95 shadow-sm">
+                <CardHeader className="pb-4 border-b border-border/60 bg-secondary/10">
+                    <CardTitle className="text-base font-semibold text-foreground flex items-center gap-2">
                         <ShieldCheck className="size-4" />
-                        {t('institutions.verified', 'VERIFIED SECTORS')}
+                        {t('institutions.verified', 'Verified Institutions')}
                     </CardTitle>
                 </CardHeader>
                 <CardContent className="pt-6">
                     {loading ? (
                         <div className="flex flex-col items-center justify-center py-20">
-                            <LoadingAnimation text={t('institutions.loading', 'ACCESSING SECTOR DATABASE...')} />
+                            <LoadingAnimation text={t('institutions.loading', 'Loading institutions...')} />
                         </div>
                     ) : institutions.length === 0 ? (
-                        <div className="text-center py-20 bg-primary/5 rounded-3xl border border-dashed border-primary/20">
-                            <Activity className="size-12 mx-auto mb-4 text-primary/20 animate-pulse" />
-                            <h3 className="text-xl font-bold text-foreground tracking-widest uppercase">{t('institutions.noSectors', 'No Sectors Detected')}</h3>
-                            <p className="text-muted-foreground mt-2 font-mono text-[10px] uppercase tracking-widest">{t('institutions.noSectorsDesc', 'The institutional grid is currently offline.')}</p>
+                        <div className="text-center py-20 rounded-3xl border border-dashed border-border bg-secondary/10">
+                            <Activity className="size-12 mx-auto mb-4 text-muted-foreground/40" />
+                            <h3 className="text-xl font-semibold text-foreground">{t('institutions.noSectors', 'No institutions found')}</h3>
+                            <p className="text-muted-foreground mt-2 text-sm">{t('institutions.noSectorsDesc', 'The institutional registry is currently empty.')}</p>
                         </div>
                     ) : (
-                        <Table className="neon-table">
+                        <Table>
                             <TableHeader>
-                                <TableRow className="hover:bg-transparent border-primary/10">
-                                    <TableHead>{t('institutions.table.name', 'SECTOR / NAME')}</TableHead>
-                                    <TableHead>{t('institutions.table.classification', 'CLASSIFICATION')}</TableHead>
-                                    <TableHead>{t('institutions.table.location', 'COORDINATES / LOCATION')}</TableHead>
-                                    <TableHead className="text-right">{t('institutions.table.actions', 'ACTIONS')}</TableHead>
+                                <TableRow className="hover:bg-transparent border-border/60">
+                                    <TableHead className="text-xs uppercase tracking-wider text-muted-foreground">{t('institutions.table.name', 'Sector / Name')}</TableHead>
+                                    <TableHead className="text-xs uppercase tracking-wider text-muted-foreground">{t('institutions.table.classification', 'Classification')}</TableHead>
+                                    <TableHead className="text-xs uppercase tracking-wider text-muted-foreground">{t('institutions.table.location', 'Coordinates / Location')}</TableHead>
+                                    <TableHead className="text-right text-xs uppercase tracking-wider text-muted-foreground">{t('institutions.table.actions', 'Actions')}</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
                                 {institutions.map((institution) => (
-                                    <TableRow key={institution.id} className="group border-primary/5">
-                                        <TableCell className="py-4 font-bold text-foreground tracking-wide">
+                                    <TableRow key={institution.id} className="group border-border/40">
+                                        <TableCell className="py-4 font-semibold text-foreground">
                                             <div className="flex items-center gap-3">
-                                                <div className="size-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary border border-primary/20 group-hover:scale-110 transition-transform">
+                                                <div className="size-10 rounded-xl bg-secondary/20 flex items-center justify-center text-primary border border-border/60">
                                                     <Building2 className="size-4" />
                                                 </div>
                                                 {institution.name}
                                             </div>
                                         </TableCell>
                                         <TableCell className="py-4">
-                                            <Badge variant="outline" className="text-foreground border-border bg-muted font-mono text-[10px] tracking-widest uppercase px-3">
+                                            <Badge variant="outline" className="text-foreground border-border bg-secondary/20 text-[11px] font-medium px-3 py-1 rounded-full">
                                                 {institution.type}
                                             </Badge>
                                         </TableCell>
-                                        <TableCell className="py-4 text-muted-foreground font-mono text-xs">
+                                        <TableCell className="py-4 text-muted-foreground text-sm">
                                             <div className="flex items-center gap-2">
-                                                <MapPin className="size-3 text-primary/50" />
+                                                <MapPin className="size-3.5 text-primary/70" />
                                                 {institution.location}
                                             </div>
                                         </TableCell>
@@ -162,9 +163,9 @@ const Institutions: React.FC = () => {
                                                     variant="ghost"
                                                     size="icon"
                                                     onClick={() => handleDeleteInstitution(institution.id, institution.name)}
-                                                    className="h-8 w-8 text-destructive/40 hover:text-destructive hover:bg-destructive/10 rounded-lg transition-all"
+                                                    className="h-9 w-9 text-destructive/50 hover:text-destructive hover:bg-destructive/10 rounded-full transition-all"
                                                 >
-                                                    <Trash2 className="size-3" />
+                                                    <Trash2 className="size-4" />
                                                 </Button>
                                             )}
                                         </TableCell>
@@ -176,39 +177,38 @@ const Institutions: React.FC = () => {
                 </CardContent>
             </Card>
 
-            {/* Create Institution Dialog */}
             <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
-                <DialogContent className="sm:max-w-[425px] glass border-primary/20 text-foreground">
+                <DialogContent className="sm:max-w-[480px] border-border/70 bg-background/95 text-foreground backdrop-blur-xl">
                     <DialogHeader>
-                        <DialogTitle className="text-xl font-bold tracking-tight flex items-center gap-2">
+                        <DialogTitle className="text-xl font-semibold tracking-tight flex items-center gap-2">
                             <Plus className="size-5 text-primary" />
-                            {t('institutions.dialog.title', 'REGISTER INSTITUTION')}
+                            {t('institutions.dialog.title', 'Register Institution')}
                         </DialogTitle>
-                        <p className="text-muted-foreground font-mono text-[10px] uppercase tracking-widest mt-1">
-                            {t('institutions.dialog.desc', 'Establish a new organizational entity.')}
+                        <p className="text-muted-foreground text-sm mt-1">
+                            {t('institutions.dialog.desc', 'Add a new institution to the registry.')}
                         </p>
                     </DialogHeader>
                     <div className="grid gap-4 py-4">
                         <div className="grid gap-2">
-                            <Label htmlFor="name" className="text-[10px] font-bold tracking-widest text-primary/70 uppercase">{t('institutions.dialog.name', 'Institution Name')}</Label>
+                            <Label htmlFor="name" className="text-sm font-medium">{t('institutions.dialog.name', 'Institution Name')}</Label>
                             <Input
                                 id="name"
                                 value={newInstitutionForm.name}
                                 onChange={(e) => setNewInstitutionForm({ ...newInstitutionForm, name: e.target.value })}
                                 placeholder={t('institutions.dialog.namePlaceholder', 'E.g. City General Hospital')}
-                                className="bg-input/50 border-input text-foreground font-mono text-xs"
+                                className="h-11 bg-secondary/20 border-transparent focus-visible:border-primary/40"
                             />
                         </div>
                         <div className="grid gap-2">
-                            <Label htmlFor="type" className="text-[10px] font-bold tracking-widest text-primary/70 uppercase">{t('institutions.dialog.classification', 'Classification')}</Label>
+                            <Label htmlFor="type" className="text-sm font-medium">{t('institutions.dialog.classification', 'Classification')}</Label>
                             <Select
                                 value={newInstitutionForm.type}
                                 onValueChange={(val) => setNewInstitutionForm({ ...newInstitutionForm, type: val })}
                             >
-                                <SelectTrigger className="bg-input/50 border-input text-foreground font-mono text-xs">
+                                <SelectTrigger className="h-11 bg-secondary/20 border-transparent focus:border-primary/40">
                                     <SelectValue placeholder={t('institutions.dialog.classificationPlaceholder', 'Select type')} />
                                 </SelectTrigger>
-                                <SelectContent className="bg-popover border-border/50 text-foreground font-mono text-xs">
+                                <SelectContent className="bg-popover border-border/50 text-foreground">
                                     <SelectItem value="Medical College">{t('institutions.dialog.types.medicalCollege', 'Medical College')}</SelectItem>
                                     <SelectItem value="Hospital">{t('institutions.dialog.types.hospital', 'Hospital')}</SelectItem>
                                     <SelectItem value="Research Center">{t('institutions.dialog.types.researchCenter', 'Research Center')}</SelectItem>
@@ -217,13 +217,13 @@ const Institutions: React.FC = () => {
                             </Select>
                         </div>
                         <div className="grid gap-2">
-                            <Label htmlFor="location" className="text-[10px] font-bold tracking-widest text-primary/70 uppercase">{t('institutions.dialog.location', 'Coordinates / Location')}</Label>
+                            <Label htmlFor="location" className="text-sm font-medium">{t('institutions.dialog.location', 'Coordinates / Location')}</Label>
                             <Input
                                 id="location"
                                 value={newInstitutionForm.location}
                                 onChange={(e) => setNewInstitutionForm({ ...newInstitutionForm, location: e.target.value })}
                                 placeholder={t('institutions.dialog.locationPlaceholder', 'E.g. Sector 5, North')}
-                                className="bg-input/50 border-input text-foreground font-mono text-xs"
+                                className="h-11 bg-secondary/20 border-transparent focus-visible:border-primary/40"
                             />
                         </div>
                     </div>
@@ -231,9 +231,9 @@ const Institutions: React.FC = () => {
                         <Button
                             onClick={handleCreateInstitution}
                             disabled={isSaving}
-                            className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-bold tracking-widest uppercase py-6"
+                            className="w-full h-11 rounded-xl bg-foreground text-background hover:bg-white/90 font-semibold"
                         >
-                            {isSaving ? t('institutions.dialog.saving', 'UPLOADING INTEL...') : t('institutions.dialog.submit', 'COMMIT TO REGISTRY')}
+                            {isSaving ? t('institutions.dialog.saving', 'Saving...') : t('institutions.dialog.submit', 'Create Institution')}
                         </Button>
                     </DialogFooter>
                 </DialogContent>

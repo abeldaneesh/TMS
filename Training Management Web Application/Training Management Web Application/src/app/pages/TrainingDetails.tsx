@@ -2,22 +2,47 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import api from '../../services/api';
-import { MyFeedbackSubmission, TrainingFeedback, TrainingFeedbackSummary } from '../../types';
+import { Institution, MyFeedbackSubmission, TrainingFeedback, TrainingFeedbackSummary } from '../../types';
 import {
     Calendar, Clock, Users, MapPin, ArrowLeft, Edit, Trash2, CheckCircle, XCircle, MessageSquareMore, Star, TrendingUp, QrCode, Award
 } from 'lucide-react';
 import { Badge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../components/ui/dialog';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 import AttendanceListModal from '../components/AttendanceListModal';
 import AttendanceSessionManager from '../components/AttendanceSessionManager';
 import LoadingScreen from '../components/LoadingScreen';
 import { generateCertificatePDF } from '../../utils/certificateGenerator';
-import { trainingsApi, feedbackApi } from '../../services/api';
+import { trainingsApi, feedbackApi, institutionsApi } from '../../services/api';
 import FeedbackSubmissionDialog from '../components/FeedbackSubmissionDialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
+
+const getEntityId = (value: any): string => value?.id || value?._id || '';
+
+const normalizeDisplayList = (value: unknown): string[] => {
+    if (Array.isArray(value)) {
+        return value
+            .flatMap((entry) => normalizeDisplayList(entry))
+            .filter(Boolean);
+    }
+
+    if (typeof value === 'string') {
+        return value
+            .split(',')
+            .map((entry) => entry.trim())
+            .filter(Boolean);
+    }
+
+    if (value && typeof value === 'object') {
+        const name = (value as any).name;
+        return typeof name === 'string' && name.trim() ? [name.trim()] : [];
+    }
+
+    return [];
+};
 
 const TrainingDetails: React.FC = () => {
     const { id } = useParams<{ id: string }>();
@@ -25,6 +50,7 @@ const TrainingDetails: React.FC = () => {
     const { user } = useAuth();
 
     const [training, setTraining] = useState<any | null>(null);
+    const [institutions, setInstitutions] = useState<Institution[]>([]);
     const [loading, setLoading] = useState(true);
     const [generating, setGenerating] = useState(false);
     const [attendanceModalOpen, setAttendanceModalOpen] = useState(false);
@@ -40,12 +66,17 @@ const TrainingDetails: React.FC = () => {
     const [feedbackRatingFilter, setFeedbackRatingFilter] = useState<string>('all');
     const [feedbackDialogOpen, setFeedbackDialogOpen] = useState(false);
     const [myFeedbackSubmission, setMyFeedbackSubmission] = useState<MyFeedbackSubmission | null>(null);
+    const [showReplacementDialog, setShowReplacementDialog] = useState(false);
 
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const trainingRes = await api.get(`/trainings/${id}`);
+                const [trainingRes, institutionsData] = await Promise.all([
+                    api.get(`/trainings/${id}`),
+                    institutionsApi.getAll().catch(() => []),
+                ]);
                 setTraining(trainingRes.data);
+                setInstitutions(Array.isArray(institutionsData) ? institutionsData : []);
             } catch (error: any) {
                 console.error('Failed to fetch training details:', error);
                 if (error.response?.status === 404) {
@@ -196,6 +227,9 @@ const TrainingDetails: React.FC = () => {
             await api.patch(`/trainings/${id}/status`, { status: newStatus });
             setTraining({ ...training, status: newStatus });
             toast.success(`Training marked as ${newStatus}`);
+            if (newStatus === 'cancelled' && (user?.role === 'master_admin' || user?.role === 'program_officer')) {
+                setShowReplacementDialog(true);
+            }
         } catch (error) {
             console.error('Status update failed:', error);
             toast.error('Failed to update status');
@@ -226,6 +260,36 @@ const TrainingDetails: React.FC = () => {
             const second = new Date(b.submittedAt).getTime();
             return feedbackSort === 'latest' ? second - first : first - second;
         });
+    const targetAudience = normalizeDisplayList(training.targetAudience);
+    const requiredInstitutionNames = Array.isArray(training.requiredInstitutions)
+        ? training.requiredInstitutions
+            .map((entry: any) => {
+                if (entry && typeof entry === 'object' && entry.name) return String(entry.name).trim();
+                const institution = institutions.find((item) => getEntityId(item) === String(entry));
+                return institution?.name?.trim() || '';
+            })
+            .filter(Boolean)
+        : [];
+    const formatDateParam = (date: Date | string) => {
+        const parsed = new Date(date);
+        const year = parsed.getFullYear();
+        const month = `${parsed.getMonth() + 1}`.padStart(2, '0');
+        const day = `${parsed.getDate()}`.padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    };
+    const openReplacementFlow = (useSameDay: boolean) => {
+        const selectedDate = useSameDay ? formatDateParam(training.date) : undefined;
+        navigate(
+            useSameDay ? `/trainings/create?date=${selectedDate}` : '/trainings/create',
+            {
+                state: {
+                    prefilledTraining: training,
+                    ...(selectedDate ? { selectedDate } : {}),
+                },
+            }
+        );
+        setShowReplacementDialog(false);
+    };
 
     return (
         <div className="pb-12 space-y-8 text-foreground">
@@ -257,14 +321,47 @@ const TrainingDetails: React.FC = () => {
                             </p>
                         </div>
 
-                        <div className="grid grid-cols-2 gap-6 pt-6 border-t border-white/10">
+                        <div className="grid gap-6 pt-6 border-t border-white/10 md:grid-cols-2">
                             <div>
                                 <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Target Audience</h3>
-                                <p className="font-medium text-foreground">{training.targetAudience || 'General'}</p>
+                                {targetAudience.length > 0 ? (
+                                    <div className="flex flex-wrap gap-2">
+                                        {targetAudience.map((audience) => (
+                                            <Badge
+                                                key={audience}
+                                                variant="outline"
+                                                className="border-primary/20 bg-primary/5 px-3 py-1 text-sm font-medium text-foreground"
+                                            >
+                                                {audience}
+                                            </Badge>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <p className="font-medium text-foreground">General staff</p>
+                                )}
                             </div>
                             <div>
                                 <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Institutions</h3>
-                                <p className="font-medium text-foreground">{training.requiredInstitutions?.length || 0} Required</p>
+                                {requiredInstitutionNames.length > 0 ? (
+                                    <div className="space-y-3">
+                                        <p className="text-sm font-medium text-foreground">
+                                            {requiredInstitutionNames.length} institution{requiredInstitutionNames.length === 1 ? '' : 's'} required
+                                        </p>
+                                        <div className="flex flex-wrap gap-2">
+                                            {requiredInstitutionNames.map((institutionName) => (
+                                                <Badge
+                                                    key={institutionName}
+                                                    variant="outline"
+                                                    className="border-white/10 bg-white/5 px-3 py-1 text-sm font-medium text-foreground"
+                                                >
+                                                    {institutionName}
+                                                </Badge>
+                                            ))}
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <p className="font-medium text-foreground">Open to all institutions</p>
+                                )}
                             </div>
                         </div>
                     </CardContent>
@@ -640,6 +737,30 @@ const TrainingDetails: React.FC = () => {
                     }}
                 />
             )}
+
+            <Dialog open={showReplacementDialog} onOpenChange={setShowReplacementDialog}>
+                <DialogContent className="border-border bg-background text-foreground">
+                    <DialogHeader>
+                        <DialogTitle>Create a replacement training?</DialogTitle>
+                        <DialogDescription>
+                            This training was cancelled. You can create a new session with the same details for the same day or choose another day.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter className="sm:justify-between">
+                        <Button variant="outline" onClick={() => setShowReplacementDialog(false)}>
+                            Not now
+                        </Button>
+                        <div className="flex flex-col-reverse gap-2 sm:flex-row">
+                            <Button variant="outline" onClick={() => openReplacementFlow(false)}>
+                                Create for another day
+                            </Button>
+                            <Button onClick={() => openReplacementFlow(true)}>
+                                Create for same day
+                            </Button>
+                        </div>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 };

@@ -5,7 +5,7 @@ import {
   trainingsApi, analyticsApi, institutionsApi, nominationsApi,
   attendanceApi, usersApi, hallsApi
 } from '../../services/api';
-import { Training, Institution, HallBlock } from '../../types';
+import { Training, Institution, Nomination, Attendance, User, Hall } from '../../types';
 import { FileText, Download, FileDown, Calendar, Building2, Cpu, ShieldCheck, Settings2, BarChart3 } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../components/ui/card';
@@ -24,6 +24,27 @@ import { format } from 'date-fns';
 import { safeFormatDate } from '../../utils/date';
 import { toast } from 'sonner';
 import { downloadFile } from '../../utils/fileDownloader';
+
+const getEntityId = (value: any): string => value?.id || value?._id || '';
+
+const asDisplayValue = (value: any, fallback = 'N/A'): string => {
+  if (value === null || value === undefined) return fallback;
+  const normalized = String(value).trim();
+  return normalized.length > 0 ? normalized : fallback;
+};
+
+const formatExportDate = (value: any, formatStr: string = 'MMM dd, yyyy'): string => {
+  const formatted = safeFormatDate(value, formatStr);
+  return formatted === 'Invalid Date' ? 'N/A' : formatted;
+};
+
+const formatStatusLabel = (value: any, fallback = 'Unknown'): string => {
+  const normalized = asDisplayValue(value, fallback).replace(/_/g, ' ').toLowerCase();
+  return normalized.replace(/\b\w/g, (char) => char.toUpperCase());
+};
+
+const sanitizeFilePart = (value: string, fallback = 'report'): string =>
+  asDisplayValue(value, fallback).replace(/[^\w.-]+/g, '_');
 
 const Reports: React.FC = () => {
   const { t } = useTranslation();
@@ -58,6 +79,59 @@ const Reports: React.FC = () => {
     fetchData();
   }, [user]);
 
+  const buildTrainingParticipantRows = (
+    nominations: Nomination[],
+    attendanceRecords: Attendance[],
+    allUsers: User[],
+    allInstitutions: Institution[]
+  ) => {
+    return nominations.map((nomination) => {
+      const participant =
+        nomination.participant ||
+        allUsers.find((entry) => getEntityId(entry) === nomination.participantId);
+      const institution =
+        nomination.institution ||
+        allInstitutions.find((entry) => getEntityId(entry) === nomination.institutionId) ||
+        (participant?.institutionId
+          ? allInstitutions.find((entry) => getEntityId(entry) === participant.institutionId)
+          : undefined);
+      const attendanceRecord =
+        attendanceRecords.find((entry) => entry.participantId === nomination.participantId) ||
+        attendanceRecords.find((entry) => getEntityId(entry.participant) === nomination.participantId);
+
+      return {
+        trainingTitle: asDisplayValue((nomination.training as any)?.title) !== 'N/A'
+          ? asDisplayValue((nomination.training as any)?.title)
+          : asDisplayValue(trainings.find((entry) => getEntityId(entry) === nomination.trainingId)?.title),
+        participantName: asDisplayValue(participant?.name),
+        designation: asDisplayValue(participant?.designation),
+        department: asDisplayValue(participant?.department),
+        institutionName: asDisplayValue(institution?.name),
+        institutionType: asDisplayValue(institution?.type),
+        phone: asDisplayValue(participant?.phone),
+        email: asDisplayValue(participant?.email),
+        nominationStatus: formatStatusLabel(nomination.status),
+        attended: attendanceRecord ? 'Yes' : 'No',
+        attendanceMethod: attendanceRecord ? formatStatusLabel(attendanceRecord.method) : 'Not marked',
+        attendanceTimestamp: attendanceRecord ? formatExportDate(attendanceRecord.timestamp, 'yyyy-MM-dd HH:mm:ss') : 'Not marked',
+        nominatedAt: formatExportDate(nomination.nominatedAt, 'yyyy-MM-dd HH:mm:ss'),
+      };
+    });
+  };
+
+  const getTrainingAnalyticsSnapshot = (nominations: Nomination[], attendanceRecords: Attendance[]) => {
+    const approvedCount = nominations.filter((entry) => ['approved', 'attended'].includes(entry.status)).length;
+    const attendedCount = attendanceRecords.length;
+    const nominatedCount = nominations.length;
+
+    return {
+      totalNominated: nominatedCount,
+      totalApproved: approvedCount,
+      totalAttended: attendedCount,
+      attendanceRate: nominatedCount > 0 ? Math.round((attendedCount / nominatedCount) * 100) : 0,
+    };
+  };
+
   const generateTrainingReportPDF = async (trainingId: string) => {
     try {
       const training = trainings.find(t => t.id === trainingId);
@@ -84,10 +158,18 @@ const Reports: React.FC = () => {
         attendanceRecords = attendanceRecords.filter(a => institutionalParticipantIds.includes(a.participantId));
       }
 
-      const analytics = analyticsResObj;
+      const analytics = (user?.role === 'institutional_admin' || user?.role === 'medical_officer')
+        ? getTrainingAnalyticsSnapshot(nominations, attendanceRecords)
+        : {
+            totalNominated: analyticsResObj.totalNominated ?? nominations.length,
+            totalApproved: analyticsResObj.totalApproved ?? nominations.filter((entry: Nomination) => ['approved', 'attended'].includes(entry.status)).length,
+            totalAttended: analyticsResObj.totalAttended ?? attendanceRecords.length,
+            attendanceRate: analyticsResObj.attendanceRate ?? getTrainingAnalyticsSnapshot(nominations, attendanceRecords).attendanceRate,
+          };
 
-      const hall = halls.find(h => h.id === training.hallId || (h as any)._id === training.hallId);
-      const trainer = allUsers.find(u => u.id === training.trainerId || (u as any)._id === training.trainerId);
+      const hall = halls.find((entry) => getEntityId(entry) === training.hallId);
+      const trainer = allUsers.find((entry) => getEntityId(entry) === training.trainerId);
+      const participantRows = buildTrainingParticipantRows(nominations, attendanceRecords, allUsers, institutions);
 
       const doc = new jsPDF();
 
@@ -97,14 +179,14 @@ const Reports: React.FC = () => {
 
       // Training Details
       doc.setFontSize(12);
-      doc.text(`Training Title: ${training.title}`, 14, 35);
+      doc.text(`Training Title: ${asDisplayValue(training.title)}`, 14, 35);
       doc.setFontSize(10);
-      doc.text(`Program Area: ${training.program}`, 14, 42);
-      doc.text(`Scheduled Date: ${safeFormatDate(training.date)}`, 14, 49);
-      doc.text(`Time Window: ${training.startTime} - ${training.endTime}`, 14, 56);
-      doc.text(`Venue: ${hall?.name || 'N/A'}`, 14, 63);
-      doc.text(`Trainer: ${trainer?.name || 'N/A'}`, 14, 70);
-      doc.text(`Status: ${(training.status || '').toUpperCase()}`, 14, 77);
+      doc.text(`Program Area: ${asDisplayValue(training.program)}`, 14, 42);
+      doc.text(`Scheduled Date: ${formatExportDate(training.date)}`, 14, 49);
+      doc.text(`Time Window: ${asDisplayValue(training.startTime)} - ${asDisplayValue(training.endTime)}`, 14, 56);
+      doc.text(`Venue: ${asDisplayValue(hall?.name)}`, 14, 63);
+      doc.text(`Trainer: ${asDisplayValue(trainer?.name)}`, 14, 70);
+      doc.text(`Status: ${formatStatusLabel(training.status)}`, 14, 77);
 
       // Summary Statistics
       doc.setFontSize(14);
@@ -116,19 +198,15 @@ const Reports: React.FC = () => {
       doc.text(`Attendance Rate: ${analytics.attendanceRate}%`, 14, 118);
 
       // Participants Table
-      const participantData = nominations.map(nom => {
-        const participant = allUsers.find(u => u.id === nom.participantId);
-        const institution = institutions.find(i => i.id === nom.institutionId);
-        const attended = attendanceRecords.some(a => a.participantId === nom.participantId);
-
-        return [
-          participant?.name || 'N/A',
-          participant?.designation || 'N/A',
-          institution?.name || 'N/A',
-          nom.status,
-          attended ? 'YES' : 'NO',
-        ];
-      });
+      const participantData = participantRows.length > 0
+        ? participantRows.map((entry) => [
+            entry.participantName,
+            entry.designation,
+            entry.institutionName,
+            entry.nominationStatus,
+            entry.attended,
+          ])
+        : [['No participant records found', 'N/A', 'N/A', 'N/A', 'N/A']];
 
       autoTable(doc, {
         startY: 130,
@@ -143,7 +221,7 @@ const Reports: React.FC = () => {
       const pdfBlob = doc.output('blob');
       await downloadFile(
         pdfBlob,
-        `Training_Report_${training.title.replace(/\s+/g, '_')}_${safeFormatDate(new Date(), 'yyyy-MM-dd')}.pdf`,
+        `Training_Report_${sanitizeFilePart(training.title, 'training')}_${formatExportDate(new Date(), 'yyyy-MM-dd')}.pdf`,
         'application/pdf'
       );
       toast.success(t('reportsPage.reportReady'));
@@ -158,15 +236,17 @@ const Reports: React.FC = () => {
       const training = trainings.find(t => t.id === trainingId);
       if (!training) return;
 
-      const [nominationsRes, attendanceRes, usersRes] = await Promise.all([
+      const [nominationsRes, attendanceRes, usersRes, hallsRes] = await Promise.all([
         nominationsApi.getAll({ trainingId }).catch(() => []),
         attendanceApi.getAll({ trainingId }).catch(() => []),
         usersApi.getAll().catch(() => []),
+        hallsApi.getAll().catch(() => []),
       ]);
 
       let nominations = Array.isArray(nominationsRes) ? nominationsRes : [];
       let attendanceRecords = Array.isArray(attendanceRes) ? attendanceRes : [];
       const allUsers = Array.isArray(usersRes) ? usersRes : [];
+      const halls = Array.isArray(hallsRes) ? hallsRes : [];
 
       // Filter data for Institution Admins and Medical Officers
       if ((user?.role === 'institutional_admin' || user?.role === 'medical_officer') && user.institutionId) {
@@ -175,31 +255,59 @@ const Reports: React.FC = () => {
         attendanceRecords = attendanceRecords.filter(a => institutionalParticipantIds.includes(a.participantId));
       }
 
-      const csvData = nominations.map(nom => {
-        const participant = allUsers.find(u => u.id === nom.participantId);
-        const institution = institutions.find(i => i.id === nom.institutionId);
-        const attendanceRecord = attendanceRecords.find(a => a.participantId === nom.participantId);
+      const hall = halls.find((entry) => getEntityId(entry) === training.hallId);
+      const trainer = allUsers.find((entry) => getEntityId(entry) === training.trainerId);
+      const csvData = buildTrainingParticipantRows(nominations, attendanceRecords, allUsers, institutions).map((entry) => ({
+        'Training Title': asDisplayValue(training.title),
+        'Program': asDisplayValue(training.program),
+        'Date': formatExportDate(training.date, 'yyyy-MM-dd'),
+        'Start Time': asDisplayValue(training.startTime),
+        'End Time': asDisplayValue(training.endTime),
+        'Venue': asDisplayValue(hall?.name),
+        'Trainer': asDisplayValue(trainer?.name),
+        'Participant': entry.participantName,
+        'Designation': entry.designation,
+        'Department': entry.department,
+        'Institution': entry.institutionName,
+        'Institution Type': entry.institutionType,
+        'Phone': entry.phone,
+        'Email': entry.email,
+        'Nomination Status': entry.nominationStatus,
+        'Attended': entry.attended,
+        'Attendance Method': entry.attendanceMethod,
+        'Attendance Timestamp': entry.attendanceTimestamp,
+        'Nominated At': entry.nominatedAt,
+      }));
 
-        return {
-          'Training Title': training.title,
-          'Program': training.program,
-          'Date': safeFormatDate(training.date, 'yyyy-MM-dd'),
-          'Participant': participant?.name || 'N/A',
-          'Designation': participant?.designation || 'N/A',
-          'Institution': institution?.name || 'N/A',
-          'Phone': participant?.phone || 'N/A',
-          'Email': participant?.email || 'N/A',
-          'Nomination Status': nom.status,
-          'Attended': attendanceRecord ? 'Yes' : 'No',
-          'Timestamp': safeFormatDate(attendanceRecord?.timestamp, 'yyyy-MM-dd HH:mm:ss'),
-        };
-      });
+      if (csvData.length === 0) {
+        csvData.push({
+          'Training Title': asDisplayValue(training.title),
+          'Program': asDisplayValue(training.program),
+          'Date': formatExportDate(training.date, 'yyyy-MM-dd'),
+          'Start Time': asDisplayValue(training.startTime),
+          'End Time': asDisplayValue(training.endTime),
+          'Venue': asDisplayValue(hall?.name),
+          'Trainer': asDisplayValue(trainer?.name),
+          'Participant': 'No participant records found',
+          'Designation': 'N/A',
+          'Department': 'N/A',
+          'Institution': 'N/A',
+          'Institution Type': 'N/A',
+          'Phone': 'N/A',
+          'Email': 'N/A',
+          'Nomination Status': 'N/A',
+          'Attended': 'No',
+          'Attendance Method': 'Not marked',
+          'Attendance Timestamp': 'Not marked',
+          'Nominated At': 'N/A',
+        });
+      }
 
       const csv = Papa.unparse(csvData);
-      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const blob = new Blob(['\uFEFF', csv], { type: 'text/csv;charset=utf-8;' });
       await downloadFile(
         blob,
-        `Training_Data_${training.title.replace(/\s+/g, '_')}_${safeFormatDate(new Date(), 'yyyy-MM-dd')}.csv`,
+        `Training_Data_${sanitizeFilePart(training.title, 'training')}_${formatExportDate(new Date(), 'yyyy-MM-dd')}.csv`,
         'text/csv'
       );
       toast.success(t('reportsPage.exportedCsv'));
@@ -224,11 +332,11 @@ const Reports: React.FC = () => {
 
       // Institution Details
       doc.setFontSize(12);
-      doc.text(`Institution: ${institution.name}`, 14, 35);
+      doc.text(`Institution: ${asDisplayValue(institution.name)}`, 14, 35);
       doc.setFontSize(10);
-      doc.text(`Type: ${institution.type}`, 14, 42);
-      doc.text(`Location: ${institution.location}`, 14, 49);
-      doc.text(`Report Date: ${safeFormatDate(new Date())}`, 14, 56);
+      doc.text(`Type: ${asDisplayValue(institution.type)}`, 14, 42);
+      doc.text(`Location: ${asDisplayValue(institution.location)}`, 14, 49);
+      doc.text(`Report Date: ${formatExportDate(new Date())}`, 14, 56);
 
       // Summary Statistics
       doc.setFontSize(14);
@@ -243,11 +351,13 @@ const Reports: React.FC = () => {
       doc.text(`Training Coverage: ${trainingPercentage}%`, 14, 98);
 
       // Trainings by Program
-      const programData = report.trainingsByProgram.map(prog => [
-        prog.program,
-        prog.trainings.toString(),
-        prog.participants.toString(),
-      ]);
+      const programData = (Array.isArray(report.trainingsByProgram) && report.trainingsByProgram.length > 0)
+        ? report.trainingsByProgram.map(prog => [
+            asDisplayValue(prog.program),
+            String(prog.trainings ?? 0),
+            String(prog.participants ?? 0),
+          ])
+        : [['No program data found', '0', '0']];
 
       autoTable(doc, {
         startY: 110,
@@ -261,13 +371,58 @@ const Reports: React.FC = () => {
       const pdfBlob = doc.output('blob');
       await downloadFile(
         pdfBlob,
-        `Institution_Report_${institution.name.replace(/\s+/g, '_')}_${safeFormatDate(new Date(), 'yyyy-MM-dd')}.pdf`,
+        `Institution_Report_${sanitizeFilePart(institution.name, 'institution')}_${formatExportDate(new Date(), 'yyyy-MM-dd')}.pdf`,
         'application/pdf'
       );
       toast.success(t('reportsPage.instReady'));
     } catch (error) {
       console.error('Error generating PDF:', error);
       toast.error(t('reportsPage.failInst'));
+    }
+  };
+
+  const generateInstitutionReportCSV = async (institutionId: string) => {
+    try {
+      const institution = institutions.find(i => i.id === institutionId);
+      if (!institution) return;
+
+      const report = await analyticsApi.getInstitutionReport(institutionId);
+      const baseRow = {
+        'Institution': asDisplayValue(institution.name),
+        'Type': asDisplayValue(institution.type),
+        'Location': asDisplayValue(institution.location),
+        'Report Date': formatExportDate(new Date(), 'yyyy-MM-dd'),
+        'Total Staff': String(report.totalStaff ?? 0),
+        'Trained Staff': String(report.trainedStaff ?? 0),
+        'Untrained Staff': String(report.untrainedStaff ?? 0),
+        'Training Coverage': `${(report.totalStaff || 0) > 0 ? Math.round(((report.trainedStaff || 0) / report.totalStaff) * 100) : 0}%`,
+      };
+
+      const csvData = (Array.isArray(report.trainingsByProgram) && report.trainingsByProgram.length > 0)
+        ? report.trainingsByProgram.map((program) => ({
+            ...baseRow,
+            'Program Area': asDisplayValue(program.program),
+            'Trainings': String(program.trainings ?? 0),
+            'Participants': String(program.participants ?? 0),
+          }))
+        : [{
+            ...baseRow,
+            'Program Area': 'No program data found',
+            'Trainings': '0',
+            'Participants': '0',
+          }];
+
+      const csv = Papa.unparse(csvData);
+      const blob = new Blob(['\uFEFF', csv], { type: 'text/csv;charset=utf-8;' });
+      await downloadFile(
+        blob,
+        `Institution_Report_${sanitizeFilePart(institution.name, 'institution')}_${formatExportDate(new Date(), 'yyyy-MM-dd')}.csv`,
+        'text/csv'
+      );
+      toast.success(t('reportsPage.exportedCsv'));
+    } catch (error) {
+      console.error('Error generating institution CSV:', error);
+      toast.error(t('reportsPage.failCsv'));
     }
   };
 
@@ -298,8 +453,8 @@ const Reports: React.FC = () => {
       doc.text('Global Training Summary', 14, 20);
 
       doc.setFontSize(10);
-      doc.text(`Generated: ${safeFormatDate(new Date(), 'MMM dd, yyyy HH:mm')}`, 14, 30);
-      doc.text(`Authorized Personnel: ${user?.name || 'N/A'}`, 14, 37);
+      doc.text(`Generated: ${formatExportDate(new Date(), 'MMM dd, yyyy HH:mm')}`, 14, 30);
+      doc.text(`Authorized Personnel: ${asDisplayValue(user?.name)}`, 14, 37);
 
       // Overall Statistics
       doc.setFontSize(14);
@@ -323,7 +478,7 @@ const Reports: React.FC = () => {
       };
 
       const statusData = Object.entries(statusCounts).map(([status, count]) => [
-        status.toUpperCase(),
+        formatStatusLabel(status),
         count.toString(),
       ]);
 
@@ -341,11 +496,13 @@ const Reports: React.FC = () => {
       doc.setFontSize(14);
       doc.text('Registered Institutions', 14, lastY);
 
-      const instData = allInstitutions.map(inst => [
-        inst.name,
-        inst.type.toUpperCase(),
-        inst.location,
-      ]);
+      const instData = allInstitutions.length > 0
+        ? allInstitutions.map(inst => [
+            asDisplayValue(inst.name),
+            formatStatusLabel(inst.type),
+            asDisplayValue(inst.location),
+          ])
+        : [['No institutions found', 'N/A', 'N/A']];
 
       autoTable(doc, {
         startY: lastY + 7,
@@ -359,13 +516,94 @@ const Reports: React.FC = () => {
       const pdfBlob = doc.output('blob');
       await downloadFile(
         pdfBlob,
-        `Global_Summary_${safeFormatDate(new Date(), 'yyyy-MM-dd')}.pdf`,
+        `Global_Summary_${formatExportDate(new Date(), 'yyyy-MM-dd')}.pdf`,
         'application/pdf'
       );
       toast.success(t('reportsPage.globalReady'));
     } catch (error) {
       console.error('Error generating PDF:', error);
       toast.error(t('reportsPage.failGlobal'));
+    }
+  };
+
+  const generateDistrictSummaryCSV = async () => {
+    try {
+      const [allTrainingsRes, allInstitutionsRes, statsRes, usersRes, hallsRes] = await Promise.all([
+        trainingsApi.getAll().catch(() => []),
+        institutionsApi.getAll().catch(() => []),
+        analyticsApi.getDashboardStats(user!.id, user!.role).catch(() => null),
+        usersApi.getAll().catch(() => []),
+        hallsApi.getAll().catch(() => []),
+      ]);
+
+      const allTrainings = Array.isArray(allTrainingsRes) ? allTrainingsRes : [];
+      const allInstitutions = Array.isArray(allInstitutionsRes) ? allInstitutionsRes : [];
+      const allUsers = Array.isArray(usersRes) ? usersRes : [];
+      const allHalls = Array.isArray(hallsRes) ? hallsRes : [];
+      const stats = statsRes || {
+        totalTrainings: 0,
+        upcomingTrainings: 0,
+        completedTrainings: 0,
+        totalParticipants: 0,
+        attendanceRate: 0,
+        trainedStaff: 0,
+        untrainedStaff: 0,
+      };
+
+      const summaryBase = {
+        'Generated On': formatExportDate(new Date(), 'yyyy-MM-dd HH:mm:ss'),
+        'Generated By': asDisplayValue(user?.name),
+        'Total Trainings': String(stats.totalTrainings ?? 0),
+        'Completed Trainings': String(stats.completedTrainings ?? 0),
+        'Upcoming Trainings': String(stats.upcomingTrainings ?? 0),
+        'Total Participants': String(stats.totalParticipants ?? 0),
+        'Attendance Rate': `${stats.attendanceRate ?? 0}%`,
+        'Trained Staff': String(stats.trainedStaff ?? 0),
+        'Untrained Staff': String(stats.untrainedStaff ?? 0),
+        'Registered Institutions': String(allInstitutions.length),
+      };
+
+      const csvData = allTrainings.length > 0
+        ? allTrainings.map((training) => {
+            const trainer = allUsers.find((entry) => getEntityId(entry) === training.trainerId);
+            const hall = allHalls.find((entry) => getEntityId(entry) === training.hallId);
+            return {
+              ...summaryBase,
+              'Training Title': asDisplayValue(training.title),
+              'Program': asDisplayValue(training.program),
+              'Date': formatExportDate(training.date, 'yyyy-MM-dd'),
+              'Start Time': asDisplayValue(training.startTime),
+              'End Time': asDisplayValue(training.endTime),
+              'Hall': asDisplayValue(hall?.name),
+              'Trainer': asDisplayValue(trainer?.name),
+              'Status': formatStatusLabel(training.status),
+              'Capacity': String(training.capacity ?? 0),
+            };
+          })
+        : [{
+            ...summaryBase,
+            'Training Title': 'No trainings found',
+            'Program': 'N/A',
+            'Date': 'N/A',
+            'Start Time': 'N/A',
+            'End Time': 'N/A',
+            'Hall': 'N/A',
+            'Trainer': 'N/A',
+            'Status': 'N/A',
+            'Capacity': '0',
+          }];
+
+      const csv = Papa.unparse(csvData);
+      const blob = new Blob(['\uFEFF', csv], { type: 'text/csv;charset=utf-8;' });
+      await downloadFile(
+        blob,
+        `Global_Summary_${formatExportDate(new Date(), 'yyyy-MM-dd')}.csv`,
+        'text/csv'
+      );
+      toast.success(t('reportsPage.exportedCsv'));
+    } catch (error) {
+      console.error('Error generating district CSV:', error);
+      toast.error(t('reportsPage.failCsv'));
     }
   };
 
@@ -395,10 +633,14 @@ const Reports: React.FC = () => {
         }
         if (format === 'pdf') {
           await generateInstitutionReportPDF(selectedInstitution);
+        } else {
+          await generateInstitutionReportCSV(selectedInstitution);
         }
       } else if (selectedReport === 'district') {
         if (format === 'pdf') {
           await generateDistrictSummaryPDF();
+        } else {
+          await generateDistrictSummaryCSV();
         }
       }
     } catch (error) {
@@ -515,17 +757,15 @@ const Reports: React.FC = () => {
               )}
               {t('reportsPage.generatePdf')}
             </Button>
-            {selectedReport === 'training' && (
-              <Button
-                onClick={() => handleGenerateReport('csv')}
-                disabled={loading}
-                variant="outline"
-                className="flex-1 h-12"
-              >
-                <Download className="size-4 mr-2" />
-                {t('reportsPage.exportCsv')}
-              </Button>
-            )}
+            <Button
+              onClick={() => handleGenerateReport('csv')}
+              disabled={loading || !selectedReport}
+              variant="outline"
+              className="flex-1 h-12"
+            >
+              <Download className="size-4 mr-2" />
+              {t('reportsPage.exportCsv')}
+            </Button>
           </div>
         </CardContent>
       </Card>
