@@ -14,12 +14,37 @@ import {
 } from '../models/shared/participantSnapshot';
 
 const LATE_ATTENDANCE_WINDOW_HOURS = Math.max(2, Math.min(6, Number(process.env.LATE_ATTENDANCE_WINDOW_HOURS || 4)));
+// Trainings are scheduled and operated in IST across the application.
+// Keep attendance window checks pinned to that timezone instead of the server runtime.
+const TRAINING_TIMEZONE_OFFSET_MINUTES = 330;
+
+const getTrainingCalendarDateParts = (dateValue: Date | string) => {
+    const sourceDate = new Date(dateValue);
+    const shifted = new Date(sourceDate.getTime() + TRAINING_TIMEZONE_OFFSET_MINUTES * 60 * 1000);
+    return {
+        year: shifted.getUTCFullYear(),
+        month: shifted.getUTCMonth(),
+        day: shifted.getUTCDate(),
+    };
+};
+
+const getTrainingDateKey = (dateValue: Date | string) => {
+    const { year, month, day } = getTrainingCalendarDateParts(dateValue);
+    return `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+};
+
+const getCurrentTrainingDateKey = () => {
+    const shiftedNow = new Date(Date.now() + TRAINING_TIMEZONE_OFFSET_MINUTES * 60 * 1000);
+    return `${shiftedNow.getUTCFullYear()}-${String(shiftedNow.getUTCMonth() + 1).padStart(2, '0')}-${String(shiftedNow.getUTCDate()).padStart(2, '0')}`;
+};
 
 const parseTrainingDateTime = (dateValue: Date | string, timeValue: string) => {
-    const date = new Date(dateValue);
+    const { year, month, day } = getTrainingCalendarDateParts(dateValue);
     const [hours = '0', minutes = '0'] = String(timeValue || '0:0').split(':');
-    date.setHours(Number(hours), Number(minutes), 0, 0);
-    return date;
+    return new Date(
+        Date.UTC(year, month, day, Number(hours), Number(minutes), 0, 0) -
+        TRAINING_TIMEZONE_OFFSET_MINUTES * 60 * 1000
+    );
 };
 
 const getLateAttendanceWindow = (training: any) => {
@@ -40,6 +65,31 @@ const ATTENDANCE_ELIGIBLE_NOMINATION_STATUSES = ['nominated', 'approved', 'atten
 const getTrainingStartDateTime = (training: any) =>
     parseTrainingDateTime(training.date, training.startTime);
 
+const notifyTrainingCreatorOfAttendance = async ({
+    training,
+    trainingId,
+    participantName,
+}: {
+    training: any;
+    trainingId: string;
+    participantName: string;
+}) => {
+    const creatorId = String(training.createdById || '');
+    if (!creatorId) return;
+
+    try {
+        await createAndSendNotification({
+            userId: creatorId,
+            title: 'Attendance Marked',
+            message: `${participantName} has marked attendance for "${training.title}".`,
+            type: 'info',
+            actionUrl: `/trainings/${trainingId}`
+        });
+    } catch (error) {
+        console.error(`Failed to notify training creator ${creatorId} about attendance for ${trainingId}`, error);
+    }
+};
+
 // Mark attendance
 export const markAttendance = async (req: AuthRequest, res: Response): Promise<void> => {
     try {
@@ -55,14 +105,7 @@ export const markAttendance = async (req: AuthRequest, res: Response): Promise<v
         }
 
         // Check if today is the training date
-        const today = new Date();
-        const trainingDate = new Date(training.date);
-
-        // Reset hours to compare just the date part
-        today.setHours(0, 0, 0, 0);
-        trainingDate.setHours(0, 0, 0, 0);
-
-        if (today.getTime() !== trainingDate.getTime()) {
+        if (getCurrentTrainingDateKey() !== getTrainingDateKey(training.date)) {
             res.status(400).json({ message: 'Attendance can only be marked on the day of the training.' });
             return;
         }
@@ -174,43 +217,11 @@ export const markAttendance = async (req: AuthRequest, res: Response): Promise<v
             }
         );
 
-        // --- NOTIFICATION LOGIC ---
-        try {
-            // 1. Notify Program Officer (Training Creator)
-            // Get participant details for the message
-            const participantName = participantSnapshot?.fullName || participant?.name || 'A participant';
-            const notificationMessage = `${participantName} has marked attendance for "${training.title}".`;
-
-            // Identify recipients: 
-            // - The creator of the training (Program Officer)
-            const recipients = new Set<string>();
-            recipients.add(training.createdById);
-
-            console.log(`[DEBUG] Attendance marked for training ${trainingId} by ${participantId}`);
-            console.log(`[DEBUG] Sending notifications to ${recipients.size} recipients:`, Array.from(recipients));
-
-            // Create notifications
-            await Promise.all(Array.from(recipients).map(async (userId: any) => {
-                try {
-                    const n = await createAndSendNotification({
-                        userId,
-                        title: 'Attendance Marked',
-                        message: notificationMessage,
-                        type: 'info',
-                        actionUrl: `/trainings/${trainingId}`
-                    });
-                    console.log(`[DEBUG] Notification created for ${userId}: ${n._id}`);
-                    return n;
-                } catch (e) {
-                    console.error(`[DEBUG] Failed to create notification for ${userId}`, e);
-                    throw e;
-                }
-            }));
-
-        } catch (notifError) {
-            console.error('Error creating notifications:', notifError);
-            // Don't fail the request if notification fails
-        }
+        await notifyTrainingCreatorOfAttendance({
+            training,
+            trainingId,
+            participantName: participantSnapshot?.fullName || participant?.name || 'A participant',
+        });
 
         res.status(201).json({
             ...attendance.toObject(),

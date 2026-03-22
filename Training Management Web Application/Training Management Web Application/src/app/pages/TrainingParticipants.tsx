@@ -19,6 +19,7 @@ import LoadingAnimation from '../components/LoadingAnimation';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../components/ui/card';
 import { Checkbox } from '../components/ui/checkbox';
 import { generateAttendanceSheetPdf } from '../../utils/attendanceSheet';
+import { getTrainingEndDateTime, getTrainingStartDateTime } from '../../utils/trainingTime';
 
 const nominationStatusPriority: Record<string, number> = {
     attended: 3,
@@ -204,14 +205,7 @@ const TrainingParticipants: React.FC = () => {
         (user?.role === 'master_admin' || (user?.role === 'program_officer' && training.createdById === user.id))
     );
 
-    const trainingStart = training
-        ? (() => {
-            const start = new Date(training.date);
-            const [hours = '0', minutes = '0'] = String(training.startTime || '0:0').split(':');
-            start.setHours(Number(hours), Number(minutes), 0, 0);
-            return start;
-        })()
-        : null;
+    const trainingStart = training ? getTrainingStartDateTime(training) : null;
 
     const canGenerateAttendanceSheet = Boolean(training && canManageAttendance && training.status !== 'completed');
     const canMarkManualAttendance = Boolean(training && canManageAttendance && training.status !== 'completed' && trainingStart && new Date() >= trainingStart);
@@ -221,14 +215,7 @@ const TrainingParticipants: React.FC = () => {
         if (training.status === 'completed') return false;
         if (!canManageAttendance) return false;
 
-        const sessionEnd = training.attendanceSession?.endTime
-            ? new Date(training.attendanceSession.endTime)
-            : (() => {
-                const end = new Date(training.date);
-                const [hours = '0', minutes = '0'] = String(training.endTime || '0:0').split(':');
-                end.setHours(Number(hours), Number(minutes), 0, 0);
-                return end;
-            })();
+        const sessionEnd = getTrainingEndDateTime(training);
         const lateWindowHours = training.lateAttendanceWindowHours || 4;
         const lateWindowEnd = new Date(sessionEnd.getTime() + lateWindowHours * 60 * 60 * 1000);
         const now = new Date();

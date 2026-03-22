@@ -12,7 +12,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../components/ui/dialog';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
-import AttendanceListModal from '../components/AttendanceListModal';
 import AttendanceSessionManager from '../components/AttendanceSessionManager';
 import LoadingScreen from '../components/LoadingScreen';
 import { generateCertificatePDF } from '../../utils/certificateGenerator';
@@ -95,7 +94,6 @@ const TrainingDetails: React.FC = () => {
     const [institutions, setInstitutions] = useState<Institution[]>([]);
     const [loading, setLoading] = useState(true);
     const [generating, setGenerating] = useState(false);
-    const [attendanceModalOpen, setAttendanceModalOpen] = useState(false);
     const [isAttendanceSessionActive, setIsAttendanceSessionActive] = useState(false);
     const [feedbackLoading, setFeedbackLoading] = useState(false);
     const [feedbackEntries, setFeedbackEntries] = useState<TrainingFeedback[]>([]);
@@ -609,7 +607,7 @@ const TrainingDetails: React.FC = () => {
                                     )}
 
                                     {(user?.role === 'program_officer' || user?.role === 'medical_officer' || user?.role === 'master_admin') && (
-                                        <Button variant="outline" className="w-full justify-start border-white/10 hover:bg-white/10" onClick={() => setAttendanceModalOpen(true)}>
+                                        <Button variant="outline" className="w-full justify-start border-white/10 hover:bg-white/10" onClick={() => navigate(`/trainings/${id}/attendance`)}>
                                             <Users className="mr-3 size-4" /> View Attendance
                                         </Button>
                                     )}
@@ -816,13 +814,6 @@ const TrainingDetails: React.FC = () => {
                     </CardContent>
                 </Card>
             )}
-
-            <AttendanceListModal
-                isOpen={attendanceModalOpen}
-                onClose={() => setAttendanceModalOpen(false)}
-                trainingId={id || ''}
-                trainingTitle={training.title}
-            />
 
             {canSubmitFeedback && !myFeedbackSubmission && (
                 <FeedbackSubmissionDialog

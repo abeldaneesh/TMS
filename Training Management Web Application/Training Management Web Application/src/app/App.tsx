@@ -10,6 +10,7 @@ import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Trainings from './pages/Trainings';
 import TrainingDetails from './pages/TrainingDetails';
+import TrainingAttendance from './pages/TrainingAttendance';
 import CreateTraining from './pages/CreateTraining';
 import MyAttendance from './pages/MyAttendance';
 import TrainingParticipants from './pages/TrainingParticipants';
@@ -91,6 +92,7 @@ const AppRoutes: React.FC = () => {
         <Route path="/trainings" element={<Trainings />} />
         <Route path="/trainings/create" element={<CreateTraining />} />
         <Route path="/trainings/:id" element={<TrainingDetails />} />
+        <Route path="/trainings/:id/attendance" element={<TrainingAttendance />} />
         <Route path="/trainings/:id/edit" element={<CreateTraining />} />
         <Route path="/trainings/:id/participants" element={<TrainingParticipants />} />
         <Route path="/hall-availability" element={<HallAvailability />} />

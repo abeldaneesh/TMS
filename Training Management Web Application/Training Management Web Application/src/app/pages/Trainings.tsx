@@ -16,7 +16,6 @@ import { safeFormatDate } from '../../utils/date';
 import { toast } from 'sonner';
 
 import FilterChips from '../components/FilterChips';
-import AttendanceListModal from '../components/AttendanceListModal';
 import LoadingScreen from '../components/LoadingScreen';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../components/ui/dialog';
 
@@ -36,10 +35,6 @@ const Trainings: React.FC = () => {
   const [sortField, setSortField] = useState<'title' | 'hall' | 'date' | 'status'>('date');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
 
-  // Modal state
-  const [attendanceModalOpen, setAttendanceModalOpen] = useState(false);
-  const [selectedTrainingId, setSelectedTrainingId] = useState<string | null>(null);
-  const [selectedTrainingTitle, setSelectedTrainingTitle] = useState('');
   const [cancelledTraining, setCancelledTraining] = useState<Training | null>(null);
 
   useEffect(() => {
@@ -164,9 +159,7 @@ const Trainings: React.FC = () => {
   };
 
   const handleViewAttendance = (training: Training) => {
-    setSelectedTrainingId(training.id);
-    setSelectedTrainingTitle(training.title);
-    setAttendanceModalOpen(true);
+    navigate(`/trainings/${training.id}/attendance`);
   };
 
   const handleViewParticipants = (training: Training) => {
@@ -440,17 +433,6 @@ const Trainings: React.FC = () => {
             </div>
           ))}
         </div>
-      )}
-
-      {selectedTrainingId && (
-        <>
-          <AttendanceListModal
-            isOpen={attendanceModalOpen}
-            onClose={() => setAttendanceModalOpen(false)}
-            trainingId={selectedTrainingId}
-            trainingTitle={selectedTrainingTitle}
-          />
-        </>
       )}
 
       <Dialog open={Boolean(cancelledTraining)} onOpenChange={(open) => !open && setCancelledTraining(null)}>
