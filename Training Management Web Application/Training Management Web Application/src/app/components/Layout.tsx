@@ -501,8 +501,8 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         {/* Main Content */}
         <main className="flex-1 lg:ml-60 relative z-10 min-h-[calc(100vh-64px)] overflow-x-hidden pt-4 sm:pt-6">
           <div className="px-4 sm:px-6 lg:px-10 pb-24 lg:pb-12 h-full">
-            <AnimatePresence mode="wait">
-              <PageTransition key={location.pathname}>
+            <AnimatePresence mode="wait" initial={false}>
+              <PageTransition key={`${location.pathname}${location.search}`}>
                 {pageContent}
               </PageTransition>
             </AnimatePresence>

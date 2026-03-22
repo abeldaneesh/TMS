@@ -1,9 +1,10 @@
 import React from 'react';
-import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, Outlet, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from '../contexts/AuthContext';
 import { Toaster } from './components/ui/sonner';
 import Layout from './components/Layout';
 import PageTransition from './components/PageTransition';
+import { AnimatePresence } from 'framer-motion';
 import PortalSelection from './pages/PortalSelection';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
@@ -51,13 +52,19 @@ const RootRedirect: React.FC = () => {
   return <Navigate to={isAuthenticated ? '/dashboard' : '/login'} replace />;
 };
 
-const PublicShell: React.FC = () => (
-  <PublicRoute>
-    <PageTransition>
-      <Outlet />
-    </PageTransition>
-  </PublicRoute>
-);
+const PublicShell: React.FC = () => {
+  const location = useLocation();
+
+  return (
+    <PublicRoute>
+      <AnimatePresence mode="wait" initial={false}>
+        <PageTransition key={`${location.pathname}${location.search}`}>
+          <Outlet />
+        </PageTransition>
+      </AnimatePresence>
+    </PublicRoute>
+  );
+};
 
 const ProtectedShell: React.FC = () => (
   <ProtectedRoute>
