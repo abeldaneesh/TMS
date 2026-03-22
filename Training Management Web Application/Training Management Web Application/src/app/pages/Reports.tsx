@@ -25,7 +25,10 @@ import { safeFormatDate } from '../../utils/date';
 import { toast } from 'sonner';
 import { downloadFile } from '../../utils/fileDownloader';
 
-const getEntityId = (value: any): string => value?.id || value?._id || '';
+const getEntityId = (value: any): string => {
+  if (typeof value === 'string' || typeof value === 'number') return String(value);
+  return value?.id || value?._id || '';
+};
 
 const asDisplayValue = (value: any, fallback = 'N/A'): string => {
   if (value === null || value === undefined) return fallback;
@@ -45,6 +48,16 @@ const formatStatusLabel = (value: any, fallback = 'Unknown'): string => {
 
 const sanitizeFilePart = (value: string, fallback = 'report'): string =>
   asDisplayValue(value, fallback).replace(/[^\w.-]+/g, '_');
+
+const formatTimeWindow = (startTime: any, endTime: any): string => {
+  const start = asDisplayValue(startTime, '');
+  const end = asDisplayValue(endTime, '');
+  if (start && end) return `${start} - ${end}`;
+  return start || end || 'N/A';
+};
+
+const getUserInstitutionId = (entry: User): string =>
+  getEntityId(entry.institution) || getEntityId(entry.institutionId);
 
 const Reports: React.FC = () => {
   const { t } = useTranslation();
@@ -130,6 +143,44 @@ const Reports: React.FC = () => {
       totalAttended: attendedCount,
       attendanceRate: nominatedCount > 0 ? Math.round((attendedCount / nominatedCount) * 100) : 0,
     };
+  };
+
+  const getInstitutionExportData = async (institutionId: string) => {
+    const [reportRes, usersRes, nominationsRes] = await Promise.all([
+      analyticsApi.getInstitutionReport(institutionId),
+      usersApi.getAll().catch(() => []),
+      nominationsApi.getAll({ institutionId }).catch(() => []),
+    ]);
+
+    const allUsers = Array.isArray(usersRes) ? usersRes : [];
+    const nominations = Array.isArray(nominationsRes) ? nominationsRes : [];
+    const trainingIds = Array.from(
+      new Set(
+        nominations
+          .map((entry) => getEntityId(entry.trainingId))
+          .filter((entry) => entry.length > 0)
+      )
+    );
+
+    const attendanceResults = await Promise.all(
+      trainingIds.map((trainingId) => attendanceApi.getAll({ trainingId }).catch(() => []))
+    );
+
+    const trainedParticipantIds = new Set<string>();
+    attendanceResults.flat().forEach((attendanceRecord) => {
+      const participantId =
+        getEntityId(attendanceRecord.participantId) ||
+        getEntityId(attendanceRecord.participant);
+      if (participantId) trainedParticipantIds.add(participantId);
+    });
+
+    const untrainedStaff = allUsers.filter((entry) => {
+      const belongsToInstitution = getUserInstitutionId(entry) === institutionId;
+      const isInstitutionStaff = entry.role !== 'master_admin' && entry.role !== 'program_officer';
+      return belongsToInstitution && isInstitutionStaff && !trainedParticipantIds.has(getEntityId(entry));
+    });
+
+    return { report: reportRes, untrainedStaff };
   };
 
   const generateTrainingReportPDF = async (trainingId: string) => {
@@ -261,6 +312,7 @@ const Reports: React.FC = () => {
         'Training Title': asDisplayValue(training.title),
         'Program': asDisplayValue(training.program),
         'Date': formatExportDate(training.date, 'yyyy-MM-dd'),
+        'Time': formatTimeWindow(training.startTime, training.endTime),
         'Start Time': asDisplayValue(training.startTime),
         'End Time': asDisplayValue(training.endTime),
         'Venue': asDisplayValue(hall?.name),
@@ -277,6 +329,7 @@ const Reports: React.FC = () => {
         'Attendance Method': entry.attendanceMethod,
         'Attendance Timestamp': entry.attendanceTimestamp,
         'Nominated At': entry.nominatedAt,
+        'Signature': '',
       }));
 
       if (csvData.length === 0) {
@@ -284,6 +337,7 @@ const Reports: React.FC = () => {
           'Training Title': asDisplayValue(training.title),
           'Program': asDisplayValue(training.program),
           'Date': formatExportDate(training.date, 'yyyy-MM-dd'),
+          'Time': formatTimeWindow(training.startTime, training.endTime),
           'Start Time': asDisplayValue(training.startTime),
           'End Time': asDisplayValue(training.endTime),
           'Venue': asDisplayValue(hall?.name),
@@ -300,6 +354,7 @@ const Reports: React.FC = () => {
           'Attendance Method': 'Not marked',
           'Attendance Timestamp': 'Not marked',
           'Nominated At': 'N/A',
+          'Signature': '',
         });
       }
 
@@ -322,7 +377,7 @@ const Reports: React.FC = () => {
       const institution = institutions.find(i => i.id === institutionId);
       if (!institution) return;
 
-      const report = await analyticsApi.getInstitutionReport(institutionId);
+      const { report, untrainedStaff } = await getInstitutionExportData(institutionId);
 
       const doc = new jsPDF();
 
@@ -352,7 +407,7 @@ const Reports: React.FC = () => {
 
       // Trainings by Program
       const programData = (Array.isArray(report.trainingsByProgram) && report.trainingsByProgram.length > 0)
-        ? report.trainingsByProgram.map(prog => [
+        ? report.trainingsByProgram.map((prog) => [
             asDisplayValue(prog.program),
             String(prog.trainings ?? 0),
             String(prog.participants ?? 0),
@@ -366,6 +421,28 @@ const Reports: React.FC = () => {
         theme: 'grid',
         styles: { fontSize: 10 },
         headStyles: { fillColor: [80, 80, 80] },
+      });
+
+      const untrainedSectionY = ((doc as any).lastAutoTable?.finalY || 110) + 12;
+      doc.setFontSize(14);
+      doc.text('Untrained Staff List', 14, untrainedSectionY);
+
+      const untrainedData = untrainedStaff.length > 0
+        ? untrainedStaff.map((staff) => [
+            asDisplayValue(staff.name),
+            asDisplayValue(staff.designation),
+            asDisplayValue(staff.department),
+            asDisplayValue(staff.email),
+          ])
+        : [['No untrained staff found', 'N/A', 'N/A', 'N/A']];
+
+      autoTable(doc, {
+        startY: untrainedSectionY + 7,
+        head: [['Name', 'Designation', 'Department', 'Email']],
+        body: untrainedData,
+        theme: 'grid',
+        styles: { fontSize: 9 },
+        headStyles: { fillColor: [120, 120, 120] },
       });
 
       const pdfBlob = doc.output('blob');
@@ -386,7 +463,7 @@ const Reports: React.FC = () => {
       const institution = institutions.find(i => i.id === institutionId);
       if (!institution) return;
 
-      const report = await analyticsApi.getInstitutionReport(institutionId);
+      const { report, untrainedStaff } = await getInstitutionExportData(institutionId);
       const baseRow = {
         'Institution': asDisplayValue(institution.name),
         'Type': asDisplayValue(institution.type),
@@ -398,21 +475,55 @@ const Reports: React.FC = () => {
         'Training Coverage': `${(report.totalStaff || 0) > 0 ? Math.round(((report.trainedStaff || 0) / report.totalStaff) * 100) : 0}%`,
       };
 
-      const csvData = (Array.isArray(report.trainingsByProgram) && report.trainingsByProgram.length > 0)
+      const programRows = (Array.isArray(report.trainingsByProgram) && report.trainingsByProgram.length > 0)
         ? report.trainingsByProgram.map((program) => ({
             ...baseRow,
+            'Record Type': 'Program Summary',
             'Program Area': asDisplayValue(program.program),
             'Trainings': String(program.trainings ?? 0),
             'Participants': String(program.participants ?? 0),
+            'Staff Name': '',
+            'Designation': '',
+            'Department': '',
+            'Email': '',
           }))
         : [{
             ...baseRow,
+            'Record Type': 'Program Summary',
             'Program Area': 'No program data found',
             'Trainings': '0',
             'Participants': '0',
+            'Staff Name': '',
+            'Designation': '',
+            'Department': '',
+            'Email': '',
           }];
 
-      const csv = Papa.unparse(csvData);
+      const untrainedRows = untrainedStaff.length > 0
+        ? untrainedStaff.map((staff) => ({
+            ...baseRow,
+            'Record Type': 'Untrained Staff',
+            'Program Area': '',
+            'Trainings': '',
+            'Participants': '',
+            'Staff Name': asDisplayValue(staff.name),
+            'Designation': asDisplayValue(staff.designation),
+            'Department': asDisplayValue(staff.department),
+            'Email': asDisplayValue(staff.email),
+          }))
+        : [{
+            ...baseRow,
+            'Record Type': 'Untrained Staff',
+            'Program Area': '',
+            'Trainings': '',
+            'Participants': '',
+            'Staff Name': 'No untrained staff found',
+            'Designation': '',
+            'Department': '',
+            'Email': '',
+          }];
+
+      const csv = Papa.unparse([...programRows, ...untrainedRows]);
       const blob = new Blob(['\uFEFF', csv], { type: 'text/csv;charset=utf-8;' });
       await downloadFile(
         blob,
