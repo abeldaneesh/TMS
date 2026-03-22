@@ -35,6 +35,11 @@ const nominationStatusPriority: Record<string, number> = {
 const getNominationTimestamp = (nomination: Nomination) =>
     new Date(nomination.approvedAt || nomination.nominatedAt || 0).getTime();
 
+const getNominationTrainingId = (nomination: Nomination) =>
+    typeof nomination.trainingId === 'object'
+        ? (nomination.trainingId as any)?.id || (nomination.trainingId as any)?._id || ''
+        : nomination.trainingId || '';
+
 const dedupeParticipantNominations = (nominations: Nomination[]) => {
     const byParticipant = new Map<string, Nomination>();
 
@@ -97,7 +102,12 @@ const AttendanceListModal: React.FC<AttendanceListModalProps> = ({
             setAttendances(attendanceData);
             setParticipants(
                 Array.isArray(nominationsData)
-                    ? dedupeParticipantNominations(nominationsData.filter((nom) => nom.status === 'approved' || nom.status === 'attended' || nom.status === 'nominated'))
+                    ? dedupeParticipantNominations(
+                        nominationsData.filter((nom) =>
+                            getNominationTrainingId(nom) === trainingId &&
+                            (nom.status === 'approved' || nom.status === 'attended' || nom.status === 'nominated')
+                        )
+                    )
                     : []
             );
             setTraining(trainingData);

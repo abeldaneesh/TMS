@@ -30,6 +30,11 @@ const nominationStatusPriority: Record<string, number> = {
 const getNominationTimestamp = (nomination: Nomination) =>
     new Date(nomination.approvedAt || nomination.nominatedAt || 0).getTime();
 
+const getNominationTrainingId = (nomination: Nomination) =>
+    typeof nomination.trainingId === 'object'
+        ? (nomination.trainingId as any)?.id || (nomination.trainingId as any)?._id || ''
+        : nomination.trainingId || '';
+
 const dedupeParticipantNominations = (nominations: Nomination[]) => {
     const byParticipant = new Map<string, Nomination>();
 
@@ -97,9 +102,11 @@ const TrainingParticipants: React.FC = () => {
 
             // The API call is already scoped to this training.
             // Keep all assigned participants visible except those explicitly removed/rejected.
-            const activeParticipants = dedupeParticipantNominations(nominationsData.filter((nom) =>
-                nom.status !== 'rejected'
-            ));
+            const activeParticipants = dedupeParticipantNominations(
+                nominationsData.filter((nom) =>
+                    getNominationTrainingId(nom) === id && nom.status !== 'rejected'
+                )
+            );
             setParticipants(activeParticipants);
         } catch (error) {
             console.error('Failed to fetch data:', error);
