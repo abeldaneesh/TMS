@@ -144,7 +144,8 @@ const Nominations: React.FC = () => {
             : {}
         ),
         trainingsApi.getAll(
-          user.role === 'program_officer' ? { createdById: user.id } : {}
+          // Fetch all trainings to ensure historical nominations can resolve their titles/dates
+          {}
         ),
         usersApi.getAll(),
         institutionsApi.getAll(),
@@ -426,11 +427,35 @@ const Nominations: React.FC = () => {
     const selectedTrainingInstitutionIds = normalizeStringList(selectedTraining?.requiredInstitutions);
     const selectedTrainingAudience = normalizeAudienceList(selectedTraining?.targetAudience);
     const currentUserInstitutionId = getEntityId(user.institutionId);
+    const filteredNominations = nominations.filter(nom => {
+      const searchLower = (searchTerm || '').toLowerCase();
+      const pName = getParticipantName(nom.participantId).toLowerCase();
+      const tName = getTrainingName(nom.trainingId).toLowerCase();
+      const iName = getInstitutionName(nom.institutionId).toLowerCase();
+      
+      const matchesSearch = pName.includes(searchLower) || tName.includes(searchLower) || iName.includes(searchLower);
+      const matchesStatus = statusFilter === 'all' || getNominationDisplayStatus(nom.status) === statusFilter;
+      
+      // Safety check: ensure the nomination is relevant to the user's role/scope
+      if (user.role === 'participant') {
+        if (getEntityId(nom.participantId) !== user.id) return false;
+      } else if (user.role === 'medical_officer' || user.role === 'institutional_admin') {
+        const nomParticipant = getParticipantRecord(nom.participantId);
+        if (nomParticipant && getEntityId(nomParticipant.institutionId) !== currentUserInstitutionId) {
+          // MOs see their own institution's people OR anything they NOMINATED themselves
+          if (getEntityId(nom.nominatedBy) !== user.id) return false;
+        }
+      }
+      
+      return matchesSearch && matchesStatus;
+    });
+
+    // Dynamic summary based on what's visible to the current user
     const nominationSummary = {
-      total: nominations.length,
-      assigned: nominations.filter((nomination) => getNominationDisplayStatus(nomination.status) === 'assigned').length,
-      attended: nominations.filter((nomination) => nomination.status === 'attended').length,
-      rejected: nominations.filter((nomination) => nomination.status === 'rejected').length,
+      total: filteredNominations.length,
+      assigned: filteredNominations.filter((nomination) => getNominationDisplayStatus(nomination.status) === 'assigned').length,
+      attended: filteredNominations.filter((nomination) => nomination.status === 'attended' || (nomination as any).attended === true).length,
+      rejected: filteredNominations.filter((nomination) => nomination.status === 'rejected').length,
     };
 
     const selectableTrainings = trainings.filter((training) => {
@@ -536,28 +561,6 @@ const Nominations: React.FC = () => {
       (participant) => !busyParticipantIds.includes(participant.id) && !selectedTrainingExistingParticipantIds.has(participant.id)
     ).length;
 
-    const filteredNominations = nominations.filter(nom => {
-      const searchLower = (searchTerm || '').toLowerCase();
-      const pName = getParticipantName(nom.participantId).toLowerCase();
-      const tName = getTrainingName(nom.trainingId).toLowerCase();
-      const iName = getInstitutionName(nom.institutionId).toLowerCase();
-      
-      const matchesSearch = pName.includes(searchLower) || tName.includes(searchLower) || iName.includes(searchLower);
-      const matchesStatus = statusFilter === 'all' || getNominationDisplayStatus(nom.status) === statusFilter;
-      
-      // Safety check: ensure the nomination is relevant to the user's role/scope
-      if (user.role === 'participant') {
-        if (getEntityId(nom.participantId) !== user.id) return false;
-      } else if (user.role === 'medical_officer' || user.role === 'institutional_admin') {
-        const nomParticipant = getParticipantRecord(nom.participantId);
-        if (nomParticipant && getEntityId(nomParticipant.institutionId) !== currentUserInstitutionId) {
-          // MOs see their own institution's people OR anything they NOMINATED themselves
-          if (getEntityId(nom.nominatedBy) !== user.id) return false;
-        }
-      }
-      
-      return matchesSearch && matchesStatus;
-    });
     const hasFilters = Boolean(searchTerm.trim()) || statusFilter !== 'all';
     const statusOptions = [
       { value: 'all', label: `All (${nominationSummary.total})` },
