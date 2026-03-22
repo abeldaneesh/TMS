@@ -43,11 +43,9 @@ const normalizeAudienceList = (value: string[] | string | undefined) =>
   normalizeStringList(value).flatMap((item) =>
     item.split(',').map((part) => part.trim()).filter(Boolean)
   );
+const normalizeMatchValue = (value?: string) => (value || '').trim().replace(/\s+/g, ' ').toLowerCase();
 const formatSessionWindow = (startTime?: string, endTime?: string) =>
   startTime && endTime ? `${startTime} - ${endTime}` : 'Time not set';
-
-const isNominatableRole = (role?: User['role']) =>
-  role === 'participant' || role === 'medical_officer' || role === 'institutional_admin';
 
 type NominationDisplayStatus = 'assigned' | 'attended' | 'rejected';
 const getNominationDisplayStatus = (status: Nomination['status']): NominationDisplayStatus => {
@@ -475,6 +473,9 @@ const Nominations: React.FC = () => {
     const selectedTrainingInstitutionNames = selectedTrainingInstitutionIds
       .map((institutionId) => institutions.find((institution) => institution.id === institutionId)?.name || '')
       .filter(Boolean);
+    const selectedAudienceTokens = selectedTrainingAudience
+      .map((audience) => normalizeMatchValue(audience))
+      .filter(Boolean);
     const selectedTrainingExistingParticipantIds = new Set(
       selectedTrainingNominations
         .filter((nomination) => nomination.status !== 'rejected')
@@ -482,10 +483,10 @@ const Nominations: React.FC = () => {
     );
 
     const eligibleParticipants = users.filter((participant) => {
-      if (!selectedTraining || !isNominatableRole(participant.role)) return false;
+      if (!selectedTraining) return false;
 
       const participantInstitutionId = getEntityId(participant.institutionId);
-      const participantDesignation = participant.designation?.trim() || '';
+      const participantDesignation = normalizeMatchValue(participant.designation);
 
       if ((user.role === 'medical_officer' || user.role === 'institutional_admin') && participantInstitutionId !== currentUserInstitutionId) {
         return false;
@@ -497,8 +498,8 @@ const Nominations: React.FC = () => {
         (user.role === 'medical_officer' && participantInstitutionId === currentUserInstitutionId);
         
       const matchesAudience =
-        selectedTrainingAudience.length === 0 || 
-        (participantDesignation && selectedTrainingAudience.includes(participantDesignation));
+        selectedAudienceTokens.length === 0 || 
+        (participantDesignation && selectedAudienceTokens.includes(participantDesignation));
 
       return matchesInstitution && matchesAudience;
     });
