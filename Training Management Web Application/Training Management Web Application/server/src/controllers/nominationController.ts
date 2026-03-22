@@ -199,6 +199,9 @@ export const getNominations = async (req: AuthRequest, res: Response): Promise<v
             if (user?.institutionId) {
                 where.institutionId = user.institutionId;
             }
+        } else if (req.user?.role === 'medical_officer') {
+            // Medical officers should see the nominations they created across sessions.
+            where.nominatedBy = req.user.userId;
         } else if (req.user?.role === 'program_officer') {
             // PO can only see nominations for trainings they created
             const poTrainingIds = await Training.find({ createdById: req.user.userId }).distinct('_id');

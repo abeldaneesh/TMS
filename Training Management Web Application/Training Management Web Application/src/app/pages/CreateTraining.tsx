@@ -262,7 +262,20 @@ const CreateTraining: React.FC = () => {
   const capacityLimitMessage = capacityExceedsSelectedHall && selectedHall
     ? `The selected hall can host only ${selectedHall.capacity} participants. Please reduce the training capacity to ${selectedHall.capacity} or choose a larger hall.`
     : '';
-  const canCheckAvailability = Boolean(formData.date && formData.startTime && formData.endTime);
+  const hasInvalidTimeRange = Boolean(
+    formData.startTime &&
+    formData.endTime &&
+    formData.startTime >= formData.endTime
+  );
+  const timeRangeMessage = hasInvalidTimeRange
+    ? 'The selected time range is not applicable. Please choose an end time that is later than the start time.'
+    : '';
+  const canCheckAvailability = Boolean(
+    formData.date &&
+    formData.startTime &&
+    formData.endTime &&
+    !hasInvalidTimeRange
+  );
   const selectedSessionType = getTrainingSessionType(formData.startTime, formData.endTime);
   const hallCards = useMemo(() => {
     const availableHallIds = new Set(availableHalls.map((hall) => hall.id));
@@ -283,7 +296,7 @@ const CreateTraining: React.FC = () => {
 
   useEffect(() => {
     const checkDetails = async () => {
-      if (!formData.hallId || !formData.date || !formData.startTime || !formData.endTime) return;
+      if (!formData.hallId || !formData.date || !formData.startTime || !formData.endTime || hasInvalidTimeRange) return;
 
       try {
         const details = await hallsApi.getAvailabilityDetails(
@@ -304,16 +317,23 @@ const CreateTraining: React.FC = () => {
       }
     };
 
-    if (formData.hallId && formData.date && formData.startTime && formData.endTime) {
+    if (formData.hallId && formData.date && formData.startTime && formData.endTime && !hasInvalidTimeRange) {
       checkDetails();
     }
-  }, [formData.hallId, formData.date, formData.startTime, formData.endTime, isEditMode, id]);
+  }, [formData.hallId, formData.date, formData.startTime, formData.endTime, hasInvalidTimeRange, isEditMode, id]);
 
   useEffect(() => {
-    if (formData.date && formData.startTime && formData.endTime) {
+    if (formData.date && formData.startTime && formData.endTime && !hasInvalidTimeRange) {
       checkHallAvailability();
     }
-  }, [formData.date, formData.startTime, formData.endTime]);
+  }, [formData.date, formData.startTime, formData.endTime, hasInvalidTimeRange]);
+
+  useEffect(() => {
+    if (hasInvalidTimeRange) {
+      setAvailableHalls([]);
+      setUnavailableReason(null);
+    }
+  }, [hasInvalidTimeRange]);
 
   const handleChange = (field: string, value: any) => {
     setFormData({ ...formData, [field]: value });
@@ -704,6 +724,7 @@ const CreateTraining: React.FC = () => {
                   </SelectContent>
                 </Select>
                 {(errors.startTime || errors.endTime) && <p className="text-sm text-red-600 mt-1">{errors.startTime || errors.endTime}</p>}
+                {timeRangeMessage && <p className="text-sm text-amber-400 mt-1">{timeRangeMessage}</p>}
               </div>
             </div>
 
@@ -762,7 +783,9 @@ const CreateTraining: React.FC = () => {
                   <p className="text-xs uppercase tracking-[0.24em] text-muted-foreground">Availability count</p>
                   <p className="mt-2 flex items-center gap-2 text-sm font-medium text-foreground">
                     <CheckCircle2 className="size-4 text-emerald-500" />
-                    {checkingAvailability
+                    {hasInvalidTimeRange
+                      ? timeRangeMessage
+                      : checkingAvailability
                       ? t('createTraining.hallStatus.checking', 'Checking hall availability...')
                       : canCheckAvailability
                         ? `${availableHalls.length} ${t('createTraining.hallStatus.available', 'hall(s) available for the selected time slot')}`

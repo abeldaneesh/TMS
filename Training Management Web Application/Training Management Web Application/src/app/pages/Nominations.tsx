@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../contexts/AuthContext';
 import { nominationsApi, trainingsApi, usersApi, institutionsApi } from '../../services/api';
 import { Nomination, Training, User, Institution } from '../../types';
-import { CheckCircle, XCircle, Clock, Users, Search, Check, Loader2 } from 'lucide-react';
+import { CheckCircle, XCircle, Clock, Users, Search, CalendarDays, Building2, Briefcase, Sparkles, UserPlus } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Badge } from '../components/ui/badge';
@@ -22,6 +22,7 @@ import { Label } from '../components/ui/label';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 import LoadingScreen from '../components/LoadingScreen';
+import FilterChips from '../components/FilterChips';
 
 const safeFormatDate = (date: any, formatStr: string = 'MMM dd, yyyy') => {
   if (!date) return 'N/A';
@@ -42,6 +43,31 @@ const normalizeAudienceList = (value: string[] | string | undefined) =>
   normalizeStringList(value).flatMap((item) =>
     item.split(',').map((part) => part.trim()).filter(Boolean)
   );
+const formatSessionWindow = (startTime?: string, endTime?: string) =>
+  startTime && endTime ? `${startTime} - ${endTime}` : 'Time not set';
+type NominationDisplayStatus = 'assigned' | 'attended' | 'rejected';
+const getNominationDisplayStatus = (status: Nomination['status']): NominationDisplayStatus => {
+  if (status === 'attended') return 'attended';
+  if (status === 'rejected') return 'rejected';
+  return 'assigned';
+};
+const getNominationDisplayLabel = (status: Nomination['status']) => {
+  const displayStatus = getNominationDisplayStatus(status);
+  if (displayStatus === 'assigned') return 'Assigned';
+  if (displayStatus === 'attended') return 'Attended';
+  return 'Rejected';
+};
+const getNominationStatusClass = (status: Nomination['status']) => {
+  const displayStatus = getNominationDisplayStatus(status);
+  switch (displayStatus) {
+    case 'assigned':
+      return 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20';
+    case 'attended':
+      return 'bg-sky-500/10 text-sky-400 border-sky-500/20';
+    case 'rejected':
+      return 'bg-destructive/10 text-destructive border-destructive/20';
+  }
+};
 
 const Nominations: React.FC = () => {
   const { t } = useTranslation();
@@ -52,6 +78,7 @@ const Nominations: React.FC = () => {
   const [institutions, setInstitutions] = useState<Institution[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState<'all' | NominationDisplayStatus>('all');
   const [selectedNomination, setSelectedNomination] = useState<Nomination | null>(null);
   const [selectedNominationIds, setSelectedNominationIds] = useState<string[]>([]);
   const [showRejectDialog, setShowRejectDialog] = useState(false);
@@ -60,6 +87,7 @@ const Nominations: React.FC = () => {
   const [selectedTrainingId, setSelectedTrainingId] = useState('');
   const [selectedParticipantIds, setSelectedParticipantIds] = useState<string[]>([]);
   const [busyParticipantIds, setBusyParticipantIds] = useState<string[]>([]);
+  const [participantSearchTerm, setParticipantSearchTerm] = useState('');
   const [barebonesMode, setBarebonesMode] = useState(false);
 
   // Manual Add State
@@ -83,6 +111,16 @@ const Nominations: React.FC = () => {
     return users.find(u => u.id === id || (u as any)._id === id)?.name || 'Unknown Personnel';
   }, [users]);
 
+  const getParticipantRecord = useCallback((participantId: any) => {
+    const id = typeof participantId === 'object' ? participantId?.id || participantId?._id : participantId;
+    return users.find(u => u.id === id || (u as any)._id === id);
+  }, [users]);
+
+  const getTrainingRecord = useCallback((trainingId: any) => {
+    const id = typeof trainingId === 'object' ? trainingId?.id || trainingId?._id : trainingId;
+    return trainings.find(t => t.id === id || (t as any)._id === id);
+  }, [trainings]);
+
   const getInstitutionName = useCallback((institutionId: any) => {
     const id = typeof institutionId === 'object' ? institutionId?.id || institutionId?._id : institutionId;
     return institutions.find(i => i.id === id || (i as any)._id === id)?.name || 'Unknown Sector';
@@ -99,11 +137,9 @@ const Nominations: React.FC = () => {
       console.log('[NOMINATIONS_SYNC] Starting data fetch...');
       const [nominationsData, trainingsData, usersData, institutionsData] = await Promise.all([
         nominationsApi.getAll(
-          (user.role === 'institutional_admin' || user.role === 'medical_officer') && user.institutionId
-            ? { institutionId: user.institutionId }
-            : user.role === 'participant'
-              ? { participantId: user.id }
-              : {}
+          user.role === 'participant'
+            ? { participantId: user.id }
+            : {}
         ),
         trainingsApi.getAll(
           user.role === 'program_officer' ? { createdById: user.id } : {}
@@ -176,6 +212,12 @@ const Nominations: React.FC = () => {
 
     fetchBusyParticipants();
   }, [selectedTrainingId, trainings]);
+
+  useEffect(() => {
+    if (!showNominateDialog) {
+      setParticipantSearchTerm('');
+    }
+  }, [showNominateDialog]);
 
   const handleApprove = async (nomination: Nomination) => {
     if (!user) return;
@@ -382,6 +424,12 @@ const Nominations: React.FC = () => {
     const selectedTrainingInstitutionIds = normalizeStringList(selectedTraining?.requiredInstitutions);
     const selectedTrainingAudience = normalizeAudienceList(selectedTraining?.targetAudience);
     const currentUserInstitutionId = getEntityId(user.institutionId);
+    const nominationSummary = {
+      total: nominations.length,
+      assigned: nominations.filter((nomination) => getNominationDisplayStatus(nomination.status) === 'assigned').length,
+      attended: nominations.filter((nomination) => nomination.status === 'attended').length,
+      rejected: nominations.filter((nomination) => nomination.status === 'rejected').length,
+    };
 
     const selectableTrainings = trainings.filter((training) => {
       if (training.status === 'cancelled' || training.status === 'completed') return false;
@@ -407,7 +455,27 @@ const Nominations: React.FC = () => {
       }
 
       return true;
+    }).sort((a, b) => {
+      const dateA = new Date(`${safeFormatDate(a.date, 'yyyy-MM-dd')}T${a.startTime || '00:00'}`).getTime();
+      const dateB = new Date(`${safeFormatDate(b.date, 'yyyy-MM-dd')}T${b.startTime || '00:00'}`).getTime();
+      return dateA - dateB;
     });
+
+    const selectedTrainingNominations = nominations
+      .filter((nomination) => nomination.trainingId === selectedTrainingId)
+      .sort((a, b) => new Date(b.nominatedAt || 0).getTime() - new Date(a.nominatedAt || 0).getTime());
+    const selectedTrainingAssignedCount = selectedTrainingNominations.filter((nomination) => nomination.status !== 'rejected').length;
+    const selectedTrainingRemainingSeats = selectedTraining
+      ? Math.max(0, selectedTraining.capacity - selectedTrainingAssignedCount)
+      : 0;
+    const selectedTrainingInstitutionNames = selectedTrainingInstitutionIds
+      .map((institutionId) => institutions.find((institution) => institution.id === institutionId)?.name || '')
+      .filter(Boolean);
+    const selectedTrainingExistingParticipantIds = new Set(
+      selectedTrainingNominations
+        .filter((nomination) => nomination.status !== 'rejected')
+        .map((nomination) => nomination.participantId)
+    );
 
     const eligibleParticipants = users.filter((participant) => {
       if (participant.role !== 'participant' || !selectedTraining) return false;
@@ -427,342 +495,647 @@ const Nominations: React.FC = () => {
       return matchesInstitution && matchesAudience;
     });
 
+    const participantSearchLower = participantSearchTerm.trim().toLowerCase();
+    const filteredEligibleParticipants = [...eligibleParticipants]
+      .sort((first, second) => {
+        const firstAssigned = selectedTrainingExistingParticipantIds.has(first.id);
+        const secondAssigned = selectedTrainingExistingParticipantIds.has(second.id);
+        const firstBusy = busyParticipantIds.includes(first.id);
+        const secondBusy = busyParticipantIds.includes(second.id);
+
+        const firstRank = firstAssigned ? 2 : firstBusy ? 1 : 0;
+        const secondRank = secondAssigned ? 2 : secondBusy ? 1 : 0;
+
+        if (firstRank !== secondRank) return firstRank - secondRank;
+        return first.name.localeCompare(second.name);
+      })
+      .filter((participant) => {
+        if (!participantSearchLower) return true;
+        const searchFields = [
+          participant.name,
+          participant.designation,
+          getInstitutionName(participant.institutionId),
+          participant.department,
+        ]
+          .filter(Boolean)
+          .join(' ')
+          .toLowerCase();
+
+        return searchFields.includes(participantSearchLower);
+      });
+    const readyParticipantsCount = filteredEligibleParticipants.filter(
+      (participant) => !busyParticipantIds.includes(participant.id) && !selectedTrainingExistingParticipantIds.has(participant.id)
+    ).length;
+
     const filteredNominations = nominations.filter(nom => {
       const searchLower = (searchTerm || '').toLowerCase();
       const pName = getParticipantName(nom.participantId).toLowerCase();
       const tName = getTrainingName(nom.trainingId).toLowerCase();
       const iName = getInstitutionName(nom.institutionId).toLowerCase();
-      return pName.includes(searchLower) || tName.includes(searchLower) || iName.includes(searchLower);
+      const matchesSearch = pName.includes(searchLower) || tName.includes(searchLower) || iName.includes(searchLower);
+      const matchesStatus = statusFilter === 'all' || getNominationDisplayStatus(nom.status) === statusFilter;
+      return matchesSearch && matchesStatus;
     });
+    const hasFilters = Boolean(searchTerm.trim()) || statusFilter !== 'all';
+    const statusOptions = [
+      { value: 'all', label: `All (${nominationSummary.total})` },
+      { value: 'assigned', label: `Assigned (${nominationSummary.assigned})` },
+      { value: 'attended', label: `Attended (${nominationSummary.attended})` },
+      { value: 'rejected', label: `Rejected (${nominationSummary.rejected})` },
+    ];
 
     return (
-      <div className="space-y-6 pb-20">
+      <div className="space-y-8 pb-20">
+        <section className="rounded-[28px] border border-border bg-card/70 p-6 shadow-sm backdrop-blur-sm sm:p-8">
+          <div className="flex flex-col gap-6 xl:flex-row xl:items-start xl:justify-between">
+            <div className="max-w-2xl">
+              <p className="text-xs uppercase tracking-[0.24em] text-muted-foreground">Nomination Hub</p>
+              <h1 className="mt-3 flex items-center gap-3 text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
+                <Users className="size-8 text-primary" />
+                Nominations
+              </h1>
+              <p className="mt-3 text-sm leading-6 text-muted-foreground sm:text-base">
+                Review previous nominations, track approval progress, and nominate the right personnel without losing context.
+              </p>
+            </div>
 
-
-        <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-          <h1 className="text-2xl font-semibold text-foreground flex items-center gap-3">
-            <Users className="size-6 text-primary" />
-            Nominations
-          </h1>
-          <div className="flex w-full md:w-auto gap-2">
-            {selectedNominationIds.length > 0 && user.role === 'master_admin' && (
-              <Button
-                onClick={handleBulkApprove}
-                className="w-full md:w-auto font-medium bg-emerald-600 hover:bg-emerald-700 text-white"
-                disabled={loading}
-              >
-                {t('nominationsProps.bulkApprove', { count: selectedNominationIds.length })}
-              </Button>
-            )}
-            {(user.role === 'program_officer' || user.role === 'master_admin' || user.role === 'medical_officer' || user.role === 'institutional_admin') && (
-              <div className="flex w-full md:w-auto gap-2 flex-col sm:flex-row">
+            <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+              {selectedNominationIds.length > 0 && user.role === 'master_admin' && (
                 <Button
-                  onClick={() => setShowNominateDialog(true)}
-                  className="w-full md:w-auto font-medium"
+                  onClick={handleBulkApprove}
+                  className="w-full font-medium bg-emerald-600 hover:bg-emerald-700 text-white sm:w-auto"
+                  disabled={loading}
                 >
-                  {t('nominationsProps.nominatePersonnel')}
+                  {t('nominationsProps.bulkApprove', { count: selectedNominationIds.length })}
                 </Button>
-                {(user.role === 'medical_officer' || user.role === 'institutional_admin') && (
+              )}
+              {(user.role === 'program_officer' || user.role === 'master_admin' || user.role === 'medical_officer' || user.role === 'institutional_admin') && (
+                <>
                   <Button
-                    onClick={() => setShowAddParticipantDialog(true)}
-                    variant="outline"
-                    className="w-full md:w-auto font-medium border-primary/20 hover:bg-primary/5 text-primary"
+                    onClick={() => setShowNominateDialog(true)}
+                    className="w-full gap-2 font-medium sm:w-auto"
                   >
-                    {t('nominationsProps.addParticipantManually', { defaultValue: '+ Add Participant' })}
+                    <Sparkles className="size-4" />
+                    {t('nominationsProps.nominatePersonnel')}
                   </Button>
-                )}
-              </div>
-            )}
+                  {(user.role === 'medical_officer' || user.role === 'institutional_admin') && (
+                    <Button
+                      onClick={() => setShowAddParticipantDialog(true)}
+                      variant="outline"
+                      className="w-full gap-2 font-medium border-primary/20 hover:bg-primary/5 text-primary sm:w-auto"
+                    >
+                      <UserPlus className="size-4" />
+                      {t('nominationsProps.addParticipantManually', { defaultValue: '+ Add Participant' })}
+                    </Button>
+                  )}
+                </>
+              )}
+            </div>
           </div>
-        </div>
 
-        {user.role === 'master_admin' && nominations.some(nom => nom.status === 'nominated') && (
-          <div className="flex items-center gap-2 px-1">
-            <Checkbox
-              id="selectAllNominations"
-              checked={
-                filteredNominations.filter(nom => nom.status === 'nominated').length > 0 &&
-                selectedNominationIds.length === filteredNominations.filter(nom => nom.status === 'nominated').length
-              }
-              onCheckedChange={() => toggleSelectAll(filteredNominations)}
-            />
-            <label htmlFor="selectAllNominations" className="text-sm font-medium leading-none cursor-pointer">
-              {t('nominationsProps.selectAll')}
-            </label>
+          <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            <Card className="border-border bg-background/80">
+              <CardContent className="p-5">
+                <p className="text-xs uppercase tracking-[0.24em] text-muted-foreground">Total nominations</p>
+                <p className="mt-3 text-3xl font-semibold text-foreground">{nominationSummary.total}</p>
+                <p className="mt-2 text-sm text-muted-foreground">All historical nomination records visible to your role.</p>
+              </CardContent>
+            </Card>
+            <Card className="border-border bg-background/80">
+              <CardContent className="p-5">
+                <p className="text-xs uppercase tracking-[0.24em] text-muted-foreground">Assigned personnel</p>
+                <p className="mt-3 text-3xl font-semibold text-emerald-400">{nominationSummary.assigned}</p>
+                <p className="mt-2 text-sm text-muted-foreground">Personnel you have already nominated for upcoming sessions.</p>
+              </CardContent>
+            </Card>
+            <Card className="border-border bg-background/80">
+              <CardContent className="p-5">
+                <p className="text-xs uppercase tracking-[0.24em] text-muted-foreground">Attended</p>
+                <p className="mt-3 text-3xl font-semibold text-sky-400">{nominationSummary.attended}</p>
+                <p className="mt-2 text-sm text-muted-foreground">Nominees who completed attendance for their training.</p>
+              </CardContent>
+            </Card>
+            <Card className="border-border bg-background/80">
+              <CardContent className="p-5">
+                <p className="text-xs uppercase tracking-[0.24em] text-muted-foreground">Rejected</p>
+                <p className="mt-3 text-3xl font-semibold text-destructive">{nominationSummary.rejected}</p>
+                <p className="mt-2 text-sm text-muted-foreground">Entries that need replacement or follow-up.</p>
+              </CardContent>
+            </Card>
           </div>
-        )}
+        </section>
 
-        <Card className="glass">
-          <CardContent className="p-3">
+        <Card className="border-border bg-card/70 backdrop-blur-sm">
+          <CardContent className="space-y-5 p-4 sm:p-5">
             <div className="relative">
-              <Search className="absolute left-3 top-3.5 size-4 text-primary opacity-40" />
+              <Search className="absolute left-3 top-3.5 size-4 text-primary opacity-50" />
               <Input
                 placeholder={t('nominationsProps.search')}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 bg-background"
+                className="h-11 pl-10 bg-background"
               />
+            </div>
+
+            <div>
+              <FilterChips
+                options={statusOptions}
+                selectedValue={statusFilter}
+                onChange={(value) => setStatusFilter(value as 'all' | NominationDisplayStatus)}
+              />
+            </div>
+
+            <div className="flex flex-col gap-2 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
+              <p>
+                {filteredNominations.length} nomination{filteredNominations.length === 1 ? '' : 's'} shown
+                {hasFilters ? ' for the current filter set.' : '.'}
+              </p>
+              {user.role === 'master_admin' && nominations.some((nom) => nom.status === 'nominated') && (
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    id="selectAllNominations"
+                    checked={
+                      filteredNominations.filter((nom) => nom.status === 'nominated').length > 0 &&
+                      selectedNominationIds.length === filteredNominations.filter((nom) => nom.status === 'nominated').length
+                    }
+                    onCheckedChange={() => toggleSelectAll(filteredNominations)}
+                  />
+                  <label htmlFor="selectAllNominations" className="cursor-pointer font-medium leading-none">
+                    {t('nominationsProps.selectAll')}
+                  </label>
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
 
         <div className="space-y-4">
-          {filteredNominations.length === 0 ? (
-            <div className="text-center py-20 text-muted-foreground">
-              {t('nominationsProps.noNominations')}
-            </div>
+          {nominationSummary.total === 0 ? (
+            <Card className="border-dashed border-border bg-card/50">
+              <CardContent className="flex flex-col items-center px-6 py-20 text-center">
+                <Users className="mb-4 size-12 text-primary/60" />
+                <h2 className="text-2xl font-semibold text-foreground">No nominations yet</h2>
+                <p className="mt-3 max-w-lg text-sm leading-6 text-muted-foreground">
+                  Start by choosing a training session and assigning eligible personnel. Once nominations are created, this page will keep the full history in one place.
+                </p>
+                {(user.role === 'program_officer' || user.role === 'master_admin' || user.role === 'medical_officer' || user.role === 'institutional_admin') && (
+                  <Button onClick={() => setShowNominateDialog(true)} className="mt-6 gap-2">
+                    <Sparkles className="size-4" />
+                    {t('nominationsProps.nominatePersonnel')}
+                  </Button>
+                )}
+              </CardContent>
+            </Card>
+          ) : filteredNominations.length === 0 ? (
+            <Card className="border-dashed border-border bg-card/50">
+              <CardContent className="px-6 py-16 text-center">
+                <Search className="mx-auto mb-4 size-10 text-muted-foreground/60" />
+                <h2 className="text-xl font-semibold text-foreground">No nominations match these filters</h2>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  Try a different search term or switch the status filter to see more records.
+                </p>
+              </CardContent>
+            </Card>
           ) : (
-            filteredNominations.map((nomination) => (
-              <Card key={nomination.id} className="glass overflow-hidden border-white/5 hover:border-primary/20 transition-all">
-                <CardContent className="p-4">
-                  <div className="flex items-start gap-4 mb-4">
-                    {user.role === 'master_admin' && nomination.status === 'nominated' && (
-                      <div className="mt-1">
-                        <Checkbox
-                          checked={selectedNominationIds.includes(nomination.id)}
-                          onCheckedChange={() => toggleNominationSelection(nomination.id)}
-                        />
-                      </div>
-                    )}
-                    <div className="flex-1">
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <h3 className="text-lg font-semibold text-foreground">{getParticipantName(nomination.participantId)}</h3>
-                          <p className="text-sm text-muted-foreground">
-                            {t('nominationsProps.institution')}: {getInstitutionName(nomination.institutionId)}
-                          </p>
+            filteredNominations.map((nomination) => {
+              const linkedTraining = (nomination as any).training || getTrainingRecord(nomination.trainingId);
+              const participant = getParticipantRecord(nomination.participantId);
+
+              return (
+                <Card key={nomination.id} className="overflow-hidden border-border bg-card/70 transition-all hover:border-primary/20 hover:bg-card/90">
+                  <CardContent className="p-5">
+                    <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                      <div className="flex min-w-0 gap-4">
+                        {user.role === 'master_admin' && nomination.status === 'nominated' && (
+                          <div className="pt-1">
+                            <Checkbox
+                              checked={selectedNominationIds.includes(nomination.id)}
+                              onCheckedChange={() => toggleNominationSelection(nomination.id)}
+                            />
+                          </div>
+                        )}
+                        <div className="min-w-0 flex-1">
+                          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                            <div className="min-w-0">
+                              <h3 className="truncate text-lg font-semibold text-foreground">{getParticipantName(nomination.participantId)}</h3>
+                              <p className="mt-1 text-sm text-muted-foreground">
+                                {participant?.designation || 'Personnel'} • {getInstitutionName(nomination.institutionId)}
+                              </p>
+                            </div>
+                            <Badge className={`w-fit border font-medium capitalize ${getNominationStatusClass(nomination.status)}`}>
+                              {getNominationDisplayLabel(nomination.status)}
+                            </Badge>
+                          </div>
+
+                          <div className="mt-4 grid gap-3 md:grid-cols-3">
+                            <div className="rounded-xl border border-border bg-background/80 p-4">
+                              <p className="flex items-center gap-2 text-xs uppercase tracking-[0.22em] text-muted-foreground">
+                                <Briefcase className="size-3.5" />
+                                Training
+                              </p>
+                              <p className="mt-3 text-sm font-medium text-foreground">{getTrainingName(nomination.trainingId)}</p>
+                            </div>
+                            <div className="rounded-xl border border-border bg-background/80 p-4">
+                              <p className="flex items-center gap-2 text-xs uppercase tracking-[0.22em] text-muted-foreground">
+                                <CalendarDays className="size-3.5" />
+                                Scheduled for
+                              </p>
+                              <p className="mt-3 text-sm font-medium text-foreground">
+                                {linkedTraining?.date ? safeFormatDate(linkedTraining.date, 'MMM dd, yyyy') : 'Date not available'}
+                              </p>
+                              <p className="mt-1 text-xs text-muted-foreground">{formatSessionWindow(linkedTraining?.startTime, linkedTraining?.endTime)}</p>
+                            </div>
+                            <div className="rounded-xl border border-border bg-background/80 p-4">
+                              <p className="flex items-center gap-2 text-xs uppercase tracking-[0.22em] text-muted-foreground">
+                                <Clock className="size-3.5" />
+                                Nominated on
+                              </p>
+                              <p className="mt-3 text-sm font-medium text-foreground">{safeFormatDate(nomination.nominatedAt, 'MMM dd, yyyy')}</p>
+                              <p className="mt-1 text-xs text-muted-foreground">
+                                {nomination.approvedAt ? `Reviewed ${safeFormatDate(nomination.approvedAt, 'MMM dd, yyyy')}` : 'Awaiting review'}
+                              </p>
+                            </div>
+                          </div>
                         </div>
-                        <Badge className={`font-medium capitalize whitespace-nowrap ${nomination.status === 'approved' ? 'bg-emerald-100 text-emerald-700' :
-                          nomination.status === 'rejected' ? 'bg-destructive/10 text-destructive' :
-                            'bg-amber-100 text-amber-700'
-                          }`}>
-                          {t(`common.statuses.${nomination.status}`, { defaultValue: nomination.status })}
-                        </Badge>
                       </div>
                     </div>
-                  </div>
 
-                  <div className="p-4 rounded-lg bg-muted/50 space-y-1">
-                    <p className="font-semibold text-primary">
-                      {t('nominationsProps.training')}: {getTrainingName(nomination.trainingId)}
-                    </p>
-                    {(nomination as any).training?.date && (
-                      <p className="text-sm text-muted-foreground">
-                        {t('nominationsProps.scheduledFor')}: {safeFormatDate((nomination as any).training.date)}
-                      </p>
+                    {user.role === 'master_admin' && nomination.status === 'nominated' && (
+                      <div className="mt-4 flex flex-col gap-2 sm:flex-row">
+                        <Button
+                          size="sm"
+                          onClick={() => handleApprove(nomination)}
+                          className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-medium"
+                        >
+                          Approve
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          onClick={() => handleRejectClick(nomination)}
+                          className="flex-1 font-medium"
+                        >
+                          Reject
+                        </Button>
+                      </div>
                     )}
-                  </div>
 
-                  {user.role === 'master_admin' && nomination.status === 'nominated' && (
-                    <div className="flex gap-2 mt-4">
-                      <Button
-                        size="sm"
-                        onClick={() => handleApprove(nomination)}
-                        className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-medium"
-                      >
-                        Approve
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="destructive"
-                        onClick={() => handleRejectClick(nomination)}
-                        className="flex-1 font-medium"
-                      >
-                        Reject
-                      </Button>
-                    </div>
-                  )}
-
-                  {nomination.rejectionReason && (
-                    <p className="mt-3 p-3 bg-destructive/10 text-destructive text-sm rounded-md">
-                      {t('nominationsProps.reason')}: {nomination.rejectionReason}
-                    </p>
-                  )}
-                </CardContent>
-              </Card>
-            ))
+                    {nomination.rejectionReason && (
+                      <div className="mt-4 rounded-xl border border-destructive/20 bg-destructive/10 p-4 text-sm text-destructive">
+                        <span className="font-medium">{t('nominationsProps.reason')}:</span> {nomination.rejectionReason}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              );
+            })
           )}
         </div>
 
         {/* Dialogs - Conditional rendering to avoid mobile portal issues */}
-        {showRejectDialog && selectedNomination && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-            <div className="bg-background border border-border rounded-2xl w-full max-w-md p-6 shadow-2xl">
-              <h2 className="text-xl font-semibold mb-4">{t('nominationsProps.rejectNomination')}</h2>
-              <textarea
-                className="w-full bg-background border border-border rounded-lg p-3 text-sm mb-4 h-32 focus:outline-none focus:ring-2 focus:ring-primary/50"
-                placeholder={t('nominationsProps.reasonPlaceholder')}
-                value={rejectionReason}
-                onChange={(e) => setRejectionReason(e.target.value)}
-              />
-              <div className="flex gap-3">
-                <Button onClick={() => setShowRejectDialog(false)} variant="outline" className="flex-1">{t('nominationsProps.cancel')}</Button>
-                <Button onClick={handleRejectConfirm} variant="destructive" className="flex-1">{t('nominationsProps.confirmRejection')}</Button>
-              </div>
-            </div>
-          </div>
-        )}
+        <Dialog open={showRejectDialog && Boolean(selectedNomination)} onOpenChange={setShowRejectDialog}>
+          <DialogContent className="border-border bg-background text-foreground sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>{t('nominationsProps.rejectNomination')}</DialogTitle>
+              <DialogDescription>
+                Provide a reason so the personnel can understand why this nomination was rejected.
+              </DialogDescription>
+            </DialogHeader>
+            <Textarea
+              className="min-h-32"
+              placeholder={t('nominationsProps.reasonPlaceholder')}
+              value={rejectionReason}
+              onChange={(e) => setRejectionReason(e.target.value)}
+            />
+            <DialogFooter>
+              <Button onClick={() => setShowRejectDialog(false)} variant="outline">
+                {t('nominationsProps.cancel')}
+              </Button>
+              <Button onClick={handleRejectConfirm} variant="destructive">
+                {t('nominationsProps.confirmRejection')}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
-        {showNominateDialog && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm overflow-hidden">
-            <div className="bg-background border border-border rounded-xl w-full max-w-lg p-6 shadow-xl max-h-[90vh] flex flex-col">
-              <h2 className="text-xl font-semibold mb-6">{t('nominationsProps.nominatePersonnel')}</h2>
+        <Dialog open={showNominateDialog} onOpenChange={setShowNominateDialog}>
+          <DialogContent className="flex max-h-[90vh] flex-col overflow-hidden border-border bg-background text-foreground sm:max-w-xl">
+            <DialogHeader>
+              <DialogTitle>{t('nominationsProps.nominatePersonnel')}</DialogTitle>
+              <DialogDescription>
+                Choose a training session, review who has already been nominated, then select the next eligible personnel.
+              </DialogDescription>
+            </DialogHeader>
 
-              <div className="flex-1 overflow-y-auto space-y-6 pr-2 custom-scrollbar">
+            <div className="flex-1 overflow-y-auto space-y-6 pr-2 custom-scrollbar">
+              <div className="space-y-4">
                 <div>
-                  <Label className="text-sm font-medium text-foreground mb-2 block">{t('nominationsProps.selectTraining')}</Label>
+                  <Label className="mb-2 block text-sm font-medium text-foreground">{t('nominationsProps.selectTraining')}</Label>
                   <select
-                    className="w-full bg-background border border-input focus:ring-2 focus:ring-primary/50 rounded-lg p-2.5 text-sm"
+                    className="w-full rounded-lg border border-input bg-background p-2.5 text-sm focus:ring-2 focus:ring-primary/50"
                     value={selectedTrainingId}
                     onChange={(e) => {
                       setSelectedTrainingId(e.target.value);
                       setSelectedParticipantIds([]);
+                      setParticipantSearchTerm('');
                     }}
                   >
                     <option value="">{t('nominationsProps.selectTrainingPlaceholder')}</option>
-                    {selectableTrainings.map(t => (
-                      <option key={t.id} value={t.id}>{t.title}</option>
+                    {selectableTrainings.map((training) => (
+                      <option key={training.id} value={training.id}>
+                        {training.title} • {safeFormatDate(training.date, 'MMM dd')} • {formatSessionWindow(training.startTime, training.endTime)}
+                      </option>
                     ))}
                   </select>
                 </div>
 
-                <div>
-                  <Label className="text-sm font-medium text-foreground mb-2 block">{t('nominationsProps.selectParticipants')} ({selectedParticipantIds.length})</Label>
-                  <div className="space-y-2">
-                    {!selectedTraining && (
-                      <p className="text-sm text-muted-foreground">
-                        {t('nominationsProps.selectTrainingFirst', { defaultValue: 'Select a training session to view eligible participants.' })}
-                      </p>
-                    )}
-                    {selectedTraining && eligibleParticipants.length === 0 && (
-                      <p className="text-sm text-muted-foreground">
-                        {t('nominationsProps.noEligibleParticipants', { defaultValue: 'No participants match the selected institutions and target audience for this training.' })}
-                      </p>
-                    )}
-                    {eligibleParticipants.map(u => {
-                      const isBusy = busyParticipantIds.includes(u.id);
-                      const isAlreadyAssigned = nominations.some(n => n.trainingId === selectedTrainingId && n.participantId === u.id && n.status !== 'rejected');
-                      const isDisabled = isBusy || isAlreadyAssigned;
-                      const isSelected = selectedParticipantIds.includes(u.id);
+                {selectedTraining && (
+                  <div className="grid gap-4 lg:grid-cols-[1.15fr_0.85fr]">
+                    <Card className="border-border bg-card/70">
+                      <CardContent className="p-5">
+                        <p className="text-xs uppercase tracking-[0.22em] text-muted-foreground">Selected training</p>
+                        <h3 className="mt-3 text-lg font-semibold text-foreground">{selectedTraining.title}</h3>
+                        <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                          <div className="rounded-xl border border-border bg-background/80 p-4">
+                            <p className="flex items-center gap-2 text-xs uppercase tracking-[0.22em] text-muted-foreground">
+                              <CalendarDays className="size-3.5" />
+                              Schedule
+                            </p>
+                            <p className="mt-3 text-sm font-medium text-foreground">{safeFormatDate(selectedTraining.date, 'MMM dd, yyyy')}</p>
+                            <p className="mt-1 text-xs text-muted-foreground">{formatSessionWindow(selectedTraining.startTime, selectedTraining.endTime)}</p>
+                          </div>
+                          <div className="rounded-xl border border-border bg-background/80 p-4">
+                            <p className="flex items-center gap-2 text-xs uppercase tracking-[0.22em] text-muted-foreground">
+                              <Users className="size-3.5" />
+                              Capacity
+                            </p>
+                            <p className="mt-3 text-sm font-medium text-foreground">
+                              {selectedTrainingAssignedCount} assigned / {selectedTraining.capacity} total
+                            </p>
+                            <p className="mt-1 text-xs text-muted-foreground">{selectedTrainingRemainingSeats} seat(s) remaining</p>
+                          </div>
+                        </div>
 
-                      return (
-                        <div
-                          key={u.id}
-                          onClick={() => !isDisabled && toggleParticipantSelection(u.id)}
-                          className={`p-3 rounded-lg border transition-all flex items-center justify-between gap-3 ${isDisabled
-                            ? 'bg-muted/50 border-border opacity-50 cursor-not-allowed'
-                            : isSelected
-                              ? 'bg-primary/5 border-primary shadow-sm cursor-pointer'
-                              : 'bg-background border-border cursor-pointer hover:border-primary/30'
-                            }`}
-                        >
-                          <div className="flex items-center gap-3">
-                            <Checkbox
-                              checked={isSelected}
-                              disabled={isDisabled}
-                              className={isDisabled ? 'opacity-50' : ''}
-                            />
-                            <div>
-                              <p className={`text-sm font-medium ${isDisabled ? 'text-muted-foreground' : 'text-foreground'}`}>{u.name}</p>
-                              <p className="text-xs text-muted-foreground">{u.designation} • {getInstitutionName(u.institutionId)}</p>
+                        <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                          <div className="rounded-xl border border-border bg-background/80 p-4">
+                            <p className="flex items-center gap-2 text-xs uppercase tracking-[0.22em] text-muted-foreground">
+                              <Briefcase className="size-3.5" />
+                              Target audience
+                            </p>
+                            <div className="mt-3 flex flex-wrap gap-2">
+                              {selectedTrainingAudience.length > 0 ? (
+                                selectedTrainingAudience.slice(0, 4).map((audience) => (
+                                  <Badge key={audience} variant="outline" className="border-primary/20 bg-primary/5 text-primary">
+                                    {audience}
+                                  </Badge>
+                                ))
+                              ) : (
+                                <span className="text-sm text-muted-foreground">Open to all designations</span>
+                              )}
+                              {selectedTrainingAudience.length > 4 && (
+                                <Badge variant="outline" className="border-border bg-background text-muted-foreground">
+                                  +{selectedTrainingAudience.length - 4} more
+                                </Badge>
+                              )}
                             </div>
                           </div>
-
-                          {isAlreadyAssigned ? (
-                            <Badge variant="secondary" className="text-xs bg-primary/20 text-primary hover:bg-primary/20">
-                              {t('nominationsProps.alreadyAssigned')}
-                            </Badge>
-                          ) : isBusy ? (
-                            <Badge variant="secondary" className="text-xs">
-                              {t('nominationsProps.busy')}
-                            </Badge>
-                          ) : null}
+                          <div className="rounded-xl border border-border bg-background/80 p-4">
+                            <p className="flex items-center gap-2 text-xs uppercase tracking-[0.22em] text-muted-foreground">
+                              <Building2 className="size-3.5" />
+                              Institutions
+                            </p>
+                            <div className="mt-3 flex flex-wrap gap-2">
+                              {selectedTrainingInstitutionNames.length > 0 ? (
+                                selectedTrainingInstitutionNames.slice(0, 3).map((institutionName) => (
+                                  <Badge key={institutionName} variant="outline" className="border-border bg-background text-foreground">
+                                    {institutionName}
+                                  </Badge>
+                                ))
+                              ) : (
+                                <span className="text-sm text-muted-foreground">Open to all institutions</span>
+                              )}
+                              {selectedTrainingInstitutionNames.length > 3 && (
+                                <Badge variant="outline" className="border-border bg-background text-muted-foreground">
+                                  +{selectedTrainingInstitutionNames.length - 3} more
+                                </Badge>
+                              )}
+                            </div>
+                          </div>
                         </div>
-                      );
-                    })}
+                      </CardContent>
+                    </Card>
+
+                    <Card className="border-border bg-card/70">
+                      <CardContent className="p-5">
+                        <p className="text-xs uppercase tracking-[0.22em] text-muted-foreground">Previous nominations</p>
+                        <p className="mt-3 text-2xl font-semibold text-foreground">{selectedTrainingNominations.length}</p>
+                        <p className="mt-1 text-sm text-muted-foreground">Existing records for this session.</p>
+
+                        <div className="mt-4 space-y-2">
+                          {selectedTrainingNominations.length === 0 ? (
+                            <p className="text-sm text-muted-foreground">No previous nominations for this training yet.</p>
+                          ) : (
+                            selectedTrainingNominations.slice(0, 5).map((nomination) => (
+                              <div key={nomination.id} className="flex items-center justify-between gap-3 rounded-lg border border-border bg-background/80 px-3 py-2">
+                                <div className="min-w-0">
+                                  <p className="truncate text-sm font-medium text-foreground">{getParticipantName(nomination.participantId)}</p>
+                                  <p className="text-xs text-muted-foreground">{safeFormatDate(nomination.nominatedAt, 'MMM dd, yyyy')}</p>
+                                </div>
+                                <Badge className={`border text-xs capitalize ${getNominationStatusClass(nomination.status)}`}>
+                                  {getNominationDisplayLabel(nomination.status)}
+                                </Badge>
+                              </div>
+                            ))
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
                   </div>
-                </div>
+                )}
               </div>
 
-              <div className="flex gap-3 pt-6 border-t border-border mt-6">
-                <Button onClick={() => setShowNominateDialog(false)} variant="outline" className="flex-1">{t('nominationsProps.cancel')}</Button>
-                <Button
-                  onClick={handleNominate}
-                  disabled={!selectedTrainingId || selectedParticipantIds.length === 0 || loading}
-                  className="flex-1"
-                >
-                  {loading ? t('nominationsProps.submitting') : t('nominationsProps.submitNominations')}
-                </Button>
+              <div>
+                <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                  <Label className="block text-sm font-medium text-foreground">
+                    {t('nominationsProps.selectParticipants')} ({selectedParticipantIds.length})
+                  </Label>
+                  {selectedTraining && (
+                    <div className="flex flex-wrap gap-2 text-xs">
+                      <Badge variant="outline" className="border-emerald-500/20 bg-emerald-500/10 text-emerald-400">
+                        {readyParticipantsCount} ready
+                      </Badge>
+                      <Badge variant="outline" className="border-border bg-background text-muted-foreground">
+                        {busyParticipantIds.length} busy
+                      </Badge>
+                      <Badge variant="outline" className="border-border bg-background text-muted-foreground">
+                        {selectedTrainingAssignedCount} already assigned
+                      </Badge>
+                    </div>
+                  )}
+                </div>
+
+                {selectedTraining && (
+                  <div className="relative mb-3">
+                    <Search className="absolute left-3 top-3.5 size-4 text-primary/60" />
+                    <Input
+                      value={participantSearchTerm}
+                      onChange={(e) => setParticipantSearchTerm(e.target.value)}
+                      placeholder="Search personnel by name, designation, or institution"
+                      className="h-11 bg-background pl-10"
+                    />
+                  </div>
+                )}
+
+                <div className="space-y-2">
+                  {!selectedTraining && (
+                    <p className="text-sm text-muted-foreground">
+                      {t('nominationsProps.selectTrainingFirst', { defaultValue: 'Select a training session to view eligible participants.' })}
+                    </p>
+                  )}
+                  {selectedTraining && eligibleParticipants.length === 0 && (
+                    <p className="text-sm text-muted-foreground">
+                      {t('nominationsProps.noEligibleParticipants', { defaultValue: 'No participants match the selected institutions and target audience for this training.' })}
+                    </p>
+                  )}
+                  {selectedTraining && eligibleParticipants.length > 0 && filteredEligibleParticipants.length === 0 && (
+                    <p className="text-sm text-muted-foreground">No personnel matched your search.</p>
+                  )}
+                  {filteredEligibleParticipants.map((participant) => {
+                    const isBusy = busyParticipantIds.includes(participant.id);
+                    const isAlreadyAssigned = selectedTrainingExistingParticipantIds.has(participant.id);
+                    const isDisabled = isBusy || isAlreadyAssigned;
+                    const isSelected = selectedParticipantIds.includes(participant.id);
+
+                    return (
+                      <div
+                        key={participant.id}
+                        onClick={() => !isDisabled && toggleParticipantSelection(participant.id)}
+                        className={`rounded-xl border p-3 transition-all flex items-center justify-between gap-3 ${isDisabled
+                          ? 'bg-muted/40 border-border opacity-60 cursor-not-allowed'
+                          : isSelected
+                            ? 'bg-primary/5 border-primary shadow-sm cursor-pointer'
+                            : 'bg-background border-border cursor-pointer hover:border-primary/30'
+                          }`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <Checkbox
+                            checked={isSelected}
+                            disabled={isDisabled}
+                            className={isDisabled ? 'opacity-50' : ''}
+                          />
+                          <div>
+                            <p className={`text-sm font-medium ${isDisabled ? 'text-muted-foreground' : 'text-foreground'}`}>{participant.name}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {participant.designation || 'Participant'} • {getInstitutionName(participant.institutionId)}
+                            </p>
+                          </div>
+                        </div>
+
+                        {isAlreadyAssigned ? (
+                          <Badge variant="secondary" className="text-xs bg-primary/20 text-primary hover:bg-primary/20">
+                            {t('nominationsProps.alreadyAssigned')}
+                          </Badge>
+                        ) : isBusy ? (
+                          <Badge variant="secondary" className="text-xs">
+                            {t('nominationsProps.busy')}
+                          </Badge>
+                        ) : (
+                          <Badge variant="outline" className="text-xs border-emerald-500/20 bg-emerald-500/10 text-emerald-400">
+                            Ready
+                          </Badge>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
             </div>
-          </div>
-        )}
 
-        {showAddParticipantDialog && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm overflow-hidden">
-            <div className="bg-background border border-border rounded-xl w-full max-w-md p-6 shadow-xl max-h-[90vh] flex flex-col">
-              <h2 className="text-xl font-semibold mb-6">{t('nominationsProps.addNewPersonnel', { defaultValue: 'Add New Personnel' })}</h2>
+            <DialogFooter className="border-t border-border pt-6">
+              <Button onClick={() => setShowNominateDialog(false)} variant="outline">
+                {t('nominationsProps.cancel')}
+              </Button>
+              <Button
+                onClick={handleNominate}
+                disabled={!selectedTrainingId || selectedParticipantIds.length === 0 || loading}
+              >
+                {loading
+                  ? t('nominationsProps.submitting')
+                  : `${t('nominationsProps.submitNominations')} (${selectedParticipantIds.length})`}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
-              <div className="flex-1 overflow-y-auto space-y-4 pr-2 custom-scrollbar">
-                <div>
-                  <Label className="text-sm font-medium text-foreground mb-1 block">Full Name *</Label>
-                  <Input
-                    placeholder="e.g. Dr. John Doe"
-                    value={newParticipant.name}
-                    onChange={(e) => setNewParticipant({ ...newParticipant, name: e.target.value })}
-                  />
-                </div>
-                <div>
-                  <Label className="text-sm font-medium text-foreground mb-1 block">Email Address *</Label>
-                  <Input
-                    type="email"
-                    placeholder="john@example.com"
-                    value={newParticipant.email}
-                    onChange={(e) => setNewParticipant({ ...newParticipant, email: e.target.value })}
-                  />
-                </div>
-                <div>
-                  <Label className="text-sm font-medium text-foreground mb-1 block">Phone Number</Label>
-                  <Input
-                    placeholder="9876543210"
-                    value={newParticipant.phone}
-                    onChange={(e) => setNewParticipant({ ...newParticipant, phone: normalizePhoneNumber(e.target.value) })}
-                    inputMode="numeric"
-                    maxLength={10}
-                    pattern="\d{10}"
-                  />
-                </div>
-                <div>
-                  <Label className="text-sm font-medium text-foreground mb-1 block">Designation</Label>
-                  <Input
-                    placeholder="e.g. Senior Medical Officer"
-                    value={newParticipant.designation}
-                    onChange={(e) => setNewParticipant({ ...newParticipant, designation: e.target.value })}
-                  />
-                </div>
-                <div>
-                  <Label className="text-sm font-medium text-foreground mb-1 block">Department</Label>
-                  <Input
-                    placeholder="e.g. Cardiology"
-                    value={newParticipant.department}
-                    onChange={(e) => setNewParticipant({ ...newParticipant, department: e.target.value })}
-                  />
-                </div>
+        <Dialog open={showAddParticipantDialog} onOpenChange={setShowAddParticipantDialog}>
+          <DialogContent className="flex max-h-[90vh] flex-col overflow-hidden border-border bg-background text-foreground sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>{t('nominationsProps.addNewPersonnel', { defaultValue: 'Add New Personnel' })}</DialogTitle>
+              <DialogDescription>
+                Add a participant manually when they are not yet available in the personnel list.
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="flex-1 overflow-y-auto space-y-4 pr-2 custom-scrollbar">
+              <div>
+                <Label className="text-sm font-medium text-foreground mb-1 block">Full Name *</Label>
+                <Input
+                  placeholder="e.g. Dr. John Doe"
+                  value={newParticipant.name}
+                  onChange={(e) => setNewParticipant({ ...newParticipant, name: e.target.value })}
+                />
               </div>
-
-              <div className="flex gap-3 pt-6 border-t border-border mt-6">
-                <Button onClick={() => setShowAddParticipantDialog(false)} variant="outline" className="flex-1">{t('nominationsProps.cancel')}</Button>
-                <Button
-                  onClick={handleManualAddSubmit}
-                  disabled={!newParticipant.name || !newParticipant.email || loading}
-                  className="flex-1"
-                >
-                  {loading ? t('nominationsProps.submitting', { defaultValue: 'Saving...' }) : t('nominationsProps.saveParticipant', { defaultValue: 'Save Participant' })}
-                </Button>
+              <div>
+                <Label className="text-sm font-medium text-foreground mb-1 block">Email Address *</Label>
+                <Input
+                  type="email"
+                  placeholder="john@example.com"
+                  value={newParticipant.email}
+                  onChange={(e) => setNewParticipant({ ...newParticipant, email: e.target.value })}
+                />
+              </div>
+              <div>
+                <Label className="text-sm font-medium text-foreground mb-1 block">Phone Number</Label>
+                <Input
+                  placeholder="9876543210"
+                  value={newParticipant.phone}
+                  onChange={(e) => setNewParticipant({ ...newParticipant, phone: normalizePhoneNumber(e.target.value) })}
+                  inputMode="numeric"
+                  maxLength={10}
+                  pattern="\d{10}"
+                />
+              </div>
+              <div>
+                <Label className="text-sm font-medium text-foreground mb-1 block">Designation</Label>
+                <Input
+                  placeholder="e.g. Senior Medical Officer"
+                  value={newParticipant.designation}
+                  onChange={(e) => setNewParticipant({ ...newParticipant, designation: e.target.value })}
+                />
+              </div>
+              <div>
+                <Label className="text-sm font-medium text-foreground mb-1 block">Department</Label>
+                <Input
+                  placeholder="e.g. Cardiology"
+                  value={newParticipant.department}
+                  onChange={(e) => setNewParticipant({ ...newParticipant, department: e.target.value })}
+                />
               </div>
             </div>
-          </div>
-        )}
+
+            <DialogFooter className="border-t border-border pt-6">
+              <Button onClick={() => setShowAddParticipantDialog(false)} variant="outline">
+                {t('nominationsProps.cancel')}
+              </Button>
+              <Button
+                onClick={handleManualAddSubmit}
+                disabled={!newParticipant.name || !newParticipant.email || loading}
+              >
+                {loading ? t('nominationsProps.submitting', { defaultValue: 'Saving...' }) : t('nominationsProps.saveParticipant', { defaultValue: 'Save Participant' })}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     );
   } catch (err: any) {
