@@ -10,6 +10,7 @@ import {
     toArchivedParticipantProfile,
     upsertTrainingParticipantSnapshot,
 } from '../models/shared/participantSnapshot';
+import { getTrainingStartDateTime } from '../utils/trainingStatus';
 
 // Nominate participant
 export const nominateParticipant = async (req: AuthRequest, res: Response): Promise<void> => {
@@ -68,6 +69,11 @@ export const nominateParticipant = async (req: AuthRequest, res: Response): Prom
 
         if (!training) {
             res.status(404).json({ message: 'Training not found' });
+            return;
+        }
+
+        if (new Date() >= getTrainingStartDateTime(training)) {
+            res.status(400).json({ message: 'Nominations close once the training start time is reached' });
             return;
         }
 

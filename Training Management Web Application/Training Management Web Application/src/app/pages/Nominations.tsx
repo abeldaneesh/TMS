@@ -23,6 +23,7 @@ import { format } from 'date-fns';
 import { toast } from 'sonner';
 import LoadingScreen from '../components/LoadingScreen';
 import FilterChips from '../components/FilterChips';
+import { getTrainingStartDateTime } from '../../utils/trainingTime';
 
 const safeFormatDate = (date: any, formatStr: string = 'MMM dd, yyyy') => {
   if (!date) return 'N/A';
@@ -316,6 +317,11 @@ const Nominations: React.FC = () => {
 
   const handleNominate = async () => {
     if (!user || !selectedTrainingId || selectedParticipantIds.length === 0) return;
+    const selectedTrainingRecord = trainings.find((training) => training.id === selectedTrainingId);
+    if (selectedTrainingRecord && new Date() >= getTrainingStartDateTime(selectedTrainingRecord)) {
+      toast.error('Nominations close once the training start time is reached');
+      return;
+    }
     setLoading(true);
     let successCount = 0;
     let failCount = 0;
@@ -469,10 +475,7 @@ const Nominations: React.FC = () => {
 
       if (training.date && training.startTime) {
         try {
-          const trainingDateStr = typeof training.date === 'string' ? training.date : new Date(training.date).toISOString().split('T')[0];
-          const trainingDateTime = new Date(`${trainingDateStr}T${training.startTime}`);
-
-          if (!isNaN(trainingDateTime.getTime()) && new Date() > trainingDateTime) {
+          if (new Date() >= getTrainingStartDateTime(training)) {
             return false;
           }
         } catch (e) {
