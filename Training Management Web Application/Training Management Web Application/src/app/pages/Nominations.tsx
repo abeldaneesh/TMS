@@ -819,20 +819,20 @@ const Nominations: React.FC = () => {
         </Dialog>
 
         <Dialog open={showNominateDialog} onOpenChange={setShowNominateDialog}>
-          <DialogContent className="flex max-h-[90vh] flex-col overflow-hidden border-border bg-background text-foreground sm:max-w-xl">
-            <DialogHeader>
+          <DialogContent className="flex max-h-[92vh] flex-col overflow-hidden border-border bg-background p-0 text-foreground sm:max-w-5xl xl:max-w-6xl">
+            <DialogHeader className="border-b border-border px-6 py-5 sm:px-8">
               <DialogTitle>{t('nominationsProps.nominatePersonnel')}</DialogTitle>
               <DialogDescription>
                 Choose a training session, review who has already been nominated, then select the next eligible personnel.
               </DialogDescription>
             </DialogHeader>
 
-            <div className="flex-1 overflow-y-auto space-y-6 pr-2 custom-scrollbar">
-              <div className="space-y-4">
+            <div className="flex-1 overflow-y-auto px-6 py-6 sm:px-8">
+              <div className="space-y-6">
                 <div>
                   <Label className="mb-2 block text-sm font-medium text-foreground">{t('nominationsProps.selectTraining')}</Label>
                   <select
-                    className="w-full rounded-lg border border-input bg-background p-2.5 text-sm focus:ring-2 focus:ring-primary/50"
+                    className="h-12 w-full rounded-xl border border-input bg-background px-4 text-sm focus:ring-2 focus:ring-primary/50"
                     value={selectedTrainingId}
                     onChange={(e) => {
                       setSelectedTrainingId(e.target.value);
@@ -850,12 +850,28 @@ const Nominations: React.FC = () => {
                 </div>
 
                 {selectedTraining && (
-                  <div className="grid gap-4 lg:grid-cols-[1.15fr_0.85fr]">
-                    <Card className="border-border bg-card/70">
+                  <div className="grid gap-5 xl:grid-cols-[minmax(0,1.5fr)_minmax(320px,0.9fr)]">
+                    <Card className="border-border bg-card/70 shadow-sm">
                       <CardContent className="p-5">
                         <p className="text-xs uppercase tracking-[0.22em] text-muted-foreground">Selected training</p>
-                        <h3 className="mt-3 text-lg font-semibold text-foreground">{selectedTraining.title}</h3>
-                        <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                        <div className="mt-3 flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                          <div>
+                            <h3 className="text-xl font-semibold text-foreground">{selectedTraining.title}</h3>
+                            <p className="mt-1 text-sm text-muted-foreground">
+                              Review session details before choosing personnel.
+                            </p>
+                          </div>
+                          <div className="flex flex-wrap gap-2">
+                            <Badge variant="outline" className="border-emerald-500/20 bg-emerald-500/10 text-emerald-400">
+                              {selectedTrainingRemainingSeats} seats left
+                            </Badge>
+                            <Badge variant="outline" className="border-border bg-background text-muted-foreground">
+                              {selectedTrainingAssignedCount} already assigned
+                            </Badge>
+                          </div>
+                        </div>
+
+                        <div className="mt-5 grid gap-3 md:grid-cols-2 2xl:grid-cols-4">
                           <div className="rounded-xl border border-border bg-background/80 p-4">
                             <p className="flex items-center gap-2 text-xs uppercase tracking-[0.22em] text-muted-foreground">
                               <CalendarDays className="size-3.5" />
@@ -874,9 +890,6 @@ const Nominations: React.FC = () => {
                             </p>
                             <p className="mt-1 text-xs text-muted-foreground">{selectedTrainingRemainingSeats} seat(s) remaining</p>
                           </div>
-                        </div>
-
-                        <div className="mt-4 grid gap-3 sm:grid-cols-2">
                           <div className="rounded-xl border border-border bg-background/80 p-4">
                             <p className="flex items-center gap-2 text-xs uppercase tracking-[0.22em] text-muted-foreground">
                               <Briefcase className="size-3.5" />
@@ -885,7 +898,12 @@ const Nominations: React.FC = () => {
                             <div className="mt-3 flex flex-wrap gap-2">
                               {selectedTrainingAudience.length > 0 ? (
                                 selectedTrainingAudience.slice(0, 4).map((audience) => (
-                                  <Badge key={audience} variant="outline" className="border-primary/20 bg-primary/5 text-primary">
+                                  <Badge
+                                    key={audience}
+                                    variant="outline"
+                                    className="max-w-full whitespace-normal break-words border-primary/20 bg-primary/5 py-1 text-left text-primary"
+                                    title={audience}
+                                  >
                                     {audience}
                                   </Badge>
                                 ))
@@ -907,7 +925,12 @@ const Nominations: React.FC = () => {
                             <div className="mt-3 flex flex-wrap gap-2">
                               {selectedTrainingInstitutionNames.length > 0 ? (
                                 selectedTrainingInstitutionNames.slice(0, 3).map((institutionName) => (
-                                  <Badge key={institutionName} variant="outline" className="border-border bg-background text-foreground">
+                                  <Badge
+                                    key={institutionName}
+                                    variant="outline"
+                                    className="max-w-full whitespace-normal break-words border-border bg-background py-1 text-left text-foreground"
+                                    title={institutionName}
+                                  >
                                     {institutionName}
                                   </Badge>
                                 ))
@@ -925,21 +948,32 @@ const Nominations: React.FC = () => {
                       </CardContent>
                     </Card>
 
-                    <Card className="border-border bg-card/70">
-                      <CardContent className="p-5">
-                        <p className="text-xs uppercase tracking-[0.22em] text-muted-foreground">Previous nominations</p>
-                        <p className="mt-3 text-2xl font-semibold text-foreground">{selectedTrainingNominations.length}</p>
-                        <p className="mt-1 text-sm text-muted-foreground">Existing records for this session.</p>
+                    <Card className="border-border bg-card/70 shadow-sm">
+                      <CardContent className="flex h-full flex-col p-5">
+                        <div className="flex items-start justify-between gap-4">
+                          <div>
+                            <p className="text-xs uppercase tracking-[0.22em] text-muted-foreground">Previous nominations</p>
+                            <p className="mt-3 text-3xl font-semibold text-foreground">{selectedTrainingNominations.length}</p>
+                            <p className="mt-1 text-sm text-muted-foreground">Existing records for this session.</p>
+                          </div>
+                          <Badge variant="outline" className="border-border bg-background text-muted-foreground">
+                            Latest first
+                          </Badge>
+                        </div>
 
-                        <div className="mt-4 space-y-2">
+                        <div className="mt-4 flex-1 space-y-2 overflow-y-auto pr-1 custom-scrollbar max-h-[320px] xl:max-h-[420px]">
                           {selectedTrainingNominations.length === 0 ? (
-                            <p className="text-sm text-muted-foreground">No previous nominations for this training yet.</p>
+                            <div className="rounded-xl border border-dashed border-border bg-background/60 px-4 py-6 text-sm text-muted-foreground">
+                              No previous nominations for this training yet.
+                            </div>
                           ) : (
-                            selectedTrainingNominations.slice(0, 5).map((nomination) => (
-                              <div key={nomination.id} className="flex items-center justify-between gap-3 rounded-lg border border-border bg-background/80 px-3 py-2">
+                            selectedTrainingNominations.map((nomination) => (
+                              <div key={nomination.id} className="flex items-center justify-between gap-3 rounded-xl border border-border bg-background/80 px-3 py-3">
                                 <div className="min-w-0">
                                   <p className="truncate text-sm font-medium text-foreground">{getParticipantName(nomination.participantId)}</p>
-                                  <p className="text-xs text-muted-foreground">{safeFormatDate(nomination.nominatedAt, 'MMM dd, yyyy')}</p>
+                                  <p className="mt-1 text-xs text-muted-foreground">
+                                    {safeFormatDate(nomination.nominatedAt, 'MMM dd, yyyy')}
+                                  </p>
                                 </div>
                                 <Badge className={`border text-xs capitalize ${getNominationStatusClass(nomination.status)}`}>
                                   {getNominationDisplayLabel(nomination.status)}
@@ -954,7 +988,8 @@ const Nominations: React.FC = () => {
                 )}
               </div>
 
-              <div>
+              <Card className="border-border bg-card/70 shadow-sm">
+                <CardContent className="p-5">
                 <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                   <Label className="block text-sm font-medium text-foreground">
                     {t('nominationsProps.selectParticipants')} ({selectedParticipantIds.length})
@@ -981,12 +1016,12 @@ const Nominations: React.FC = () => {
                       value={participantSearchTerm}
                       onChange={(e) => setParticipantSearchTerm(e.target.value)}
                       placeholder="Search personnel by name, designation, or institution"
-                      className="h-11 bg-background pl-10"
+                      className="h-11 rounded-xl bg-background pl-10"
                     />
                   </div>
                 )}
 
-                <div className="space-y-2">
+                <div className="space-y-2 max-h-[340px] overflow-y-auto pr-1 custom-scrollbar xl:max-h-[420px]">
                   {!selectedTraining && (
                     <p className="text-sm text-muted-foreground">
                       {t('nominationsProps.selectTrainingFirst', { defaultValue: 'Select a training session to view eligible participants.' })}
@@ -1048,10 +1083,11 @@ const Nominations: React.FC = () => {
                     );
                   })}
                 </div>
-              </div>
+                </CardContent>
+              </Card>
             </div>
 
-            <DialogFooter className="border-t border-border pt-6">
+            <DialogFooter className="border-t border-border px-6 py-4 sm:px-8">
               <Button onClick={() => setShowNominateDialog(false)} variant="outline">
                 {t('nominationsProps.cancel')}
               </Button>

@@ -148,6 +148,10 @@ const Dashboard: React.FC = () => {
     activeOrOngoing.length > 0 || upcomingTrainings.length > 0 || completedTrainings.length > 0;
   const canCreateTraining = user?.role === 'master_admin' || user?.role === 'program_officer';
   const selectedDateIsPast = Boolean(selectedDate && selectedDate < today);
+  const showDashboardCalendar =
+    user?.role === 'medical_officer' ||
+    user?.role === 'program_officer' ||
+    user?.role === 'master_admin';
 
   const handleDateSelect = (date?: Date) => {
     setSelectedDate(date);
@@ -203,6 +207,24 @@ const Dashboard: React.FC = () => {
     return user.profilePicture.startsWith('http') ? user.profilePicture : `${BASE_URL}${user.profilePicture}`;
   };
 
+  const calendarPanel = (
+    <div className="bg-secondary/10 p-4 rounded-2xl border border-secondary/20 glassmorphism-light">
+      <div className="flex items-center gap-2 mb-4 px-2">
+        <CalendarIcon className="size-5 text-primary" />
+        <h3 className="font-bold text-lg">{t('dashboard.calendar.title', 'Event Calendar')}</h3>
+      </div>
+      <Calendar
+        mode="single"
+        selected={selectedDate}
+        onSelect={handleDateSelect}
+        className="rounded-md border-0 bg-transparent flex justify-center"
+      />
+      <p className="text-xs text-muted-foreground mt-4 px-2 italic text-center">
+        {t('dashboard.calendar.hint', 'Select a date to filter training sessions.')}
+      </p>
+    </div>
+  );
+
   return (
     <div className="pb-12 text-foreground">
       <div className="flex flex-col lg:flex-row gap-8">
@@ -227,6 +249,12 @@ const Dashboard: React.FC = () => {
               </Button>
             )}
           </div>
+
+          {showDashboardCalendar && (
+            <div className="lg:hidden">
+              {calendarPanel}
+            </div>
+          )}
 
           <div className="space-y-4">
             {/* Quick Actions */}
@@ -422,40 +450,28 @@ const Dashboard: React.FC = () => {
         </div>
 
         {/* Sidebar Calendar - Only for Admin/PO */}
-        {user?.role !== 'participant' && (
-          <div className="lg:w-80 space-y-6">
-            <div className="bg-secondary/10 p-4 rounded-2xl border border-secondary/20 glassmorphism-light">
-              <div className="flex items-center gap-2 mb-4 px-2">
-                <CalendarIcon className="size-5 text-primary" />
-                <h3 className="font-bold text-lg">{t('dashboard.calendar.title', 'Event Calendar')}</h3>
-              </div>
-              <Calendar
-                mode="single"
-                selected={selectedDate}
-                onSelect={handleDateSelect}
-                className="rounded-md border-0 bg-transparent flex justify-center"
-              />
-              <p className="text-xs text-muted-foreground mt-4 px-2 italic text-center">
-                {t('dashboard.calendar.hint', 'Select a date to filter training sessions.')}
-              </p>
-            </div>
+        {showDashboardCalendar && (
+          <div className="hidden lg:block lg:w-80 lg:shrink-0">
+            <div className="space-y-6 lg:sticky lg:top-24">
+              {calendarPanel}
             
-            {/* Quick Stats Summary in Sidebar */}
-            <div className="hidden lg:block bg-primary/5 p-6 rounded-2xl border border-primary/10">
-              <h4 className="font-semibold text-sm uppercase tracking-wider text-primary mb-4">{t('dashboard.sidebar.summary', 'My Summary')}</h4>
-              <div className="space-y-4">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-muted-foreground">{t('dashboard.sidebar.active', 'Active Now')}</span>
-                  <span className="font-bold">{activeOrOngoing.length}</span>
+              {/* Quick Stats Summary in Sidebar */}
+              <div className="bg-primary/5 p-6 rounded-2xl border border-primary/10">
+                <h4 className="font-semibold text-sm uppercase tracking-wider text-primary mb-4">{t('dashboard.sidebar.summary', 'My Summary')}</h4>
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-muted-foreground">{t('dashboard.sidebar.active', 'Active Now')}</span>
+                    <span className="font-bold">{activeOrOngoing.length}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-muted-foreground">{t('dashboard.sidebar.upcoming', 'Scheduled')}</span>
+                    <span className="font-bold">{upcomingTrainings.length}</span>
+                  </div>
+                  <div className="h-px bg-primary/10 w-full" />
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    {t('dashboard.sidebar.welcome', 'Welcome back!')} {user?.name}. {t('dashboard.sidebar.instruction', 'Use the calendar to browse your schedule.')}
+                  </p>
                 </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-muted-foreground">{t('dashboard.sidebar.upcoming', 'Scheduled')}</span>
-                  <span className="font-bold">{upcomingTrainings.length}</span>
-                </div>
-                <div className="h-px bg-primary/10 w-full" />
-                <p className="text-xs text-muted-foreground leading-relaxed">
-                  {t('dashboard.sidebar.welcome', 'Welcome back!')} {user?.name}. {t('dashboard.sidebar.instruction', 'Use the calendar to browse your schedule.')}
-                </p>
               </div>
             </div>
           </div>
