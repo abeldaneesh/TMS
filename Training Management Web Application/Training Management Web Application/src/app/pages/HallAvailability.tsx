@@ -38,6 +38,7 @@ import { motion } from 'framer-motion';
 type SlotStatus = 'available' | 'partial' | 'booked';
 
 const cn = (...classes: (string | boolean | undefined)[]) => classes.filter(Boolean).join(' ');
+const getEntityId = (value: any): string => value?.id || value?._id || value?.toString?.() || '';
 
 const DAY_CARD = 'rounded-[22px] border border-border bg-card/90 backdrop-blur-xl shadow-sm';
 const PANEL_CARD = 'rounded-[24px] border border-border bg-card shadow-sm';
@@ -57,7 +58,7 @@ const getStatusMeta = (status: SlotStatus) => {
   switch (status) {
     case 'available':
       return {
-        label: 'Available',
+        label: 'Available Now',
         accent: 'text-emerald-600 dark:text-emerald-300',
         badge: 'border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-200',
         glow: 'hover:border-emerald-500/40 hover:shadow-md',
@@ -179,12 +180,12 @@ const HallAvailability: React.FC = () => {
     const dateStr = format(new Date(dateString), 'yyyy-MM-dd');
     const hallTrainings = trainings.filter(
       (training) =>
-        training.hallId === hallId &&
+        getEntityId(training.hallId) === hallId &&
         training.status !== 'cancelled' &&
         format(new Date(training.date), 'yyyy-MM-dd') === dateStr,
     );
     const hallBlocks = blocks.filter(
-      (block) => block.hallId === hallId && format(new Date(block.date), 'yyyy-MM-dd') === dateStr,
+      (block) => getEntityId(block.hallId) === hallId && format(new Date(block.date), 'yyyy-MM-dd') === dateStr,
     );
     return { trainings: hallTrainings, blocks: hallBlocks };
   };
@@ -664,6 +665,10 @@ const HallAvailability: React.FC = () => {
                   <div className="flex items-center justify-between">
                     <p className="text-xs uppercase tracking-[0.28em] text-muted-foreground">Booking Details</p>
                     <p className="text-xs text-muted-foreground">{eventCount} events on {format(new Date(selectedDate), 'dd MMM')}</p>
+                  </div>
+
+                  <div className="rounded-[18px] border border-border bg-background px-4 py-3 text-sm text-muted-foreground">
+                    Hall status above is for the selected time window only. Booking details below show all events scheduled on this day.
                   </div>
 
                   {eventCount === 0 ? (

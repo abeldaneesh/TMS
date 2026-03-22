@@ -15,7 +15,7 @@ import {
 import { safeFormatDate } from '../../utils/date';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
-  ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell
+  ResponsiveContainer
 } from 'recharts';
 import LoadingScreen from '../components/LoadingScreen';
 
@@ -93,8 +93,8 @@ const Analytics: React.FC = () => {
     { status: 'Cancelled', count: safeTrainings.filter(t => t.status === 'cancelled').length, color: '#f85149' },
   ];
   const totalStatusCount = statusData.reduce((sum, item) => sum + item.count, 0);
-  const visibleStatusData = statusData.filter((item) => item.count > 0);
   const leadingStatus = [...statusData].sort((first, second) => second.count - first.count)[0];
+  const leadingPercentage = totalStatusCount > 0 && leadingStatus ? Math.round((leadingStatus.count / totalStatusCount) * 100) : 0;
 
   return (
     <div className="pb-12 space-y-10 text-foreground">
@@ -160,81 +160,60 @@ const Analytics: React.FC = () => {
             <CardDescription className="text-muted-foreground text-sm text-left">{t('analyticsPage.trainingStatusDesc')}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
-            <div className="relative">
-              <ResponsiveContainer width="100%" height={320}>
-                <PieChart>
-                  <text
-                    x="50%"
-                    y="46%"
-                    textAnchor="middle"
-                    dominantBaseline="middle"
-                    className="fill-foreground text-[30px] font-bold"
-                  >
-                    {totalStatusCount}
-                  </text>
-                  <text
-                    x="50%"
-                    y="58%"
-                    textAnchor="middle"
-                    dominantBaseline="middle"
-                    className="fill-muted-foreground text-[12px] font-medium"
-                  >
-                    Total trainings
-                  </text>
-                  <text
-                    x="50%"
-                    y="68%"
-                    textAnchor="middle"
-                    dominantBaseline="middle"
-                    className="fill-muted-foreground text-[11px]"
-                  >
-                    {leadingStatus && leadingStatus.count > 0
-                      ? `${leadingStatus.status}: ${Math.round((leadingStatus.count / totalStatusCount) * 100)}%`
-                      : 'No status data'}
-                  </text>
-                <Pie
-                  data={visibleStatusData}
-                  cx="50%"
-                  cy="50%"
-                  outerRadius={100}
-                  innerRadius={70}
-                  paddingAngle={8}
-                  dataKey="count"
-                  stroke="none"
-                >
-                  {visibleStatusData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
-                </Pie>
-                <Tooltip
-                  formatter={(value: number, _name, payload: any) => {
-                    const percentage = totalStatusCount > 0 ? Math.round((value / totalStatusCount) * 100) : 0;
-                    return [`${value} trainings (${percentage}%)`, payload?.payload?.status];
-                  }}
-                  contentStyle={{ backgroundColor: 'rgba(13, 17, 23, 0.9)', borderColor: 'rgba(110, 64, 201, 0.2)', borderRadius: '12px', color: '#fff' }}
-                />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
+            <div className="grid gap-4 md:grid-cols-[220px_minmax(0,1fr)] md:items-center">
+              <div className="rounded-3xl border border-white/10 bg-white/5 px-5 py-6 text-left">
+                <p className="text-xs font-medium uppercase tracking-[0.24em] text-muted-foreground">Total trainings</p>
+                <p className="mt-3 text-5xl font-bold text-foreground">{totalStatusCount}</p>
+                <p className="mt-3 text-sm text-muted-foreground">
+                  {leadingStatus && leadingStatus.count > 0
+                    ? `${leadingStatus.status} leads with ${leadingStatus.count} trainings`
+                    : 'No status data available'}
+                </p>
+              </div>
 
-            <div className="grid gap-3 sm:grid-cols-2">
-              {statusData.map((entry) => {
-                const percentage = totalStatusCount > 0 ? Math.round((entry.count / totalStatusCount) * 100) : 0;
-                return (
-                  <div key={entry.status} className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-left">
-                    <div className="flex items-center justify-between gap-3">
-                      <div className="flex items-center gap-3">
-                        <span className="size-3 rounded-full" style={{ backgroundColor: entry.color }} />
-                        <div>
-                          <p className="text-sm font-semibold text-foreground">{entry.status}</p>
-                          <p className="text-xs text-muted-foreground">{percentage}% of all trainings</p>
+              <div className="space-y-4 text-left">
+                <div>
+                  <div className="mb-2 flex items-center justify-between gap-3 text-xs uppercase tracking-[0.22em] text-muted-foreground">
+                    <span>Status share</span>
+                    <span>{leadingStatus?.status || 'No data'} {leadingPercentage > 0 ? `${leadingPercentage}%` : ''}</span>
+                  </div>
+                  <div className="flex h-4 overflow-hidden rounded-full bg-white/5">
+                    {statusData.map((entry) => {
+                      const width = totalStatusCount > 0 ? (entry.count / totalStatusCount) * 100 : 0;
+                      return width > 0 ? (
+                        <div
+                          key={entry.status}
+                          className="h-full"
+                          style={{ width: `${width}%`, backgroundColor: entry.color }}
+                          title={`${entry.status}: ${entry.count} / ${totalStatusCount}`}
+                        />
+                      ) : null;
+                    })}
+                  </div>
+                </div>
+
+                <div className="grid gap-3">
+                  {statusData.map((entry) => {
+                    const percentage = totalStatusCount > 0 ? Math.round((entry.count / totalStatusCount) * 100) : 0;
+                    return (
+                      <div key={entry.status} className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
+                        <div className="flex items-center justify-between gap-4">
+                          <div className="flex items-center gap-3">
+                            <span className="size-3 rounded-full" style={{ backgroundColor: entry.color }} />
+                            <div>
+                              <p className="text-sm font-semibold text-foreground">{entry.status}</p>
+                              <p className="text-xs text-muted-foreground">
+                                {entry.count} / {totalStatusCount || 0} trainings
+                              </p>
+                            </div>
+                          </div>
+                          <p className="text-lg font-bold text-foreground">{percentage}%</p>
                         </div>
                       </div>
-                      <p className="text-lg font-bold text-foreground">{entry.count}</p>
-                    </div>
-                  </div>
-                );
-              })}
+                    );
+                  })}
+                </div>
+              </div>
             </div>
           </CardContent>
         </Card>
