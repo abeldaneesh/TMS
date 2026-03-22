@@ -300,7 +300,7 @@ const Nominations: React.FC = () => {
       if (training) {
         // Count how many people are already nominated (excluding rejected)
         const currentValidNominationsCount = nominations.filter(
-          n => n.trainingId === selectedTrainingId && n.status !== 'rejected'
+          (n) => getEntityId(n.trainingId) === selectedTrainingId && n.status !== 'rejected'
         ).length;
 
         const allowedNew = training.capacity - currentValidNominationsCount;
@@ -466,7 +466,7 @@ const Nominations: React.FC = () => {
     });
 
     const selectedTrainingNominations = nominations
-      .filter((nomination) => nomination.trainingId === selectedTrainingId)
+      .filter((nomination) => getEntityId(nomination.trainingId) === selectedTrainingId)
       .sort((a, b) => new Date(b.nominatedAt || 0).getTime() - new Date(a.nominatedAt || 0).getTime());
     const selectedTrainingAssignedCount = selectedTrainingNominations.filter((nomination) => nomination.status !== 'rejected').length;
     const selectedTrainingRemainingSeats = selectedTraining
@@ -478,7 +478,7 @@ const Nominations: React.FC = () => {
     const selectedTrainingExistingParticipantIds = new Set(
       selectedTrainingNominations
         .filter((nomination) => nomination.status !== 'rejected')
-        .map((nomination) => nomination.participantId)
+        .map((nomination) => getEntityId(nomination.participantId))
     );
 
     const eligibleParticipants = users.filter((participant) => {
