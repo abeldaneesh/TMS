@@ -151,12 +151,19 @@ export const nominateParticipant = async (req: AuthRequest, res: Response): Prom
             }
         }
 
+        const isAutoApproved = req.user?.role === 'medical_officer' || req.user?.role === 'master_admin';
+        const initialStatus = isAutoApproved ? NominationStatus.APPROVED : NominationStatus.NOMINATED;
+
         let nomination;
         if (existingNomination) {
-            existingNomination.status = NominationStatus.NOMINATED;
+            existingNomination.status = initialStatus;
             existingNomination.institutionId = institutionId;
             existingNomination.nominatedBy = req.user!.userId;
             existingNomination.rejectionReason = undefined;
+            if (isAutoApproved) {
+                existingNomination.approvedBy = req.user!.userId;
+                existingNomination.approvedAt = new Date();
+            }
             existingNomination.participantSnapshot = mergeParticipantSnapshots(
                 existingNomination.participantSnapshot as any,
                 participantSnapshot
@@ -168,7 +175,10 @@ export const nominateParticipant = async (req: AuthRequest, res: Response): Prom
                 trainingId,
                 participantId,
                 institutionId,
+                status: initialStatus,
                 nominatedBy: req.user!.userId,
+                approvedBy: isAutoApproved ? req.user!.userId : undefined,
+                approvedAt: isAutoApproved ? new Date() : undefined,
                 participantSnapshot,
             });
         }
