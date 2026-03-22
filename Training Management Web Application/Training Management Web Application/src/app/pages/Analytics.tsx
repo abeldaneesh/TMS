@@ -92,6 +92,9 @@ const Analytics: React.FC = () => {
     { status: 'Ongoing', count: safeTrainings.filter(t => t.status === 'ongoing').length, color: '#238636' },
     { status: 'Cancelled', count: safeTrainings.filter(t => t.status === 'cancelled').length, color: '#f85149' },
   ];
+  const totalStatusCount = statusData.reduce((sum, item) => sum + item.count, 0);
+  const visibleStatusData = statusData.filter((item) => item.count > 0);
+  const leadingStatus = [...statusData].sort((first, second) => second.count - first.count)[0];
 
   return (
     <div className="pb-12 space-y-10 text-foreground">
@@ -156,30 +159,83 @@ const Analytics: React.FC = () => {
             <CardTitle className="text-foreground text-lg font-semibold text-left">{t('analyticsPage.trainingStatus')}</CardTitle>
             <CardDescription className="text-muted-foreground text-sm text-left">{t('analyticsPage.trainingStatusDesc')}</CardDescription>
           </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={320}>
-              <PieChart>
+          <CardContent className="space-y-6">
+            <div className="relative">
+              <ResponsiveContainer width="100%" height={320}>
+                <PieChart>
+                  <text
+                    x="50%"
+                    y="46%"
+                    textAnchor="middle"
+                    dominantBaseline="middle"
+                    className="fill-foreground text-[30px] font-bold"
+                  >
+                    {totalStatusCount}
+                  </text>
+                  <text
+                    x="50%"
+                    y="58%"
+                    textAnchor="middle"
+                    dominantBaseline="middle"
+                    className="fill-muted-foreground text-[12px] font-medium"
+                  >
+                    Total trainings
+                  </text>
+                  <text
+                    x="50%"
+                    y="68%"
+                    textAnchor="middle"
+                    dominantBaseline="middle"
+                    className="fill-muted-foreground text-[11px]"
+                  >
+                    {leadingStatus && leadingStatus.count > 0
+                      ? `${leadingStatus.status}: ${Math.round((leadingStatus.count / totalStatusCount) * 100)}%`
+                      : 'No status data'}
+                  </text>
                 <Pie
-                  data={statusData}
+                  data={visibleStatusData}
                   cx="50%"
                   cy="50%"
-                  labelLine={false}
-                  label={({ status, count }) => count > 0 ? `${status}: ${count}` : null}
                   outerRadius={100}
                   innerRadius={70}
                   paddingAngle={8}
                   dataKey="count"
                   stroke="none"
                 >
-                  {statusData.map((entry, index) => (
+                  {visibleStatusData.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={entry.color} />
                   ))}
                 </Pie>
                 <Tooltip
+                  formatter={(value: number, _name, payload: any) => {
+                    const percentage = totalStatusCount > 0 ? Math.round((value / totalStatusCount) * 100) : 0;
+                    return [`${value} trainings (${percentage}%)`, payload?.payload?.status];
+                  }}
                   contentStyle={{ backgroundColor: 'rgba(13, 17, 23, 0.9)', borderColor: 'rgba(110, 64, 201, 0.2)', borderRadius: '12px', color: '#fff' }}
                 />
-              </PieChart>
-            </ResponsiveContainer>
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+
+            <div className="grid gap-3 sm:grid-cols-2">
+              {statusData.map((entry) => {
+                const percentage = totalStatusCount > 0 ? Math.round((entry.count / totalStatusCount) * 100) : 0;
+                return (
+                  <div key={entry.status} className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-left">
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-3">
+                        <span className="size-3 rounded-full" style={{ backgroundColor: entry.color }} />
+                        <div>
+                          <p className="text-sm font-semibold text-foreground">{entry.status}</p>
+                          <p className="text-xs text-muted-foreground">{percentage}% of all trainings</p>
+                        </div>
+                      </div>
+                      <p className="text-lg font-bold text-foreground">{entry.count}</p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </CardContent>
         </Card>
       </div>

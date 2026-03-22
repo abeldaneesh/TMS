@@ -16,6 +16,7 @@ import {
 import TmsLogo from './TmsLogo';
 import { AnimatePresence } from 'framer-motion';
 import PageTransition from './PageTransition';
+import LoginWelcomeOverlay from './LoginWelcomeOverlay';
 
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
@@ -41,6 +42,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const { theme, toggleTheme } = useTheme();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [searchFocused, setSearchFocused] = useState(false);
+  const [showLoginWelcome, setShowLoginWelcome] = useState(false);
 
   if (!user) return null;
 
@@ -191,6 +193,16 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     return () => clearInterval(interval);
   }, []);
 
+  useEffect(() => {
+    if (!user) return;
+
+    const shouldShowWelcome = sessionStorage.getItem('dmo_show_login_welcome') === 'true';
+    if (!shouldShowWelcome) return;
+
+    setShowLoginWelcome(true);
+    sessionStorage.removeItem('dmo_show_login_welcome');
+  }, [user]);
+
   const handleMarkAsRead = async (id: string) => {
     try {
       await api.patch(`/notifications/${id}/read`);
@@ -302,8 +314,13 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
   return (
     <div className="min-h-screen bg-background relative overflow-hidden flex flex-col">
+      <LoginWelcomeOverlay
+        user={user}
+        visible={showLoginWelcome}
+        onClose={() => setShowLoginWelcome(false)}
+      />
       {/* Top Navigation */}
-      <nav className="fixed w-full z-40 top-0 bg-background h-[calc(4rem+env(safe-area-inset-top))] pt-[env(safe-area-inset-top)] px-4 flex items-center justify-between">
+      <nav className={`fixed w-full z-40 top-0 bg-background h-[calc(4rem+env(safe-area-inset-top))] pt-[env(safe-area-inset-top)] px-4 flex items-center justify-between transition-all duration-500 ${showLoginWelcome ? 'pointer-events-none blur-[6px] scale-[0.995] opacity-60' : ''}`}>
         <div className="flex items-center">
           <Button
             variant="ghost"
@@ -447,7 +464,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         </div>
       </nav>
 
-      <div className="flex flex-1 pt-[calc(4rem+env(safe-area-inset-top))] h-full">
+      <div className={`flex flex-1 pt-[calc(4rem+env(safe-area-inset-top))] h-full transition-all duration-500 ${showLoginWelcome ? 'pointer-events-none blur-[8px] scale-[0.992] opacity-45 saturate-50' : ''}`}>
         {/* Sidebar */}
         <aside
           className={`fixed inset-y-0 left-0 z-30 w-64 bg-background transform transition-transform duration-300 ease-out pt-[calc(4rem+env(safe-area-inset-top))] overflow-y-auto hide-scroll ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'
@@ -517,13 +534,15 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       {/* Mobile Sidebar Overlay */}
       {sidebarOpen && (
         <div
-          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-20 lg:hidden transition-opacity"
+          className={`fixed inset-0 bg-black/60 backdrop-blur-sm z-20 lg:hidden transition-opacity ${showLoginWelcome ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
           onClick={() => setSidebarOpen(false)}
         />
       )}
 
       {/* Bottom Navigation for Mobile */}
-      <BottomNav unreadCount={unreadCount} />
+      <div className={`transition-all duration-500 ${showLoginWelcome ? 'pointer-events-none blur-[6px] opacity-50' : ''}`}>
+        <BottomNav unreadCount={unreadCount} />
+      </div>
     </div>
   );
 };

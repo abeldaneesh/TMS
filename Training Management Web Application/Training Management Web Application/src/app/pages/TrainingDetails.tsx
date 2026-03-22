@@ -4,7 +4,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import api from '../../services/api';
 import { Institution, MyFeedbackSubmission, TrainingFeedback, TrainingFeedbackSummary } from '../../types';
 import {
-    Calendar, Clock, Users, MapPin, ArrowLeft, Edit, Trash2, CheckCircle, XCircle, MessageSquareMore, Star, TrendingUp, QrCode, Award
+    Calendar, Clock, Users, MapPin, ArrowLeft, Edit, Trash2, CheckCircle, XCircle, MessageSquareMore, Star, TrendingUp, QrCode, Award, FileDown
 } from 'lucide-react';
 import { Badge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
@@ -15,6 +15,7 @@ import { toast } from 'sonner';
 import AttendanceSessionManager from '../components/AttendanceSessionManager';
 import LoadingScreen from '../components/LoadingScreen';
 import { generateCertificatePDF } from '../../utils/certificateGenerator';
+import { generateTrainingFeedbackPdf } from '../../utils/feedbackReport';
 import { trainingsApi, feedbackApi, institutionsApi } from '../../services/api';
 import FeedbackSubmissionDialog from '../components/FeedbackSubmissionDialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
@@ -273,6 +274,30 @@ const TrainingDetails: React.FC = () => {
         } catch (error) {
             console.error('Status update failed:', error);
             toast.error('Failed to update status');
+        }
+    };
+
+    const handleExportFeedbackPdf = async () => {
+        if (!training) return;
+
+        try {
+            await generateTrainingFeedbackPdf({
+                training,
+                entries: filteredFeedbackEntries,
+                summary: feedbackSummary,
+                exportedByName: user?.name,
+                ratingFilterLabel:
+                    feedbackRatingFilter === 'all'
+                        ? 'All ratings'
+                        : feedbackRatingFilter === 'unrated'
+                            ? 'Unrated'
+                            : `${feedbackRatingFilter} star${feedbackRatingFilter === '1' ? '' : 's'}`,
+                sortLabel: feedbackSort === 'latest' ? 'Latest first' : 'Oldest first',
+            });
+            toast.success('Feedback PDF exported successfully');
+        } catch (error) {
+            console.error('Failed to export feedback PDF:', error);
+            toast.error('Failed to export feedback PDF');
         }
     };
 
@@ -684,7 +709,16 @@ const TrainingDetails: React.FC = () => {
                                 </p>
                             </div>
 
-                            <div className="grid gap-3 sm:grid-cols-2">
+                            <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-end">
+                                <Button
+                                    variant="outline"
+                                    className="border-primary/20 bg-primary/5 text-primary hover:bg-primary/10"
+                                    onClick={handleExportFeedbackPdf}
+                                    disabled={feedbackLoading || filteredFeedbackEntries.length === 0}
+                                >
+                                    <FileDown className="mr-2 size-4" />
+                                    Export PDF
+                                </Button>
                                 <Select value={feedbackRatingFilter} onValueChange={setFeedbackRatingFilter}>
                                     <SelectTrigger className="w-full min-w-[170px] border-border bg-background">
                                         <SelectValue placeholder="Filter by rating" />
