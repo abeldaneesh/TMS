@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">Training App</string>
-    <string name="title_activity_main">Training App</string>
+    <string name="app_name">TMS</string>
+    <string name="title_activity_main">TMS</string>
     <string name="package_name">com.training.app</string>
     <string name="custom_url_scheme">com.training.app</string>
 </resources>

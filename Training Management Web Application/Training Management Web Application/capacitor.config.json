@@ -1,5 +1,15 @@
 {
   "appId": "com.training.app",
-  "appName": "Training App",
-  "webDir": "dist"
+  "appName": "DMO TMS",
+  "webDir": "dist",
+  "bundledWebRuntime": false,
+  "plugins": {
+    "PushNotifications": {
+      "presentationOptions": [
+        "badge",
+        "sound",
+        "alert"
+      ]
+    }
+  }
 }

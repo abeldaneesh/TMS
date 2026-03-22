@@ -1,0 +1,574 @@
+import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
+import { useAuth } from '../../contexts/AuthContext';
+import {
+  trainingsApi, analyticsApi, institutionsApi, nominationsApi,
+  attendanceApi, usersApi, hallsApi
+} from '../../services/api';
+import { Training, Institution, HallBlock } from '../../types';
+import { FileText, Download, FileDown, Calendar, Building2, Cpu, ShieldCheck, Settings2, BarChart3 } from 'lucide-react';
+import { Button } from '../components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../components/ui/card';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '../components/ui/select';
+import { Label } from '../components/ui/label';
+import { jsPDF } from 'jspdf';
+import autoTable from 'jspdf-autotable';
+import Papa from 'papaparse';
+import { format } from 'date-fns';
+import { safeFormatDate } from '../../utils/date';
+import { toast } from 'sonner';
+import { downloadFile } from '../../utils/fileDownloader';
+
+const Reports: React.FC = () => {
+  const { t } = useTranslation();
+  const { user } = useAuth();
+  const [trainings, setTrainings] = useState<Training[]>([]);
+  const [institutions, setInstitutions] = useState<Institution[]>([]);
+  const [selectedReport, setSelectedReport] = useState('');
+  const [selectedTraining, setSelectedTraining] = useState('');
+  const [selectedInstitution, setSelectedInstitution] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!user) return;
+
+    const fetchData = async () => {
+      try {
+        const [trainingsData, institutionsData] = await Promise.all([
+          trainingsApi.getAll(user.role === 'program_officer' ? { createdById: user.id } : {}),
+          institutionsApi.getAll(),
+        ]);
+        setTrainings(Array.isArray(trainingsData) ? trainingsData : []);
+        setInstitutions(Array.isArray(institutionsData) ? institutionsData : []);
+
+        if ((user.role === 'institutional_admin' || user.role === 'medical_officer') && user.institutionId) {
+          setSelectedInstitution(user.institutionId);
+        }
+      } catch (error) {
+        console.error('Error fetching data:', error);
+        toast.error(t('reportsPage.failLoad'));
+      }
+    };
+    fetchData();
+  }, [user]);
+
+  const generateTrainingReportPDF = async (trainingId: string) => {
+    try {
+      const training = trainings.find(t => t.id === trainingId);
+      if (!training) return;
+
+      const [analyticsRes, nominationsRes, attendanceRes, usersRes, hallsRes] = await Promise.all([
+        analyticsApi.getTrainingAnalytics(trainingId).catch(() => null),
+        nominationsApi.getAll({ trainingId }).catch(() => []),
+        attendanceApi.getAll({ trainingId }).catch(() => []),
+        usersApi.getAll().catch(() => []),
+        hallsApi.getAll().catch(() => []),
+      ]);
+
+      const analyticsResObj = analyticsRes || { totalNominated: 0, totalApproved: 0, totalAttended: 0, attendanceRate: 0 };
+      let nominations = Array.isArray(nominationsRes) ? nominationsRes : [];
+      let attendanceRecords = Array.isArray(attendanceRes) ? attendanceRes : [];
+      const allUsers = Array.isArray(usersRes) ? usersRes : [];
+      const halls = Array.isArray(hallsRes) ? hallsRes : [];
+
+      // Filter data for Institution Admins and Medical Officers
+      if ((user?.role === 'institutional_admin' || user?.role === 'medical_officer') && user.institutionId) {
+        nominations = nominations.filter(n => n.institutionId === user.institutionId);
+        const institutionalParticipantIds = nominations.map(n => n.participantId);
+        attendanceRecords = attendanceRecords.filter(a => institutionalParticipantIds.includes(a.participantId));
+      }
+
+      const analytics = analyticsResObj;
+
+      const hall = halls.find(h => h.id === training.hallId || (h as any)._id === training.hallId);
+      const trainer = allUsers.find(u => u.id === training.trainerId || (u as any)._id === training.trainerId);
+
+      const doc = new jsPDF();
+
+      // Title
+      doc.setFontSize(20);
+      doc.text('Training Report', 14, 20);
+
+      // Training Details
+      doc.setFontSize(12);
+      doc.text(`Training Title: ${training.title}`, 14, 35);
+      doc.setFontSize(10);
+      doc.text(`Program Area: ${training.program}`, 14, 42);
+      doc.text(`Scheduled Date: ${safeFormatDate(training.date)}`, 14, 49);
+      doc.text(`Time Window: ${training.startTime} - ${training.endTime}`, 14, 56);
+      doc.text(`Venue: ${hall?.name || 'N/A'}`, 14, 63);
+      doc.text(`Trainer: ${trainer?.name || 'N/A'}`, 14, 70);
+      doc.text(`Status: ${(training.status || '').toUpperCase()}`, 14, 77);
+
+      // Summary Statistics
+      doc.setFontSize(14);
+      doc.text('Attendance Analytics', 14, 90);
+      doc.setFontSize(10);
+      doc.text(`Total Nominated: ${analytics.totalNominated}`, 14, 97);
+      doc.text(`Total Approved: ${analytics.totalApproved}`, 14, 104);
+      doc.text(`Total Attended: ${analytics.totalAttended}`, 14, 111);
+      doc.text(`Attendance Rate: ${analytics.attendanceRate}%`, 14, 118);
+
+      // Participants Table
+      const participantData = nominations.map(nom => {
+        const participant = allUsers.find(u => u.id === nom.participantId);
+        const institution = institutions.find(i => i.id === nom.institutionId);
+        const attended = attendanceRecords.some(a => a.participantId === nom.participantId);
+
+        return [
+          participant?.name || 'N/A',
+          participant?.designation || 'N/A',
+          institution?.name || 'N/A',
+          nom.status,
+          attended ? 'YES' : 'NO',
+        ];
+      });
+
+      autoTable(doc, {
+        startY: 130,
+        head: [['Participant Name', 'Designation', 'Institution', 'Status', 'Attended']],
+        body: participantData,
+        theme: 'grid',
+        styles: { fontSize: 8 },
+        headStyles: { fillColor: [0, 80, 150] }, // Professional Navy
+      });
+
+      // Download PDF
+      const pdfBlob = doc.output('blob');
+      await downloadFile(
+        pdfBlob,
+        `Training_Report_${training.title.replace(/\s+/g, '_')}_${safeFormatDate(new Date(), 'yyyy-MM-dd')}.pdf`,
+        'application/pdf'
+      );
+      toast.success(t('reportsPage.reportReady'));
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      toast.error(t('reportsPage.failPdf'));
+    }
+  };
+
+  const generateTrainingReportCSV = async (trainingId: string) => {
+    try {
+      const training = trainings.find(t => t.id === trainingId);
+      if (!training) return;
+
+      const [nominationsRes, attendanceRes, usersRes] = await Promise.all([
+        nominationsApi.getAll({ trainingId }).catch(() => []),
+        attendanceApi.getAll({ trainingId }).catch(() => []),
+        usersApi.getAll().catch(() => []),
+      ]);
+
+      let nominations = Array.isArray(nominationsRes) ? nominationsRes : [];
+      let attendanceRecords = Array.isArray(attendanceRes) ? attendanceRes : [];
+      const allUsers = Array.isArray(usersRes) ? usersRes : [];
+
+      // Filter data for Institution Admins and Medical Officers
+      if ((user?.role === 'institutional_admin' || user?.role === 'medical_officer') && user.institutionId) {
+        nominations = nominations.filter(n => n.institutionId === user.institutionId);
+        const institutionalParticipantIds = nominations.map(n => n.participantId);
+        attendanceRecords = attendanceRecords.filter(a => institutionalParticipantIds.includes(a.participantId));
+      }
+
+      const csvData = nominations.map(nom => {
+        const participant = allUsers.find(u => u.id === nom.participantId);
+        const institution = institutions.find(i => i.id === nom.institutionId);
+        const attendanceRecord = attendanceRecords.find(a => a.participantId === nom.participantId);
+
+        return {
+          'Training Title': training.title,
+          'Program': training.program,
+          'Date': safeFormatDate(training.date, 'yyyy-MM-dd'),
+          'Participant': participant?.name || 'N/A',
+          'Designation': participant?.designation || 'N/A',
+          'Institution': institution?.name || 'N/A',
+          'Phone': participant?.phone || 'N/A',
+          'Email': participant?.email || 'N/A',
+          'Nomination Status': nom.status,
+          'Attended': attendanceRecord ? 'Yes' : 'No',
+          'Timestamp': safeFormatDate(attendanceRecord?.timestamp, 'yyyy-MM-dd HH:mm:ss'),
+        };
+      });
+
+      const csv = Papa.unparse(csvData);
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      await downloadFile(
+        blob,
+        `Training_Data_${training.title.replace(/\s+/g, '_')}_${safeFormatDate(new Date(), 'yyyy-MM-dd')}.csv`,
+        'text/csv'
+      );
+      toast.success(t('reportsPage.exportedCsv'));
+    } catch (error) {
+      console.error('Error generating CSV:', error);
+      toast.error(t('reportsPage.failCsv'));
+    }
+  };
+
+  const generateInstitutionReportPDF = async (institutionId: string) => {
+    try {
+      const institution = institutions.find(i => i.id === institutionId);
+      if (!institution) return;
+
+      const report = await analyticsApi.getInstitutionReport(institutionId);
+
+      const doc = new jsPDF();
+
+      // Title
+      doc.setFontSize(20);
+      doc.text('Institution Training Report', 14, 20);
+
+      // Institution Details
+      doc.setFontSize(12);
+      doc.text(`Institution: ${institution.name}`, 14, 35);
+      doc.setFontSize(10);
+      doc.text(`Type: ${institution.type}`, 14, 42);
+      doc.text(`Location: ${institution.location}`, 14, 49);
+      doc.text(`Report Date: ${safeFormatDate(new Date())}`, 14, 56);
+
+      // Summary Statistics
+      doc.setFontSize(14);
+      doc.text('Training Summary', 14, 70);
+      doc.setFontSize(10);
+      doc.text(`Total Staff: ${report.totalStaff}`, 14, 77);
+      doc.text(`Trained Staff: ${report.trainedStaff}`, 14, 84);
+      doc.text(`Untrained Staff: ${report.untrainedStaff || 0}`, 14, 91);
+      const trainingPercentage = (report.totalStaff || 0) > 0
+        ? Math.round(((report.trainedStaff || 0) / report.totalStaff) * 100)
+        : 0;
+      doc.text(`Training Coverage: ${trainingPercentage}%`, 14, 98);
+
+      // Trainings by Program
+      const programData = report.trainingsByProgram.map(prog => [
+        prog.program,
+        prog.trainings.toString(),
+        prog.participants.toString(),
+      ]);
+
+      autoTable(doc, {
+        startY: 110,
+        head: [['Program Area', 'Trainings', 'Total Participants']],
+        body: programData,
+        theme: 'grid',
+        styles: { fontSize: 10 },
+        headStyles: { fillColor: [80, 80, 80] },
+      });
+
+      const pdfBlob = doc.output('blob');
+      await downloadFile(
+        pdfBlob,
+        `Institution_Report_${institution.name.replace(/\s+/g, '_')}_${safeFormatDate(new Date(), 'yyyy-MM-dd')}.pdf`,
+        'application/pdf'
+      );
+      toast.success(t('reportsPage.instReady'));
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      toast.error(t('reportsPage.failInst'));
+    }
+  };
+
+  const generateDistrictSummaryPDF = async () => {
+    try {
+      const [allTrainingsRes, allInstitutionsRes, statsRes] = await Promise.all([
+        trainingsApi.getAll().catch(() => []),
+        institutionsApi.getAll().catch(() => []),
+        analyticsApi.getDashboardStats(user!.id, user!.role).catch(() => null),
+      ]);
+
+      const allTrainings = Array.isArray(allTrainingsRes) ? allTrainingsRes : [];
+      const allInstitutions = Array.isArray(allInstitutionsRes) ? allInstitutionsRes : [];
+      const stats = statsRes || {
+        totalTrainings: 0,
+        upcomingTrainings: 0,
+        completedTrainings: 0,
+        totalParticipants: 0,
+        attendanceRate: 0,
+        trainedStaff: 0,
+        untrainedStaff: 0
+      };
+
+      const doc = new jsPDF();
+
+      // Title
+      doc.setFontSize(20);
+      doc.text('Global Training Summary', 14, 20);
+
+      doc.setFontSize(10);
+      doc.text(`Generated: ${safeFormatDate(new Date(), 'MMM dd, yyyy HH:mm')}`, 14, 30);
+      doc.text(`Authorized Personnel: ${user?.name || 'N/A'}`, 14, 37);
+
+      // Overall Statistics
+      doc.setFontSize(14);
+      doc.text('District Training Matrix', 14, 50);
+      doc.setFontSize(10);
+      doc.text(`Total Trainings: ${stats.totalTrainings}`, 14, 57);
+      doc.text(`Trainings Completed: ${stats.completedTrainings}`, 14, 64);
+      doc.text(`Upcoming Trainings: ${stats.upcomingTrainings}`, 14, 71);
+      doc.text(`Active Participants: ${stats.totalParticipants}`, 14, 78);
+      doc.text(`Average Attendance Rate: ${stats.attendanceRate}%`, 14, 85);
+      doc.text(`Total Trained Staff: ${stats.trainedStaff}`, 14, 92);
+      doc.text(`Remaining Staff: ${stats.untrainedStaff}`, 14, 99);
+
+      // Trainings by Status
+      const statusCounts = {
+        draft: allTrainings.filter(t => t.status === 'draft').length,
+        scheduled: allTrainings.filter(t => t.status === 'scheduled').length,
+        ongoing: allTrainings.filter(t => t.status === 'ongoing').length,
+        completed: allTrainings.filter(t => t.status === 'completed').length,
+        cancelled: allTrainings.filter(t => t.status === 'cancelled').length,
+      };
+
+      const statusData = Object.entries(statusCounts).map(([status, count]) => [
+        status.toUpperCase(),
+        count.toString(),
+      ]);
+
+      autoTable(doc, {
+        startY: 110,
+        head: [['Training Status', 'Count']],
+        body: statusData,
+        theme: 'grid',
+        styles: { fontSize: 10 },
+        headStyles: { fillColor: [0, 80, 150] },
+      });
+
+      // Institutions Summary
+      const lastY = (doc as any).lastAutoTable.finalY + 10;
+      doc.setFontSize(14);
+      doc.text('Registered Institutions', 14, lastY);
+
+      const instData = allInstitutions.map(inst => [
+        inst.name,
+        inst.type.toUpperCase(),
+        inst.location,
+      ]);
+
+      autoTable(doc, {
+        startY: lastY + 7,
+        head: [['Institution Name', 'Type', 'Location']],
+        body: instData,
+        theme: 'grid',
+        styles: { fontSize: 9 },
+        headStyles: { fillColor: [80, 80, 80] },
+      });
+
+      const pdfBlob = doc.output('blob');
+      await downloadFile(
+        pdfBlob,
+        `Global_Summary_${safeFormatDate(new Date(), 'yyyy-MM-dd')}.pdf`,
+        'application/pdf'
+      );
+      toast.success(t('reportsPage.globalReady'));
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      toast.error(t('reportsPage.failGlobal'));
+    }
+  };
+
+  const handleGenerateReport = async (format: 'pdf' | 'csv') => {
+    if (!selectedReport) {
+      toast.error(t('reportsPage.selectTypeError'));
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      if (selectedReport === 'training') {
+        if (!selectedTraining) {
+          toast.error(t('reportsPage.selectTrainingError'));
+          return;
+        }
+        if (format === 'pdf') {
+          await generateTrainingReportPDF(selectedTraining);
+        } else {
+          await generateTrainingReportCSV(selectedTraining);
+        }
+      } else if (selectedReport === 'institution') {
+        if (!selectedInstitution) {
+          toast.error(t('reportsPage.selectInstError'));
+          return;
+        }
+        if (format === 'pdf') {
+          await generateInstitutionReportPDF(selectedInstitution);
+        }
+      } else if (selectedReport === 'district') {
+        if (format === 'pdf') {
+          await generateDistrictSummaryPDF();
+        }
+      }
+    } catch (error) {
+      console.error('Error generating report:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="max-w-4xl mx-auto space-y-8 pb-12">
+      <div className="flex flex-col sm:flex-row items-start sm:items-end justify-between gap-4">
+        <div>
+          <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-foreground flex items-center gap-3">
+            <BarChart3 className="size-8 sm:size-10 text-primary" />
+            {t('reportsPage.title', 'Reports & Analytics')}
+          </h1>
+          <p className="text-muted-foreground mt-2 text-sm">{t('reportsPage.subtitle')}</p>
+        </div>
+      </div>
+
+      <Card className="border-border shadow-sm overflow-hidden">
+        <CardHeader className="border-b border-border bg-muted/20 pb-6">
+          <CardTitle className="text-lg text-foreground flex items-center gap-2">
+            <FileText className="size-4" />
+            {t('reportsPage.generator')}
+          </CardTitle>
+          <CardDescription className="text-sm text-muted-foreground">
+            {t('reportsPage.generatorDesc')}
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-8 pt-8 px-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="space-y-3">
+              <Label className="text-sm font-medium text-foreground flex items-center gap-2">
+                <Settings2 className="size-3" />
+                {t('reportsPage.reportType', 'Report Type')}
+              </Label>
+              <Select value={selectedReport} onValueChange={(value) => {
+                setSelectedReport(value);
+                setSelectedTraining('');
+                setSelectedInstitution('');
+              }}>
+                <SelectTrigger className="bg-background text-foreground">
+                  <SelectValue placeholder={t('reportsPage.selectType')} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="training">{t('reportsPage.typeTraining')}</SelectItem>
+                  <SelectItem value="institution">{t('reportsPage.typeInstitution')}</SelectItem>
+                  {(user?.role === 'master_admin' || user?.role === 'program_officer') && (
+                    <SelectItem value="district">{t('reportsPage.typeDistrict')}</SelectItem>
+                  )}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {selectedReport === 'training' && (
+              <div className="space-y-3 animate-in fade-in slide-in-from-top-4 duration-300">
+                <Label className="text-sm font-medium text-foreground flex items-center gap-2">
+                  <Calendar className="size-3" />
+                  {t('reportsPage.selectTraining', 'Select Training')}
+                </Label>
+                <Select value={selectedTraining} onValueChange={setSelectedTraining}>
+                  <SelectTrigger className="bg-background text-foreground">
+                    <SelectValue placeholder={t('reportsPage.identifyTraining')} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {trainings.map((training) => (
+                      <SelectItem key={training.id} value={training.id}>
+                        {training.title} — {safeFormatDate(training.date, 'MM/dd/yy')}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            {selectedReport === 'institution' && (
+              <div className="space-y-3 animate-in fade-in slide-in-from-top-4 duration-300">
+                <Label className="text-sm font-medium text-foreground flex items-center gap-2">
+                  <Building2 className="size-3" />
+                  {t('reportsPage.selectInst', 'Select Institution')}
+                </Label>
+                <Select
+                  value={selectedInstitution}
+                  onValueChange={setSelectedInstitution}
+                  disabled={user?.role === 'institutional_admin' || user?.role === 'medical_officer'}
+                >
+                  <SelectTrigger className="bg-background text-foreground">
+                    <SelectValue placeholder={t('reportsPage.identifyInst')} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {institutions.map((institution) => (
+                      <SelectItem key={institution.id} value={institution.id}>
+                        {institution.name} ({institution.type.toUpperCase()})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+          </div>
+
+          <div className="flex flex-col md:flex-row gap-4 pt-4">
+            <Button
+              onClick={() => handleGenerateReport('pdf')}
+              disabled={loading || !selectedReport}
+              className="flex-1 h-12"
+            >
+              {loading ? (
+                <Cpu className="size-4 mr-2 animate-spin" />
+              ) : (
+                <FileDown className="size-4 mr-2" />
+              )}
+              {t('reportsPage.generatePdf')}
+            </Button>
+            {selectedReport === 'training' && (
+              <Button
+                onClick={() => handleGenerateReport('csv')}
+                disabled={loading}
+                variant="outline"
+                className="flex-1 h-12"
+              >
+                <Download className="size-4 mr-2" />
+                {t('reportsPage.exportCsv')}
+              </Button>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <Card className="border-border shadow-sm">
+          <CardContent className="p-8 text-center">
+            <div className="bg-primary/10 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-6">
+              <Calendar className="size-8 text-primary" />
+            </div>
+            <h3 className="text-lg font-semibold text-foreground mb-3">{t('reportsPage.trainingAnalytics')}</h3>
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              {t('reportsPage.trainingAnalyticsDesc')}
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card className="border-border shadow-sm">
+          <CardContent className="p-8 text-center">
+            <div className="bg-primary/10 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-6">
+              <Building2 className="size-8 text-secondary" />
+            </div>
+            <h3 className="text-lg font-semibold text-foreground mb-3">{t('reportsPage.instData')}</h3>
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              {t('reportsPage.instDataDesc')}
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card className="border-border shadow-sm">
+          <CardContent className="p-8 text-center">
+            <div className="bg-primary/10 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-6">
+              <ShieldCheck className="size-8 text-emerald-400" />
+            </div>
+            <h3 className="text-lg font-semibold text-foreground mb-3">{t('reportsPage.districtData')}</h3>
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              {t('reportsPage.districtDataDesc')}
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+};
+
+export default Reports;
