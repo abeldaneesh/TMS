@@ -30,6 +30,7 @@ const timeToMinutes = (time: string) => {
 };
 const getOverlapMinutes = (slotStart: number, slotEnd: number, eventStart: number, eventEnd: number) =>
     Math.max(0, Math.min(slotEnd, eventEnd) - Math.max(slotStart, eventStart));
+type SlotStatus = 'available' | 'partial' | 'booked';
 
 const Halls: React.FC = () => {
     const { t } = useTranslation();
@@ -329,25 +330,31 @@ const Halls: React.FC = () => {
             return { trainings: hallTrainings, blocks: hallBlocks };
         };
 
-        const getWindowStatus = (
+        const getWindowAnalytics = (
             events: { trainings: Training[]; blocks: HallBlock[] },
             slotStart: string,
             slotEnd: string
         ) => {
             const start = timeToMinutes(slotStart);
             const end = timeToMinutes(slotEnd);
+            const duration = Math.max(1, end - start);
             const overlaps = [...events.trainings, ...events.blocks].map((item) =>
                 getOverlapMinutes(start, end, timeToMinutes(item.startTime), timeToMinutes(item.endTime))
             );
-            const occupiedMinutes = overlaps.reduce((sum, minutes) => sum + minutes, 0);
-            return occupiedMinutes > 0 ? 'booked' : 'available';
+            const occupiedMinutes = Math.min(duration, overlaps.reduce((sum, minutes) => sum + minutes, 0));
+            const occupiedPercent = Math.min(100, Math.round((occupiedMinutes / duration) * 100));
+            const availablePercent = 100 - occupiedPercent;
+            const status: SlotStatus =
+                occupiedPercent === 0 ? 'available' : occupiedPercent >= 100 ? 'booked' : 'partial';
+
+            return { occupiedPercent, availablePercent, status };
         };
 
         const getSlottedStatus = (day: number, hallId: string) => {
             const events = getEventsForHallOnDate(hallId, day);
             return {
-                morning: getWindowStatus(events, '10:00', '13:30'),
-                afternoon: getWindowStatus(events, '14:00', '17:30')
+                morning: getWindowAnalytics(events, '10:00', '13:30'),
+                evening: getWindowAnalytics(events, '17:00', '22:00')
             };
         };
 
@@ -362,7 +369,7 @@ const Halls: React.FC = () => {
                                 {currentDate.toLocaleString('default', { month: 'long' })} {year}
                             </h3>
                             <p className="text-sm text-muted-foreground">
-                                Morning and afternoon availability for each hall
+                                Morning and evening availability for each hall
                             </p>
                         </div>
                         <div className="flex gap-2">
@@ -374,8 +381,9 @@ const Halls: React.FC = () => {
                     <div className="flex flex-wrap gap-2 rounded-2xl border border-border/60 bg-secondary/10 p-3 text-xs text-muted-foreground">
                         <div className="flex items-center gap-2 rounded-full bg-background/60 px-3 py-1.5"><div className="size-2 rounded-full bg-emerald-500" /> Morning available</div>
                         <div className="flex items-center gap-2 rounded-full bg-background/60 px-3 py-1.5"><div className="size-2 rounded-full bg-rose-500" /> Morning booked</div>
-                        <div className="flex items-center gap-2 rounded-full bg-background/60 px-3 py-1.5"><div className="size-2 rounded-full bg-emerald-500/70" /> Afternoon available</div>
-                        <div className="flex items-center gap-2 rounded-full bg-background/60 px-3 py-1.5"><div className="size-2 rounded-full bg-rose-500/70" /> Afternoon booked</div>
+                        <div className="flex items-center gap-2 rounded-full bg-background/60 px-3 py-1.5"><div className="size-2 rounded-full bg-amber-400" /> Partial window</div>
+                        <div className="flex items-center gap-2 rounded-full bg-background/60 px-3 py-1.5"><div className="size-2 rounded-full bg-emerald-500/70" /> Evening available</div>
+                        <div className="flex items-center gap-2 rounded-full bg-background/60 px-3 py-1.5"><div className="size-2 rounded-full bg-rose-500/70" /> Evening booked</div>
                     </div>
                 </div>
 
@@ -413,16 +421,35 @@ const Halls: React.FC = () => {
                                 ))}
                                 {Array.from({ length: daysInMonth(year, month) }).map((_, i) => {
                                     const day = i + 1;
-                                    const { morning, afternoon } = getSlottedStatus(day, hall.id);
-                                    const morningLabel = morning === 'available' ? 'Open' : 'Booked';
-                                    const afternoonLabel = afternoon === 'available' ? 'Open' : 'Booked';
+                                    const { morning, evening } = getSlottedStatus(day, hall.id);
+                                    const getSlotLabel = (slot: { availablePercent: number; status: SlotStatus }) => {
+                                        if (slot.status === 'booked') return 'Booked';
+                                        if (slot.status === 'partial') return `${slot.availablePercent}% free`;
+                                        return 'Open';
+                                    };
+                                    const getBarClass = (slot: { status: SlotStatus }, tone: 'morning' | 'evening') => {
+                                        if (slot.status === 'booked') {
+                                            return 'bg-rose-500/70';
+                                        }
+                                        if (slot.status === 'partial') {
+                                            return tone === 'morning' ? 'bg-amber-400/80' : 'bg-amber-300/80';
+                                        }
+                                        return tone === 'morning' ? 'bg-emerald-500/30' : 'bg-emerald-500/25';
+                                    };
+                                    const getTextClass = (slot: { status: SlotStatus }) => {
+                                        if (slot.status === 'booked') return 'text-rose-500';
+                                        if (slot.status === 'partial') return 'text-amber-400';
+                                        return 'text-emerald-500';
+                                    };
+                                    const morningLabel = getSlotLabel(morning);
+                                    const eveningLabel = getSlotLabel(evening);
                                     return (
                                         <div 
                                             key={day} 
-                                            title={`Day ${day}: Morning ${morningLabel}, Afternoon ${afternoonLabel}`}
+                                            title={`Day ${day}: Morning ${morningLabel}, Evening ${eveningLabel}`}
                                             className={cn(
                                                 "relative h-24 overflow-hidden rounded-2xl border border-border/60 p-3 transition-all group hover:border-primary/30 hover:bg-secondary/20",
-                                                morning === 'booked' && afternoon === 'booked' ? "bg-rose-500/5" : "bg-secondary/10"
+                                                morning.status === 'booked' && evening.status === 'booked' ? "bg-rose-500/5" : "bg-secondary/10"
                                             )}
                                         >
                                             <span className="absolute right-3 top-2 text-xs font-semibold text-muted-foreground/70 group-hover:text-muted-foreground transition-colors">{day}</span>
@@ -430,20 +457,20 @@ const Halls: React.FC = () => {
                                             <div className="mt-6 flex flex-col gap-2.5">
                                                 <div className="flex items-center justify-between gap-2">
                                                     <div className="flex items-center gap-1.5">
-                                                        <Sun className={cn("size-3", morning === 'available' ? "text-emerald-500" : "text-rose-500")} />
+                                                        <Sun className={cn("size-3", getTextClass(morning))} />
                                                         <span className="text-[10px] font-medium text-foreground">Morning</span>
                                                     </div>
-                                                    <span className={cn("text-[10px] font-semibold", morning === 'available' ? "text-emerald-500" : "text-rose-500")}>{morningLabel}</span>
+                                                    <span className={cn("text-[10px] font-semibold", getTextClass(morning))}>{morningLabel}</span>
                                                 </div>
-                                                <div className={cn("h-1.5 rounded-full", morning === 'available' ? "bg-emerald-500/30" : "bg-rose-500/70")} />
+                                                <div className={cn("h-1.5 rounded-full", getBarClass(morning, 'morning'))} />
                                                 <div className="flex items-center justify-between gap-2">
                                                     <div className="flex items-center gap-1.5">
-                                                        <Sunset className={cn("size-3", afternoon === 'available' ? "text-emerald-500" : "text-rose-500")} />
-                                                        <span className="text-[10px] font-medium text-foreground">Afternoon</span>
+                                                        <Sunset className={cn("size-3", getTextClass(evening))} />
+                                                        <span className="text-[10px] font-medium text-foreground">Evening</span>
                                                     </div>
-                                                    <span className={cn("text-[10px] font-semibold", afternoon === 'available' ? "text-emerald-500" : "text-rose-500")}>{afternoonLabel}</span>
+                                                    <span className={cn("text-[10px] font-semibold", getTextClass(evening))}>{eveningLabel}</span>
                                                 </div>
-                                                <div className={cn("h-1.5 rounded-full", afternoon === 'available' ? "bg-emerald-500/25" : "bg-rose-500/55")} />
+                                                <div className={cn("h-1.5 rounded-full", getBarClass(evening, 'evening'))} />
                                             </div>
                                             
                                             {/* Hover indicator */}
