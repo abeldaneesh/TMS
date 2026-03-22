@@ -12,6 +12,7 @@ import {
     toArchivedParticipantProfile,
     upsertTrainingParticipantSnapshot,
 } from '../models/shared/participantSnapshot';
+import { withEffectiveTrainingStatus } from '../utils/trainingStatus';
 
 const LATE_ATTENDANCE_WINDOW_HOURS = Math.max(2, Math.min(6, Number(process.env.LATE_ATTENDANCE_WINDOW_HOURS || 4)));
 // Trainings are scheduled and operated in IST across the application.
@@ -534,14 +535,14 @@ export const getMyAttendance = async (req: AuthRequest, res: Response): Promise<
         const formattedAttendance = attendance.map((att: any) => ({
             id: att._id,
             ...att,
-            training: att.trainingId ? {
+            training: att.trainingId ? withEffectiveTrainingStatus({
                 ...att.trainingId,
                 id: att.trainingId._id,
                 hall: att.trainingId.hallId ? {
                     ...att.trainingId.hallId,
                     id: att.trainingId.hallId._id
                 } : null
-            } : null
+            }) : null
         }));
 
         res.json(formattedAttendance);
@@ -577,14 +578,14 @@ export const getAttendanceByParticipant = async (req: AuthRequest, res: Response
         const formattedAttendance = attendance.map((att: any) => ({
             id: att._id,
             ...att,
-            training: att.trainingId ? {
+            training: att.trainingId ? withEffectiveTrainingStatus({
                 ...att.trainingId,
                 id: att.trainingId._id,
                 hall: att.trainingId.hallId ? {
                     ...att.trainingId.hallId,
                     id: att.trainingId.hallId._id
                 } : null
-            } : null
+            }) : null
         }));
 
         res.json(formattedAttendance);

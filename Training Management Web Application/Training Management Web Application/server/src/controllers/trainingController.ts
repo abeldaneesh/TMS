@@ -7,6 +7,7 @@ import Attendance from '../models/Attendance';
 import Notification from '../models/Notification';
 import TrainingFeedback from '../models/TrainingFeedback';
 import { createAndSendNotification } from '../utils/notificationUtils';
+import { withEffectiveTrainingStatus } from '../utils/trainingStatus';
 
 const LATE_ATTENDANCE_WINDOW_HOURS = Math.max(2, Math.min(6, Number(process.env.LATE_ATTENDANCE_WINDOW_HOURS || 4)));
 
@@ -125,7 +126,7 @@ export const getTrainings = async (req: Request, res: Response): Promise<void> =
         }
 
         // Map populated fields to match expected output
-        const formattedTrainings = trainings.map(t => ({
+        const formattedTrainings = trainings.map(t => withEffectiveTrainingStatus({
             ...t,
             id: t._id,
             userStatus: userStatusMap[t._id.toString()] || null,
@@ -185,7 +186,7 @@ export const getTrainingById = async (req: Request, res: Response): Promise<void
             status: { $in: ['nominated', 'approved', 'attended'] }
         });
 
-        const transformedTraining = {
+        const transformedTraining = withEffectiveTrainingStatus({
             ...training,
             // @ts-ignore
             id: training._id,
@@ -197,7 +198,7 @@ export const getTrainingById = async (req: Request, res: Response): Promise<void
             assignedParticipantsCount,
             remainingCapacity: Math.max(0, training.capacity - assignedParticipantsCount),
             lateAttendanceWindowHours: LATE_ATTENDANCE_WINDOW_HOURS,
-        };
+        });
 
         res.json(transformedTraining);
     } catch (error) {
@@ -294,10 +295,10 @@ export const createTraining = async (req: AuthRequest, res: Response): Promise<v
             requiredInstitutions
         });
 
-        res.status(201).json({
+        res.status(201).json(withEffectiveTrainingStatus({
             ...training.toObject(),
             id: training._id
-        });
+        }));
     } catch (error: any) {
         console.error('Create training error:', error);
         res.status(500).json({ message: 'Error creating training' });
@@ -463,10 +464,10 @@ export const updateTraining = async (req: AuthRequest, res: Response): Promise<v
 
         await training.save();
 
-        res.json({
+        res.json(withEffectiveTrainingStatus({
             ...training.toObject(),
             id: training._id
-        });
+        }));
     } catch (error: any) {
         console.error('Update training error:', error);
         res.status(500).json({ message: 'Error updating training' });
@@ -497,10 +498,10 @@ export const updateTrainingStatus = async (req: AuthRequest, res: Response): Pro
         training.status = status;
         await training.save();
 
-        res.json({
+        res.json(withEffectiveTrainingStatus({
             ...training.toObject(),
             id: training._id
-        });
+        }));
     } catch (error) {
         console.error('Update status error:', error);
         res.status(500).json({ message: 'Error updating training status' });

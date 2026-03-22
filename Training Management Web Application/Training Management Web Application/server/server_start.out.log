@@ -1,0 +1,5 @@
+
+> server@1.0.0 start
+> node dist/index.js
+
+[dotenv@17.2.4] injecting env (12) from .env -- tip: ⚙️  enable debug logging with { debug: true }
