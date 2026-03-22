@@ -58,7 +58,7 @@ const getStatusMeta = (status: SlotStatus) => {
   switch (status) {
     case 'available':
       return {
-        label: 'Available Now',
+        label: 'Available',
         accent: 'text-emerald-600 dark:text-emerald-300',
         badge: 'border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-200',
         glow: 'hover:border-emerald-500/40 hover:shadow-md',
@@ -571,6 +571,12 @@ const HallAvailability: React.FC = () => {
             const windowMeta = getStatusMeta(windowStatus);
             const breakdown = getDayBreakdown(hall.id);
             const eventCount = events.trainings.length + events.blocks.length;
+            const statusLabel =
+              windowStatus === 'available'
+                ? `Available for ${startTime} - ${endTime}`
+                : windowStatus === 'partial'
+                  ? `Partially busy for ${startTime} - ${endTime}`
+                  : `Booked for ${startTime} - ${endTime}`;
 
             return (
               <motion.article
@@ -611,7 +617,7 @@ const HallAvailability: React.FC = () => {
                       ) : (
                         <XCircle className="mr-2 size-3.5" />
                       )}
-                      {windowMeta.label}
+                      {statusLabel}
                     </Badge>
                     <Badge className="rounded-full border border-border bg-background px-3 py-1 text-xs font-medium text-foreground">
                       <Users className="mr-2 size-3.5 text-muted-foreground" />
