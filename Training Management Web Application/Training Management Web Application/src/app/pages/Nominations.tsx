@@ -152,9 +152,9 @@ const Nominations: React.FC = () => {
         institutionsApi.getAll(),
       ]);
 
-      console.log('[NOMINATIONS_SYNC] Fetch complete:', {
-        nomCount: Array.isArray(nominationsData) ? nominationsData.length : 'ERR',
-        userCount: Array.isArray(usersData) ? usersData.length : 'ERR'
+      console.log('[NOMINATIONS_SYNC] Sync result:', {
+        nominations: Array.isArray(nominationsData) ? nominationsData.length : 0,
+        users: Array.isArray(usersData) ? usersData.length : 0
       });
 
       // Sort nominations: Pending first, then newest first
@@ -492,9 +492,13 @@ const Nominations: React.FC = () => {
       }
 
       const matchesInstitution =
-        selectedTrainingInstitutionIds.length === 0 || selectedTrainingInstitutionIds.includes(participantInstitutionId);
+        selectedTrainingInstitutionIds.length === 0 || 
+        selectedTrainingInstitutionIds.includes(participantInstitutionId) ||
+        (user.role === 'medical_officer' && participantInstitutionId === currentUserInstitutionId);
+        
       const matchesAudience =
-        selectedTrainingAudience.length === 0 || (participantDesignation && selectedTrainingAudience.includes(participantDesignation));
+        selectedTrainingAudience.length === 0 || 
+        (participantDesignation && selectedTrainingAudience.includes(participantDesignation));
 
       return matchesInstitution && matchesAudience;
     });
@@ -536,8 +540,21 @@ const Nominations: React.FC = () => {
       const pName = getParticipantName(nom.participantId).toLowerCase();
       const tName = getTrainingName(nom.trainingId).toLowerCase();
       const iName = getInstitutionName(nom.institutionId).toLowerCase();
+      
       const matchesSearch = pName.includes(searchLower) || tName.includes(searchLower) || iName.includes(searchLower);
       const matchesStatus = statusFilter === 'all' || getNominationDisplayStatus(nom.status) === statusFilter;
+      
+      // Safety check: ensure the nomination is relevant to the user's role/scope
+      if (user.role === 'participant') {
+        if (getEntityId(nom.participantId) !== user.id) return false;
+      } else if (user.role === 'medical_officer' || user.role === 'institutional_admin') {
+        const nomParticipant = getParticipantRecord(nom.participantId);
+        if (nomParticipant && getEntityId(nomParticipant.institutionId) !== currentUserInstitutionId) {
+          // MOs see their own institution's people OR anything they NOMINATED themselves
+          if (getEntityId(nom.nominatedBy) !== user.id) return false;
+        }
+      }
+      
       return matchesSearch && matchesStatus;
     });
     const hasFilters = Boolean(searchTerm.trim()) || statusFilter !== 'all';
