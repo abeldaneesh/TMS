@@ -312,9 +312,17 @@ const TrainingDetails: React.FC = () => {
     const creatorId = typeof training.createdById === 'string'
         ? training.createdById
         : training.createdById?.id || training.createdById?._id;
+    const trainerId = typeof training.trainerId === 'string'
+        ? training.trainerId
+        : training.trainerId?.id || training.trainerId?._id;
     const isOwnerOrAdmin = Boolean(
         user?.role === 'master_admin' ||
         ((user?.role === 'program_officer' || user?.role === 'medical_officer') && creatorId === currentUserId)
+    );
+    const canManageAttendanceSession = Boolean(
+        user?.role === 'master_admin' ||
+        ((user?.role === 'program_officer' || user?.role === 'medical_officer') &&
+            (creatorId === currentUserId || trainerId === currentUserId))
     );
     const canViewFeedback = training.status === 'completed' && isOwnerOrAdmin;
     const canSubmitFeedback = Boolean(user?.role === 'participant' && training.status === 'completed' && training.userStatus === 'attended');
@@ -520,7 +528,7 @@ const TrainingDetails: React.FC = () => {
                     {/* Attendance Session Manager - Visible if owner/admin OR if session is active for participants */}
                     <AttendanceSessionManager
                         trainingId={id!}
-                        isOwnerOrAdmin={Boolean(user?.role === 'master_admin' || ((user?.role === 'program_officer' || user?.role === 'medical_officer') && creatorId === currentUserId))}
+                        isOwnerOrAdmin={canManageAttendanceSession}
                         date={training.date}
                         startTime={training.startTime}
                         endTime={training.endTime}
