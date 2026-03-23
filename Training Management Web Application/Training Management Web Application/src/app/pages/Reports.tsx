@@ -92,6 +92,7 @@ const Reports: React.FC = () => {
   const [selectedTraining, setSelectedTraining] = useState('');
   const [selectedInstitution, setSelectedInstitution] = useState('');
   const [loading, setLoading] = useState(false);
+  const currentInstitutionId = getEntityId(user?.institution) || getEntityId(user?.institutionId);
 
   useEffect(() => {
     if (!user) return;
@@ -105,8 +106,8 @@ const Reports: React.FC = () => {
         setTrainings(Array.isArray(trainingsData) ? trainingsData : []);
         setInstitutions(Array.isArray(institutionsData) ? institutionsData : []);
 
-        if ((user.role === 'institutional_admin' || user.role === 'medical_officer') && user.institutionId) {
-          setSelectedInstitution(user.institutionId);
+        if ((user.role === 'institutional_admin' || user.role === 'medical_officer') && currentInstitutionId) {
+          setSelectedInstitution(currentInstitutionId);
         }
       } catch (error) {
         console.error('Error fetching data:', error);
@@ -114,7 +115,7 @@ const Reports: React.FC = () => {
       }
     };
     fetchData();
-  }, [user]);
+  }, [user, currentInstitutionId]);
 
   const buildTrainingParticipantRows = (
     nominations: Nomination[],
@@ -254,10 +255,10 @@ const Reports: React.FC = () => {
       const halls = Array.isArray(hallsRes) ? hallsRes : [];
 
       // Filter data for Institution Admins and Medical Officers
-      if ((user?.role === 'institutional_admin' || user?.role === 'medical_officer') && user.institutionId) {
-        nominations = nominations.filter(n => n.institutionId === user.institutionId);
-        const institutionalParticipantIds = nominations.map(n => n.participantId);
-        attendanceRecords = attendanceRecords.filter(a => institutionalParticipantIds.includes(a.participantId));
+      if ((user?.role === 'institutional_admin' || user?.role === 'medical_officer') && currentInstitutionId) {
+        nominations = nominations.filter((n) => getEntityId(n.institutionId) === currentInstitutionId);
+        const institutionalParticipantIds = nominations.map((n) => getEntityId(n.participantId));
+        attendanceRecords = attendanceRecords.filter((a) => institutionalParticipantIds.includes(getEntityId(a.participantId)));
       }
 
       const analytics = (user?.role === 'institutional_admin' || user?.role === 'medical_officer')
@@ -351,10 +352,10 @@ const Reports: React.FC = () => {
       const halls = Array.isArray(hallsRes) ? hallsRes : [];
 
       // Filter data for Institution Admins and Medical Officers
-      if ((user?.role === 'institutional_admin' || user?.role === 'medical_officer') && user.institutionId) {
-        nominations = nominations.filter(n => n.institutionId === user.institutionId);
-        const institutionalParticipantIds = nominations.map(n => n.participantId);
-        attendanceRecords = attendanceRecords.filter(a => institutionalParticipantIds.includes(a.participantId));
+      if ((user?.role === 'institutional_admin' || user?.role === 'medical_officer') && currentInstitutionId) {
+        nominations = nominations.filter((n) => getEntityId(n.institutionId) === currentInstitutionId);
+        const institutionalParticipantIds = nominations.map((n) => getEntityId(n.participantId));
+        attendanceRecords = attendanceRecords.filter((a) => institutionalParticipantIds.includes(getEntityId(a.participantId)));
       }
 
       const hall = halls.find((entry) => getEntityId(entry) === training.hallId);
