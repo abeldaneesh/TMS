@@ -176,7 +176,7 @@ const TrainingAttendance: React.FC = () => {
         const windowHours = training.lateAttendanceWindowHours || 4;
         const windowEnd = new Date(sessionEnd.getTime() + windowHours * 60 * 60 * 1000);
         const now = new Date();
-        return now > sessionEnd && now <= windowEnd;
+        return now >= sessionEnd && now <= windowEnd;
     }, [training, canManageAttendance]);
 
     const eligibleManualParticipants = participants.filter((nomination) => nomination.participantId && !hasAttendanceRecord(nomination.participantId));

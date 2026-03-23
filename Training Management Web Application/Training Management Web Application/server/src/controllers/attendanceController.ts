@@ -161,7 +161,7 @@ export const markAttendance = async (req: AuthRequest, res: Response): Promise<v
                     return;
                 }
 
-                if (new Date() > new Date(training.attendanceSession.endTime!)) {
+                if (new Date() >= new Date(training.attendanceSession.endTime!)) {
                     res.status(400).json({ message: 'Attendance session has expired' });
                     return;
                 }
@@ -268,7 +268,7 @@ export const markLateAttendance = async (req: AuthRequest, res: Response): Promi
 
         const { sessionEnd, windowEnd } = getLateAttendanceWindow(training);
         const now = new Date();
-        if (now <= sessionEnd) {
+        if (now < sessionEnd) {
             res.status(400).json({ message: 'Late attendance becomes available only after the attendance window closes' });
             return;
         }

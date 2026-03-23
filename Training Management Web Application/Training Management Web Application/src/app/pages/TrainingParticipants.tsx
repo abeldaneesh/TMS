@@ -219,7 +219,7 @@ const TrainingParticipants: React.FC = () => {
         const lateWindowHours = training.lateAttendanceWindowHours || 4;
         const lateWindowEnd = new Date(sessionEnd.getTime() + lateWindowHours * 60 * 60 * 1000);
         const now = new Date();
-        return now > sessionEnd && now <= lateWindowEnd;
+        return now >= sessionEnd && now <= lateWindowEnd;
     })();
 
     const handleGenerateAttendanceSheet = async () => {
