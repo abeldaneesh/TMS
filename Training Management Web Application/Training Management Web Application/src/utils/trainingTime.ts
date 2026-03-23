@@ -26,7 +26,5 @@ export const parseTrainingDateTime = (dateValue: Date | string, timeValue: strin
 export const getTrainingStartDateTime = (training: Pick<Training, 'date' | 'startTime'>) =>
     parseTrainingDateTime(training.date, training.startTime);
 
-export const getTrainingEndDateTime = (training: Pick<Training, 'date' | 'endTime' | 'attendanceSession'>) =>
-    training.attendanceSession?.endTime
-        ? new Date(training.attendanceSession.endTime)
-        : parseTrainingDateTime(training.date, training.endTime);
+export const getTrainingEndDateTime = (training: Pick<Training, 'date' | 'endTime'>) =>
+    parseTrainingDateTime(training.date, training.endTime);

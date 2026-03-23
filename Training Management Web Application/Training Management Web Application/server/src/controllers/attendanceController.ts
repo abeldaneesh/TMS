@@ -49,9 +49,7 @@ const parseTrainingDateTime = (dateValue: Date | string, timeValue: string) => {
 };
 
 const getLateAttendanceWindow = (training: any) => {
-    const sessionEnd = training.attendanceSession?.endTime
-        ? new Date(training.attendanceSession.endTime)
-        : parseTrainingDateTime(training.date, training.endTime);
+    const sessionEnd = parseTrainingDateTime(training.date, training.endTime);
     const windowEnd = new Date(sessionEnd.getTime() + LATE_ATTENDANCE_WINDOW_HOURS * 60 * 60 * 1000);
     return { sessionEnd, windowEnd };
 };
