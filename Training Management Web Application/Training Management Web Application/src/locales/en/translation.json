@@ -298,12 +298,16 @@
       "networkError": "Network Error",
       "noParticipants": "No Participants Found",
       "noParticipantsDesc": "There are no participants registered in the system yet.",
-      "search": "Search by name, email, or department...",
+      "search": "Search by name, email, rank, or institution...",
       "table": {
         "details": "Participant Details",
         "contact": "Contact Info",
-        "department": "Department",
-        "status": "Status"
+        "operationalRank": "Operational Rank",
+        "institution": "Institution"
+      },
+      "misc": {
+        "noOperationalRank": "No rank assigned",
+        "noInstitution": "No institution assigned"
       }
     },
     "alerts": {
