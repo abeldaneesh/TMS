@@ -56,6 +56,12 @@ const formatTimeWindow = (startTime: any, endTime: any): string => {
   return start || end || 'N/A';
 };
 
+const formatPhoneForCsv = (value: any): string => {
+  const normalized = asDisplayValue(value, '');
+  if (!normalized) return 'N/A';
+  return /^[\d+\-\s()]+$/.test(normalized) ? `="${normalized}"` : normalized;
+};
+
 const getArchivedParticipantLabel = (fullName?: string, isArchived?: boolean) => {
   const baseName = asDisplayValue(fullName, 'Participant (Removed)');
   if (baseName === 'Participant (Removed)') return baseName;
@@ -353,61 +359,55 @@ const Reports: React.FC = () => {
 
       const hall = halls.find((entry) => getEntityId(entry) === training.hallId);
       const trainer = allUsers.find((entry) => getEntityId(entry) === training.trainerId);
-      const csvData = buildTrainingParticipantRows(nominations, attendanceRecords, allUsers, institutions).map((entry) => ({
-        'Training Title': asDisplayValue(training.title),
-        'Program': asDisplayValue(training.program),
-        'Date': formatExportDate(training.date, 'yyyy-MM-dd'),
-        'Time': formatTimeWindow(training.startTime, training.endTime),
-        'Start Time': asDisplayValue(training.startTime),
-        'End Time': asDisplayValue(training.endTime),
-        'Venue': asDisplayValue(hall?.name),
-        'Trainer': asDisplayValue(trainer?.name),
+      const participantRows = buildTrainingParticipantRows(nominations, attendanceRecords, allUsers, institutions).map((entry) => ({
         'Participant': entry.participantName,
         'Designation': entry.designation,
         'Department': entry.department,
         'Institution': entry.institutionName,
-        'Institution Type': entry.institutionType,
-        'Phone': entry.phone,
+        'Phone': formatPhoneForCsv(entry.phone),
         'Email': entry.email,
-        'Nomination Status': entry.nominationStatus,
-        'Attendance Status': entry.attended,
-        'Attendance Method': entry.attendanceMethod,
-        'Attendance Type': entry.attendanceType,
+        'Nomination': entry.nominationStatus,
+        'Attendance': entry.attendanceType === 'Late'
+          ? 'Late'
+          : entry.attendanceMethod === 'Not marked'
+            ? 'Absent'
+            : 'Present',
+        'Method': entry.attendanceMethod,
+        'Attendance At': entry.attendanceTimestamp,
         'Marked By': entry.attendanceMarkedBy,
-        'Attendance Timestamp': entry.attendanceTimestamp,
-        'Nominated At': entry.nominatedAt,
         'Signature': '',
       }));
 
-      if (csvData.length === 0) {
-        csvData.push({
-          'Training Title': asDisplayValue(training.title),
-          'Program': asDisplayValue(training.program),
-          'Date': formatExportDate(training.date, 'yyyy-MM-dd'),
-          'Time': formatTimeWindow(training.startTime, training.endTime),
-          'Start Time': asDisplayValue(training.startTime),
-          'End Time': asDisplayValue(training.endTime),
-          'Venue': asDisplayValue(hall?.name),
-          'Trainer': asDisplayValue(trainer?.name),
+      if (participantRows.length === 0) {
+        participantRows.push({
           'Participant': 'No participant records found',
           'Designation': 'N/A',
           'Department': 'N/A',
           'Institution': 'N/A',
-          'Institution Type': 'N/A',
           'Phone': 'N/A',
           'Email': 'N/A',
-          'Nomination Status': 'N/A',
-          'Attendance Status': 'Absent',
-          'Attendance Method': 'Not marked',
-          'Attendance Type': 'Absent',
+          'Nomination': 'N/A',
+          'Attendance': 'Absent',
+          'Method': 'Not marked',
+          'Attendance At': 'Not marked',
           'Marked By': 'N/A',
-          'Attendance Timestamp': 'Not marked',
-          'Nominated At': 'N/A',
           'Signature': '',
         });
       }
 
-      const csv = Papa.unparse(csvData);
+      const summarySection = Papa.unparse([
+        ['Training Report', ''],
+        ['Training Title', asDisplayValue(training.title)],
+        ['Program', asDisplayValue(training.program)],
+        ['Session Date', formatExportDate(training.date, 'yyyy-MM-dd')],
+        ['Session Time', formatTimeWindow(training.startTime, training.endTime)],
+        ['Venue', asDisplayValue(hall?.name)],
+        ['Trainer', asDisplayValue(trainer?.name)],
+        ['Generated On', formatExportDate(new Date(), 'yyyy-MM-dd HH:mm:ss')],
+      ]);
+
+      const participantSection = Papa.unparse(participantRows);
+      const csv = `${summarySection}\r\n\r\n${participantSection}`;
       const blob = new Blob(['\uFEFF', csv], { type: 'text/csv;charset=utf-8;' });
       await downloadFile(
         blob,
