@@ -261,11 +261,6 @@ export const markLateAttendance = async (req: AuthRequest, res: Response): Promi
             return;
         }
 
-        if (training.status === 'completed') {
-            res.status(400).json({ message: 'Late attendance cannot be marked after the training is completed' });
-            return;
-        }
-
         const { sessionEnd, windowEnd } = getLateAttendanceWindow(training);
         const now = new Date();
         if (now < sessionEnd) {

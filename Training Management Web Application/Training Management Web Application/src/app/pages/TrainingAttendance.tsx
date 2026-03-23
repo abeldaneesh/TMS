@@ -171,7 +171,6 @@ const TrainingAttendance: React.FC = () => {
 
     const canManageLateAttendance = useMemo(() => {
         if (!training || !canManageAttendance) return false;
-        if (training.status === 'completed') return false;
         const sessionEnd = getTrainingEndDateTime(training);
         const windowHours = training.lateAttendanceWindowHours || 4;
         const windowEnd = new Date(sessionEnd.getTime() + windowHours * 60 * 60 * 1000);

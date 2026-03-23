@@ -212,7 +212,6 @@ const TrainingParticipants: React.FC = () => {
 
     const canMarkLateAttendance = (() => {
         if (!training) return false;
-        if (training.status === 'completed') return false;
         if (!canManageAttendance) return false;
 
         const sessionEnd = getTrainingEndDateTime(training);
