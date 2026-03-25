@@ -37,22 +37,41 @@ const AttendanceSessionManager: React.FC<AttendanceSessionManagerProps> = ({
     const [isWithinWindow, setIsWithinWindow] = useState(false);
     const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
+    const getScheduledWindow = () => {
+        const trainingDate = new Date(date);
+        const [startH, startM] = startTime.split(':').map(Number);
+        const [endH, endM] = endTime.split(':').map(Number);
+
+        const windowStart = new Date(trainingDate);
+        windowStart.setHours(startH, startM, 0, 0);
+
+        const windowEnd = new Date(trainingDate);
+        windowEnd.setHours(endH, endM, 0, 0);
+
+        return { windowStart, windowEnd };
+    };
+
+    const getMaxAllowedDuration = () => {
+        try {
+            const now = new Date();
+            const { windowStart, windowEnd } = getScheduledWindow();
+            const totalTrainingMinutes = Math.max(1, Math.floor((windowEnd.getTime() - windowStart.getTime()) / 60000));
+            const remainingUntilEndMinutes = Math.max(0, Math.floor((windowEnd.getTime() - now.getTime()) / 60000));
+
+            return Math.max(0, Math.min(totalTrainingMinutes, remainingUntilEndMinutes));
+        } catch (error) {
+            console.error('Error calculating max attendance duration:', error);
+            return 0;
+        }
+    };
+    const maxAllowedDuration = getMaxAllowedDuration();
+
     // Calculate if current time is within the scheduled window
     useEffect(() => {
         const checkWindow = () => {
             try {
                 const now = new Date();
-                const trainingDate = new Date(date);
-
-                // Parse startTime and endTime (format HH:mm)
-                const [startH, startM] = startTime.split(':').map(Number);
-                const [endH, endM] = endTime.split(':').map(Number);
-
-                const windowStart = new Date(trainingDate);
-                windowStart.setHours(startH, startM, 0, 0);
-
-                const windowEnd = new Date(trainingDate);
-                windowEnd.setHours(endH, endM, 0, 0);
+                const { windowStart, windowEnd } = getScheduledWindow();
 
                 // Buffer: Allow starting 30 mins before and up to the end time
                 const bufferStart = new Date(windowStart.getTime() - 30 * 60000);
@@ -121,6 +140,18 @@ const AttendanceSessionManager: React.FC<AttendanceSessionManagerProps> = ({
         };
     }, [session]);
 
+    useEffect(() => {
+        if (maxAllowedDuration <= 0) {
+            setDuration(0);
+            return;
+        }
+
+        setDuration((previous) => {
+            if (!previous || previous <= 0) return Math.min(30, maxAllowedDuration);
+            return Math.min(previous, maxAllowedDuration);
+        });
+    }, [maxAllowedDuration]);
+
     // QR Logic
     useEffect(() => {
         const generateQR = async () => {
@@ -150,6 +181,14 @@ const AttendanceSessionManager: React.FC<AttendanceSessionManagerProps> = ({
     const handleStart = async () => {
         if (!isWithinWindow) {
             toast.error('Cannot start session outside scheduled training time');
+            return;
+        }
+        if (maxAllowedDuration <= 0) {
+            toast.error('Attendance session can no longer be started because the training time has ended');
+            return;
+        }
+        if (duration <= 0 || duration > maxAllowedDuration) {
+            toast.error(`Session duration cannot exceed ${maxAllowedDuration} minute(s) for this training window`);
             return;
         }
         try {
@@ -267,13 +306,19 @@ const AttendanceSessionManager: React.FC<AttendanceSessionManagerProps> = ({
                                                 id="duration"
                                                 type="number"
                                                 min="1"
-                                                max="120"
+                                                max={Math.max(1, maxAllowedDuration)}
                                                 value={duration}
-                                                onChange={(e) => setDuration(parseInt(e.target.value) || 0)}
+                                                onChange={(e) => {
+                                                    const nextValue = parseInt(e.target.value, 10) || 0;
+                                                    setDuration(Math.min(nextValue, maxAllowedDuration));
+                                                }}
                                                 className="bg-input/50 border-input text-foreground"
                                                 disabled={!isWithinWindow && isOwnerOrAdmin}
                                             />
                                         </div>
+                                        <p className="text-xs text-muted-foreground">
+                                            Maximum allowed: {Math.max(0, maxAllowedDuration)} minute(s), based on the remaining scheduled training time.
+                                        </p>
                                     </div>
                                     {isOwnerOrAdmin && (
                                         <Button

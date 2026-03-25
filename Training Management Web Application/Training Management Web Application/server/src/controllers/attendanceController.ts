@@ -63,6 +63,8 @@ const ATTENDANCE_ELIGIBLE_NOMINATION_STATUSES = ['nominated', 'approved', 'atten
 
 const getTrainingStartDateTime = (training: any) =>
     parseTrainingDateTime(training.date, training.startTime);
+const getTrainingEndDateTime = (training: any) =>
+    parseTrainingDateTime(training.date, training.endTime);
 
 const notifyTrainingCreatorOfAttendance = async ({
     training,
@@ -595,9 +597,9 @@ import { v4 as uuidv4 } from 'uuid';
 export const startAttendanceSession = async (req: AuthRequest, res: Response): Promise<void> => {
     try {
         const { trainingId } = req.params;
-        const { durationInMinutes } = req.body;
+        const requestedDuration = Number(req.body?.durationInMinutes);
 
-        if (!durationInMinutes || durationInMinutes <= 0) {
+        if (!Number.isFinite(requestedDuration) || requestedDuration <= 0) {
             res.status(400).json({ message: 'Valid duration is required' });
             return;
         }
@@ -614,8 +616,27 @@ export const startAttendanceSession = async (req: AuthRequest, res: Response): P
             return;
         }
 
+        const now = new Date();
+        const scheduledStart = getTrainingStartDateTime(training);
+        const scheduledEnd = getTrainingEndDateTime(training);
+        const totalTrainingMinutes = Math.max(1, Math.floor((scheduledEnd.getTime() - scheduledStart.getTime()) / 60000));
+        const remainingUntilEndMinutes = Math.max(0, Math.floor((scheduledEnd.getTime() - now.getTime()) / 60000));
+        const maxAllowedDuration = Math.max(0, Math.min(totalTrainingMinutes, remainingUntilEndMinutes));
+
+        if (maxAllowedDuration <= 0) {
+            res.status(400).json({ message: 'Attendance session cannot be started after the training end time' });
+            return;
+        }
+
+        if (requestedDuration > maxAllowedDuration) {
+            res.status(400).json({
+                message: `Attendance session duration cannot exceed ${maxAllowedDuration} minute(s) for this training`
+            });
+            return;
+        }
+
         const startTime = new Date();
-        const endTime = new Date(startTime.getTime() + durationInMinutes * 60000);
+        const endTime = new Date(startTime.getTime() + requestedDuration * 60000);
         const qrCodeToken = uuidv4();
 
         training.attendanceSession = {
