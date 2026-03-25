@@ -6,9 +6,11 @@ import {
   attendanceApi, usersApi, hallsApi
 } from '../../services/api';
 import { Training, Institution, Nomination, Attendance, User, Hall } from '../../types';
-import { FileText, Download, FileDown, Calendar, Building2, Cpu, ShieldCheck, Settings2, BarChart3 } from 'lucide-react';
+import { FileText, Download, FileDown, Calendar, Building2, Cpu, ShieldCheck, Settings2, BarChart3, Search, X } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../components/ui/card';
+import { Input } from '../components/ui/input';
+import { Badge } from '../components/ui/badge';
 import {
   Select,
   SelectContent,
@@ -40,6 +42,15 @@ const formatExportDate = (value: any, formatStr: string = 'MMM dd, yyyy'): strin
   const formatted = safeFormatDate(value, formatStr);
   return formatted === 'Invalid Date' ? 'N/A' : formatted;
 };
+const formatDateInputValue = (value: any): string => {
+  if (!value) return '';
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return '';
+  const year = parsed.getFullYear();
+  const month = `${parsed.getMonth() + 1}`.padStart(2, '0');
+  const day = `${parsed.getDate()}`.padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
 
 const formatStatusLabel = (value: any, fallback = 'Unknown'): string => {
   const normalized = asDisplayValue(value, fallback).replace(/_/g, ' ').toLowerCase();
@@ -54,6 +65,17 @@ const formatTimeWindow = (startTime: any, endTime: any): string => {
   const end = asDisplayValue(endTime, '');
   if (start && end) return `${start} - ${end}`;
   return start || end || 'N/A';
+};
+const normalizeMatchValue = (value?: string) => (value || '').trim().replace(/\s+/g, ' ').toLowerCase();
+const getTrainingSortTimestamp = (training: Training) => {
+  const dateValue = formatDateInputValue(training.date);
+  if (dateValue) {
+    const sessionTimestamp = new Date(`${dateValue}T${training.startTime || '00:00'}`).getTime();
+    if (!Number.isNaN(sessionTimestamp)) return sessionTimestamp;
+  }
+
+  const fallbackTimestamp = new Date(training.date).getTime();
+  return Number.isNaN(fallbackTimestamp) ? 0 : fallbackTimestamp;
 };
 
 const formatPhoneForCsv = (value: any): string => {
@@ -91,6 +113,8 @@ const Reports: React.FC = () => {
   const [selectedReport, setSelectedReport] = useState('');
   const [selectedTraining, setSelectedTraining] = useState('');
   const [selectedInstitution, setSelectedInstitution] = useState('');
+  const [trainingSearchTerm, setTrainingSearchTerm] = useState('');
+  const [trainingDateFilter, setTrainingDateFilter] = useState('');
   const [loading, setLoading] = useState(false);
   const currentInstitutionId = getEntityId(user?.institution) || getEntityId(user?.institutionId);
 
@@ -116,6 +140,13 @@ const Reports: React.FC = () => {
     };
     fetchData();
   }, [user, currentInstitutionId]);
+
+  useEffect(() => {
+    if (selectedReport !== 'training') {
+      setTrainingSearchTerm('');
+      setTrainingDateFilter('');
+    }
+  }, [selectedReport]);
 
   const buildTrainingParticipantRows = (
     nominations: Nomination[],
@@ -811,6 +842,33 @@ const Reports: React.FC = () => {
     }
   };
 
+  const searchableTrainings = [...trainings].sort((a, b) => getTrainingSortTimestamp(b) - getTrainingSortTimestamp(a));
+  const normalizedTrainingSearch = normalizeMatchValue(trainingSearchTerm);
+  const filteredTrainings = searchableTrainings.filter((training) => {
+    const matchesDate = !trainingDateFilter || formatDateInputValue(training.date) === trainingDateFilter;
+    if (!matchesDate) return false;
+
+    if (!normalizedTrainingSearch) return true;
+
+    const searchText = [
+      training.title,
+      training.program,
+      training.description,
+      formatExportDate(training.date, 'MMM dd, yyyy'),
+      formatTimeWindow(training.startTime, training.endTime),
+      training.status,
+    ].join(' ');
+
+    return normalizeMatchValue(searchText).includes(normalizedTrainingSearch);
+  });
+  const selectedTrainingRecord = trainings.find((training) => training.id === selectedTraining);
+  const selectedTrainingPinned = Boolean(
+    selectedTrainingRecord && !filteredTrainings.some((training) => training.id === selectedTraining)
+  );
+  const visibleTrainings = selectedTrainingPinned
+    ? [selectedTrainingRecord!, ...filteredTrainings]
+    : filteredTrainings;
+
   return (
     <div className="max-w-4xl mx-auto space-y-8 pb-12">
       <div className="flex flex-col sm:flex-row items-start sm:items-end justify-between gap-4">
@@ -864,18 +922,113 @@ const Reports: React.FC = () => {
                   <Calendar className="size-3" />
                   {t('reportsPage.selectTraining', 'Select Training')}
                 </Label>
-                <Select value={selectedTraining} onValueChange={setSelectedTraining}>
-                  <SelectTrigger className="bg-background text-foreground">
-                    <SelectValue placeholder={t('reportsPage.identifyTraining')} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {trainings.map((training) => (
-                      <SelectItem key={training.id} value={training.id}>
-                        {training.title} — {safeFormatDate(training.date, 'MM/dd/yy')}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <div className="rounded-2xl border border-border bg-background p-4">
+                  <div className="flex flex-col gap-3">
+                    <div className="relative">
+                      <Search className="pointer-events-none absolute left-3 top-3.5 size-4 text-primary/60" />
+                      <Input
+                        value={trainingSearchTerm}
+                        onChange={(e) => setTrainingSearchTerm(e.target.value)}
+                        placeholder={t('reportsPage.trainingSearchPlaceholder', {
+                          defaultValue: 'Search training title, program, or date',
+                        })}
+                        className="h-11 rounded-xl bg-input-background pl-10"
+                      />
+                    </div>
+                    <div className="flex flex-col gap-3 sm:flex-row">
+                      <div className="relative flex-1">
+                        <Calendar className="pointer-events-none absolute left-3 top-3.5 size-4 text-primary/60" />
+                        <Input
+                          type="date"
+                          value={trainingDateFilter}
+                          onChange={(e) => setTrainingDateFilter(e.target.value)}
+                          className="h-11 rounded-xl bg-input-background pl-10"
+                        />
+                      </div>
+                      {(trainingSearchTerm || trainingDateFilter) && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          onClick={() => {
+                            setTrainingSearchTerm('');
+                            setTrainingDateFilter('');
+                          }}
+                          className="sm:self-stretch"
+                        >
+                          <X className="mr-2 size-4" />
+                          {t('reportsPage.clearTrainingFilters', { defaultValue: 'Clear filters' })}
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
+                    <p className="text-xs text-muted-foreground">
+                      {visibleTrainings.length} of {trainings.length} training(s) shown
+                    </p>
+                    {selectedTrainingPinned && (
+                      <Badge variant="outline" className="border-primary/20 bg-primary/5 text-primary">
+                        {t('reportsPage.selectedTrainingPinned', {
+                          defaultValue: 'Selected training shown outside current filters',
+                        })}
+                      </Badge>
+                    )}
+                  </div>
+
+                  <div className="mt-4 max-h-[320px] space-y-3 overflow-y-auto pr-1 custom-scrollbar">
+                    {visibleTrainings.length === 0 ? (
+                      <div className="rounded-xl border border-dashed border-border bg-muted/20 px-4 py-6 text-sm text-muted-foreground">
+                        {t('reportsPage.noTrainingMatches', {
+                          defaultValue: 'No trainings matched your search or date filter.',
+                        })}
+                      </div>
+                    ) : (
+                      visibleTrainings.map((training) => {
+                        const isSelected = training.id === selectedTraining;
+
+                        return (
+                          <button
+                            key={training.id}
+                            type="button"
+                            onClick={() => setSelectedTraining(training.id)}
+                            className={`w-full rounded-xl border p-4 text-left transition-all ${
+                              isSelected
+                                ? 'border-primary bg-primary/5 shadow-sm'
+                                : 'border-border bg-card hover:border-primary/30'
+                            }`}
+                          >
+                            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                              <div className="min-w-0">
+                                <div className="flex flex-wrap items-center gap-2">
+                                  <p className="text-sm font-semibold text-foreground">{training.title}</p>
+                                  {isSelected && (
+                                    <Badge variant="outline" className="border-primary/20 bg-primary/10 text-primary">
+                                      {t('reportsPage.selectedTrainingTag', { defaultValue: 'Selected' })}
+                                    </Badge>
+                                  )}
+                                </div>
+                                <p className="mt-1 text-xs text-muted-foreground">
+                                  {formatExportDate(training.date, 'MMM dd, yyyy')} • {formatTimeWindow(training.startTime, training.endTime)}
+                                </p>
+                                {(training.program || training.description) && (
+                                  <p className="mt-2 line-clamp-2 text-xs text-muted-foreground">
+                                    {[training.program, training.description].filter(Boolean).join(' • ')}
+                                  </p>
+                                )}
+                              </div>
+
+                              <div className="flex flex-wrap gap-2">
+                                <Badge variant="outline" className="border-border bg-background text-muted-foreground">
+                                  {formatStatusLabel(training.status)}
+                                </Badge>
+                              </div>
+                            </div>
+                          </button>
+                        );
+                      })
+                    )}
+                  </div>
+                </div>
               </div>
             )}
 
