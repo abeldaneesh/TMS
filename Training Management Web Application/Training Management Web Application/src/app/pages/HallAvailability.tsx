@@ -34,6 +34,7 @@ import { ClockTimePicker } from '../components/ui/clock-time-picker';
 import { Tooltip, TooltipContent, TooltipTrigger } from '../components/ui/tooltip';
 import { Progress } from '../components/ui/progress';
 import { motion } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
 
 type SlotStatus = 'available' | 'partial' | 'booked';
 
@@ -88,6 +89,7 @@ const getStatusMeta = (status: SlotStatus) => {
 
 const HallAvailability: React.FC = () => {
   const { user } = useAuth();
+  const { t, i18n } = useTranslation();
 
   const [halls, setHalls] = useState<Hall[]>([]);
   const [trainings, setTrainings] = useState<Training[]>([]);
@@ -105,6 +107,35 @@ const HallAvailability: React.FC = () => {
   const [blockReason, setBlockReason] = useState('Maintenance / Repair');
   const [customReason, setCustomReason] = useState('');
   const [isBlocking, setIsBlocking] = useState(false);
+  const isMalayalam = i18n.resolvedLanguage?.startsWith('ml') || i18n.language?.startsWith('ml');
+  const uiLocale = isMalayalam ? 'ml-IN' : 'en-IN';
+
+  const formatMonthYear = (date: Date) =>
+    new Intl.DateTimeFormat(uiLocale, { month: 'long', year: 'numeric' }).format(date);
+  const formatMonthDay = (date: Date) =>
+    new Intl.DateTimeFormat(uiLocale, { day: '2-digit', month: 'short' }).format(date);
+  const formatFullDate = (date: Date) =>
+    new Intl.DateTimeFormat(uiLocale, { day: '2-digit', month: 'short', year: 'numeric' }).format(date);
+  const weekdayLabels = Array.from({ length: 7 }, (_, index) =>
+    new Intl.DateTimeFormat(uiLocale, { weekday: 'short' }).format(new Date(2024, 0, 7 + index)),
+  );
+
+  const getLocalizedBlockReason = (reason: string) => {
+    switch (reason) {
+      case 'Meeting / Internal Booking':
+        return t('hallAvailability.reasons.internalBooking', { defaultValue: 'Meeting / Internal Booking' });
+      case 'Maintenance / Repair':
+        return t('hallAvailability.reasons.maintenance', { defaultValue: 'Maintenance / Repair' });
+      case 'Cleaning / Sanitization':
+        return t('hallAvailability.reasons.cleaning', { defaultValue: 'Cleaning / Sanitization' });
+      case 'Inspection / Audit':
+        return t('hallAvailability.reasons.inspection', { defaultValue: 'Inspection / Audit' });
+      case 'Other':
+        return t('hallAvailability.reasons.other', { defaultValue: 'Other' });
+      default:
+        return reason;
+    }
+  };
 
   const reasons = [
     'Meeting / Internal Booking',
@@ -156,7 +187,7 @@ const HallAvailability: React.FC = () => {
       setAvailability(results);
     } catch (error) {
       console.error('Error checking availability:', error);
-      toast.error('Unable to refresh hall availability');
+      toast.error(t('hallAvailability.refreshFail', { defaultValue: 'Unable to refresh hall availability' }));
     } finally {
       setChecking(false);
     }
@@ -234,13 +265,13 @@ const HallAvailability: React.FC = () => {
         endTime,
         reason: finalReason,
       });
-      toast.success('Hall blocked successfully');
+      toast.success(t('hallAvailability.blockSuccess'));
       setShowBlockDialog(false);
       const blocksData = await hallBlocksApi.getAll();
       setBlocks(blocksData);
       checkAvailability();
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Failed to block hall');
+      toast.error(error.response?.data?.message || t('hallAvailability.blockFail'));
     } finally {
       setIsBlocking(false);
     }
@@ -261,9 +292,9 @@ const HallAvailability: React.FC = () => {
       <div className="space-y-8">
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div className="space-y-1">
-            <p className="text-xs uppercase tracking-[0.35em] text-muted-foreground">Availability Calendar</p>
+            <p className="text-xs uppercase tracking-[0.35em] text-muted-foreground">{t('hallAvailability.calendarLabel', { defaultValue: 'Availability Calendar' })}</p>
             <h3 className="text-2xl font-semibold text-foreground">
-              {currentDate.toLocaleString('default', { month: 'long' })} {year}
+              {formatMonthYear(currentDate)}
             </h3>
           </div>
           <div className="flex items-center gap-2">
@@ -302,12 +333,12 @@ const HallAvailability: React.FC = () => {
                 </div>
                 <Badge className="w-fit rounded-full border border-border bg-background px-3 py-1 text-xs font-medium text-foreground">
                   <Users className="mr-2 size-3.5 text-muted-foreground" />
-                  {hall.capacity} seats
+                  {t('hallAvailability.seats', { count: hall.capacity, defaultValue: `${hall.capacity} seats` })}
                 </Badge>
               </div>
 
               <div className="grid grid-cols-7 gap-3 md:gap-4">
-                {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
+                {weekdayLabels.map((day) => (
                   <div key={day} className="px-1 text-center text-[11px] font-medium uppercase tracking-[0.26em] text-muted-foreground">
                     {day}
                   </div>
@@ -349,7 +380,7 @@ const HallAvailability: React.FC = () => {
                             <span className="text-sm font-semibold text-foreground">{day}</span>
                             {isToday && (
                               <span className="rounded-full border border-primary/30 bg-primary/10 px-2 py-0.5 text-[10px] font-medium uppercase tracking-[0.22em] text-primary">
-                                Today
+                                {t('hallAvailability.today', { defaultValue: 'Today' })}
                               </span>
                             )}
                           </div>
@@ -358,9 +389,9 @@ const HallAvailability: React.FC = () => {
                               <div className="mb-1 flex items-center justify-between text-[11px] text-muted-foreground">
                                 <span className="flex items-center gap-1.5">
                                   <Sun className="size-3.5 text-amber-500 dark:text-amber-300" />
-                                  Morning
+                                  {t('hallAvailability.morning', { defaultValue: 'Morning' })}
                                 </span>
-                                <span>{breakdown.morning.availablePercent}% free</span>
+                                <span>{t('hallAvailability.freePercent', { count: breakdown.morning.availablePercent, defaultValue: `${breakdown.morning.availablePercent}% free` })}</span>
                               </div>
                               <Progress
                                 value={breakdown.morning.availablePercent}
@@ -372,9 +403,9 @@ const HallAvailability: React.FC = () => {
                               <div className="mb-1 flex items-center justify-between text-[11px] text-muted-foreground">
                                 <span className="flex items-center gap-1.5">
                                   <Sunset className="size-3.5 text-violet-500 dark:text-violet-300" />
-                                  Evening
+                                  {t('hallAvailability.evening', { defaultValue: 'Evening' })}
                                 </span>
-                                <span>{breakdown.evening.availablePercent}% free</span>
+                                <span>{t('hallAvailability.freePercent', { count: breakdown.evening.availablePercent, defaultValue: `${breakdown.evening.availablePercent}% free` })}</span>
                               </div>
                               <Progress
                                 value={breakdown.evening.availablePercent}
@@ -391,16 +422,16 @@ const HallAvailability: React.FC = () => {
                       >
                         <div className="space-y-3">
                           <div>
-                            <p className="text-xs uppercase tracking-[0.24em] text-muted-foreground">{format(cellDate, 'EEE, dd MMM')}</p>
+                            <p className="text-xs uppercase tracking-[0.24em] text-muted-foreground">{formatFullDate(cellDate)}</p>
                             <p className="mt-1 text-sm font-medium text-foreground">{hall.name}</p>
                           </div>
                           {allEvents.length === 0 ? (
-                            <p className="text-sm text-emerald-700 dark:text-emerald-200">Open across both standard slots.</p>
+                            <p className="text-sm text-emerald-700 dark:text-emerald-200">{t('hallAvailability.openBothSlots', { defaultValue: 'Open across both standard slots.' })}</p>
                           ) : (
                             <div className="space-y-2">
                               {breakdown.events.blocks.map((block) => (
                                 <div key={block.id} className="rounded-xl border border-rose-400/25 bg-rose-500/10 px-3 py-2">
-                                  <p className="text-xs font-medium text-rose-700 dark:text-rose-200">{block.reason}</p>
+                                  <p className="text-xs font-medium text-rose-700 dark:text-rose-200">{getLocalizedBlockReason(block.reason)}</p>
                                   <p className="mt-1 text-[11px] text-muted-foreground">
                                     {block.startTime} - {block.endTime}
                                   </p>
@@ -431,8 +462,8 @@ const HallAvailability: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-24">
-        <LoadingAnimation text="Loading premium availability view..." />
+          <div className="flex items-center justify-center py-24">
+        <LoadingAnimation text={t('hallAvailability.loadingView', { defaultValue: 'Loading hall availability...' })} />
       </div>
     );
   }
@@ -443,9 +474,9 @@ const HallAvailability: React.FC = () => {
         <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
           <div className="max-w-2xl space-y-3">
             <div className="space-y-3">
-              <h1 className="text-3xl font-semibold tracking-tight text-foreground md:text-4xl">Hall Availability</h1>
+              <h1 className="text-3xl font-semibold tracking-tight text-foreground md:text-4xl">{t('hallAvailability.title')}</h1>
               <p className="max-w-xl text-sm leading-6 text-muted-foreground md:text-base">
-                Scan hall capacity, booking pressure, and operational blocks in one polished workspace built for fast scheduling decisions.
+                {t('hallAvailability.subtitle')}
               </p>
             </div>
           </div>
@@ -454,7 +485,7 @@ const HallAvailability: React.FC = () => {
             <div className="relative min-w-[280px]">
               <Search className="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-muted-foreground transition-colors" />
               <Input
-                placeholder="Search halls, wings, or locations"
+                placeholder={t('hallAvailability.searchPlaceholder', { defaultValue: 'Search halls, wings, or locations' })}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="h-12 rounded-2xl border border-border bg-background pl-11 text-foreground placeholder:text-muted-foreground shadow-sm transition-all duration-200 focus:border-primary/50 focus:ring-2 focus:ring-primary/10"
@@ -474,7 +505,7 @@ const HallAvailability: React.FC = () => {
                 )}
               >
                 <List className="mr-2 size-4" />
-                List
+                {t('hallAvailability.viewList', { defaultValue: 'List' })}
               </Button>
               <Button
                 variant="ghost"
@@ -488,7 +519,7 @@ const HallAvailability: React.FC = () => {
                 )}
               >
                 <LayoutGrid className="mr-2 size-4" />
-                Grid
+                {t('hallAvailability.viewGrid', { defaultValue: 'Grid' })}
               </Button>
             </div>
           </div>
@@ -498,21 +529,23 @@ const HallAvailability: React.FC = () => {
       <section className={cn(PANEL_CARD, 'p-6 md:p-8')}>
         <div className="mb-6 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div>
-            <p className="text-xs uppercase tracking-[0.32em] text-muted-foreground">Availability Protocol</p>
-            <h2 className="mt-2 text-2xl font-semibold text-foreground">Set your decision window</h2>
+            <p className="text-xs uppercase tracking-[0.32em] text-muted-foreground">{t('hallAvailability.protocolLabel', { defaultValue: 'Availability Protocol' })}</p>
+            <h2 className="mt-2 text-2xl font-semibold text-foreground">{t('hallAvailability.decisionWindowTitle', { defaultValue: 'Set your decision window' })}</h2>
             <p className="mt-2 max-w-xl text-sm text-muted-foreground">
-              Pick the time range you want to inspect. Cards update with clearer status signals and more precise booking context.
+              {t('hallAvailability.decisionWindowDesc', { defaultValue: 'Pick the time range you want to inspect. Cards update with clearer status signals and more precise booking context.' })}
             </p>
           </div>
           <div className="flex items-center gap-3 rounded-2xl border border-border bg-background px-4 py-3 text-sm text-muted-foreground">
             <Sparkles className="size-4 text-primary" />
-            {checking ? 'Refreshing availability...' : `${filteredHalls.length} halls in view`}
+            {checking
+              ? t('hallAvailability.refreshing', { defaultValue: 'Refreshing availability...' })
+              : t('hallAvailability.hallsInView', { count: filteredHalls.length, defaultValue: `${filteredHalls.length} halls in view` })}
           </div>
         </div>
 
         <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_auto]">
           <div className="space-y-2">
-            <Label className="text-xs font-medium uppercase tracking-[0.24em] text-muted-foreground">Date</Label>
+            <Label className="text-xs font-medium uppercase tracking-[0.24em] text-muted-foreground">{t('hallAvailability.date')}</Label>
             <div className="relative">
               <Calendar className="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
               <Input
@@ -525,7 +558,7 @@ const HallAvailability: React.FC = () => {
           </div>
 
           <div className="space-y-2">
-            <Label className="text-xs font-medium uppercase tracking-[0.24em] text-muted-foreground">Start Time</Label>
+            <Label className="text-xs font-medium uppercase tracking-[0.24em] text-muted-foreground">{t('hallAvailability.startTime')}</Label>
             <div className="rounded-2xl border border-border bg-background px-3 focus-within:border-primary/50 focus-within:ring-2 focus-within:ring-primary/10">
               <div className="flex items-center gap-3">
                 <Clock3 className="size-4 text-muted-foreground" />
@@ -535,7 +568,7 @@ const HallAvailability: React.FC = () => {
           </div>
 
           <div className="space-y-2">
-            <Label className="text-xs font-medium uppercase tracking-[0.24em] text-muted-foreground">End Time</Label>
+            <Label className="text-xs font-medium uppercase tracking-[0.24em] text-muted-foreground">{t('hallAvailability.endTime')}</Label>
             <div className="rounded-2xl border border-border bg-background px-3 focus-within:border-primary/50 focus-within:ring-2 focus-within:ring-primary/10">
               <div className="flex items-center gap-3">
                 <Clock3 className="size-4 text-muted-foreground" />
@@ -549,7 +582,7 @@ const HallAvailability: React.FC = () => {
               onClick={checkAvailability}
               className="h-12 w-full rounded-2xl bg-gradient-to-r from-violet-500 via-indigo-500 to-sky-500 px-6 text-sm font-medium text-white shadow-[0_18px_40px_rgba(79,70,229,0.28)] transition-all duration-200 hover:scale-[1.02] hover:shadow-[0_22px_50px_rgba(59,130,246,0.35)] active:scale-[0.98]"
             >
-              {checking ? 'Refreshing...' : 'Check Availability'}
+              {checking ? t('hallAvailability.refreshingShort', { defaultValue: 'Refreshing...' }) : t('hallAvailability.checkAvail')}
             </Button>
           </div>
         </div>
@@ -560,8 +593,8 @@ const HallAvailability: React.FC = () => {
       ) : filteredHalls.length === 0 ? (
         <div className="rounded-[28px] border border-dashed border-border bg-card py-20 text-center">
           <Info className="mx-auto mb-4 size-12 text-muted-foreground" />
-          <h3 className="text-xl font-semibold text-foreground">No halls match this search</h3>
-          <p className="mt-2 text-sm text-muted-foreground">Try a broader keyword or clear the search to see all venue options.</p>
+          <h3 className="text-xl font-semibold text-foreground">{t('hallAvailability.noSearchTitle', { defaultValue: 'No halls match this search' })}</h3>
+          <p className="mt-2 text-sm text-muted-foreground">{t('hallAvailability.noSearchDesc', { defaultValue: 'Try a broader keyword or clear the search to see all venue options.' })}</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
@@ -573,10 +606,10 @@ const HallAvailability: React.FC = () => {
             const eventCount = events.trainings.length + events.blocks.length;
             const statusLabel =
               windowStatus === 'available'
-                ? `Available for ${startTime} - ${endTime}`
+                ? t('hallAvailability.statusAvailableFor', { time: `${startTime} - ${endTime}`, defaultValue: `Available for ${startTime} - ${endTime}` })
                 : windowStatus === 'partial'
-                  ? `Partially busy for ${startTime} - ${endTime}`
-                  : `Booked for ${startTime} - ${endTime}`;
+                  ? t('hallAvailability.statusPartialFor', { time: `${startTime} - ${endTime}`, defaultValue: `Partially busy for ${startTime} - ${endTime}` })
+                  : t('hallAvailability.statusBookedFor', { time: `${startTime} - ${endTime}`, defaultValue: `Booked for ${startTime} - ${endTime}` });
 
             return (
               <motion.article
@@ -621,7 +654,7 @@ const HallAvailability: React.FC = () => {
                     </Badge>
                     <Badge className="rounded-full border border-border bg-background px-3 py-1 text-xs font-medium text-foreground">
                       <Users className="mr-2 size-3.5 text-muted-foreground" />
-                      {hall.capacity} seats
+                      {t('hallAvailability.seats', { count: hall.capacity, defaultValue: `${hall.capacity} seats` })}
                     </Badge>
                   </div>
                 </div>
@@ -632,9 +665,9 @@ const HallAvailability: React.FC = () => {
                       <div className="flex items-center justify-between text-sm text-muted-foreground">
                         <span className="flex items-center gap-2">
                           <Sun className="size-4 text-amber-500 dark:text-amber-300" />
-                          Morning
+                          {t('hallAvailability.morning', { defaultValue: 'Morning' })}
                         </span>
-                        <span>{breakdown.morning.availablePercent}% free</span>
+                        <span>{t('hallAvailability.freePercent', { count: breakdown.morning.availablePercent, defaultValue: `${breakdown.morning.availablePercent}% free` })}</span>
                       </div>
                       <Progress
                         value={breakdown.morning.availablePercent}
@@ -647,9 +680,9 @@ const HallAvailability: React.FC = () => {
                       <div className="flex items-center justify-between text-sm text-muted-foreground">
                         <span className="flex items-center gap-2">
                           <Sunset className="size-4 text-violet-500 dark:text-violet-300" />
-                          Evening
+                          {t('hallAvailability.evening', { defaultValue: 'Evening' })}
                         </span>
-                        <span>{breakdown.evening.availablePercent}% free</span>
+                        <span>{t('hallAvailability.freePercent', { count: breakdown.evening.availablePercent, defaultValue: `${breakdown.evening.availablePercent}% free` })}</span>
                       </div>
                       <Progress
                         value={breakdown.evening.availablePercent}
@@ -660,7 +693,7 @@ const HallAvailability: React.FC = () => {
                   </div>
 
                   <div className="flex items-center justify-between border-t border-border pt-4 text-sm">
-                    <span className="text-muted-foreground">Selected window</span>
+                    <span className="text-muted-foreground">{t('hallAvailability.selectedWindow', { defaultValue: 'Selected window' })}</span>
                     <span className="font-medium text-foreground">
                       {startTime} - {endTime}
                     </span>
@@ -669,17 +702,17 @@ const HallAvailability: React.FC = () => {
 
                 <div className="mt-6 space-y-3">
                   <div className="flex items-center justify-between">
-                    <p className="text-xs uppercase tracking-[0.28em] text-muted-foreground">Booking Details</p>
-                    <p className="text-xs text-muted-foreground">{eventCount} events on {format(new Date(selectedDate), 'dd MMM')}</p>
+                    <p className="text-xs uppercase tracking-[0.28em] text-muted-foreground">{t('hallAvailability.bookingDetails', { defaultValue: 'Booking Details' })}</p>
+                    <p className="text-xs text-muted-foreground">{t('hallAvailability.eventsOnDate', { count: eventCount, date: formatMonthDay(new Date(selectedDate)), defaultValue: `${eventCount} events on ${formatMonthDay(new Date(selectedDate))}` })}</p>
                   </div>
 
                   <div className="rounded-[18px] border border-border bg-background px-4 py-3 text-sm text-muted-foreground">
-                    Hall status above is for the selected time window only. Booking details below show all events scheduled on this day.
+                    {t('hallAvailability.dayNote', { defaultValue: 'Hall status above is for the selected time window only. Booking details below show all events scheduled on this day.' })}
                   </div>
 
                   {eventCount === 0 ? (
                     <div className="rounded-[18px] border border-border bg-background px-4 py-4 text-sm text-muted-foreground">
-                      No bookings or operational blocks found for this day.
+                      {t('hallAvailability.noBookings', { defaultValue: 'No bookings or operational blocks found for this day.' })}
                     </div>
                   ) : (
                     <div className="space-y-3">
@@ -687,8 +720,8 @@ const HallAvailability: React.FC = () => {
                         <div key={block.id} className="rounded-[18px] border border-rose-500/25 bg-rose-500/10 px-4 py-3">
                           <div className="flex items-center justify-between gap-4">
                             <div>
-                              <p className="text-sm font-medium text-rose-700 dark:text-rose-100">{block.reason}</p>
-                              <p className="mt-1 text-xs text-rose-600 dark:text-rose-200/70">Operational block</p>
+                              <p className="text-sm font-medium text-rose-700 dark:text-rose-100">{getLocalizedBlockReason(block.reason)}</p>
+                              <p className="mt-1 text-xs text-rose-600 dark:text-rose-200/70">{t('hallAvailability.operationalBlock', { defaultValue: 'Operational block' })}</p>
                             </div>
                             <p className="text-xs font-medium text-rose-700 dark:text-rose-100">
                               {block.startTime} - {block.endTime}
@@ -725,7 +758,7 @@ const HallAvailability: React.FC = () => {
                     }}
                   >
                     <Ban className="mr-2 size-4" />
-                    Block This Hall
+                    {t('hallAvailability.blockThisHall', { defaultValue: 'Block This Hall' })}
                   </Button>
                 )}
               </motion.article>
@@ -739,35 +772,35 @@ const HallAvailability: React.FC = () => {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-lg font-semibold text-foreground">
               <Ban className="size-5 text-rose-300" />
-              Block hall availability
+              {t('hallAvailability.dialogTitle', { defaultValue: 'Block hall availability' })}
             </DialogTitle>
             <DialogDescription className="text-sm text-muted-foreground">
-              {blockingHall?.name} on {format(new Date(selectedDate), 'dd MMM yyyy')}
+              {blockingHall?.name} • {formatFullDate(new Date(selectedDate))}
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-5 py-3">
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <div className="space-y-2">
-                <Label className="text-xs uppercase tracking-[0.24em] text-muted-foreground">Start</Label>
+                <Label className="text-xs uppercase tracking-[0.24em] text-muted-foreground">{t('hallAvailability.start', { defaultValue: 'Start' })}</Label>
                 <ClockTimePicker value={startTime} onChange={setStartTime} className="border-border bg-background text-foreground" />
               </div>
               <div className="space-y-2">
-                <Label className="text-xs uppercase tracking-[0.24em] text-muted-foreground">End</Label>
+                <Label className="text-xs uppercase tracking-[0.24em] text-muted-foreground">{t('hallAvailability.end', { defaultValue: 'End' })}</Label>
                 <ClockTimePicker value={endTime} onChange={setEndTime} className="border-border bg-background text-foreground" />
               </div>
             </div>
 
             <div className="space-y-2">
-              <Label className="text-xs uppercase tracking-[0.24em] text-muted-foreground">Reason</Label>
+              <Label className="text-xs uppercase tracking-[0.24em] text-muted-foreground">{t('hallAvailability.reason')}</Label>
               <Select value={blockReason} onValueChange={setBlockReason}>
                 <SelectTrigger className="border-border bg-background text-foreground">
-                  <SelectValue placeholder="Select reason" />
+                  <SelectValue placeholder={t('hallAvailability.selectReason')} />
                 </SelectTrigger>
                 <SelectContent>
                   {reasons.map((reason) => (
                     <SelectItem key={reason} value={reason}>
-                      {reason}
+                      {getLocalizedBlockReason(reason)}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -778,7 +811,7 @@ const HallAvailability: React.FC = () => {
               <Input
                 value={customReason}
                 onChange={(e) => setCustomReason(e.target.value)}
-                placeholder="Enter a custom reason"
+                placeholder={t('hallAvailability.enterCustomReason', { defaultValue: 'Enter a custom reason' })}
                 className="border-border bg-background text-foreground placeholder:text-muted-foreground"
               />
             )}
@@ -790,7 +823,7 @@ const HallAvailability: React.FC = () => {
               onClick={() => setShowBlockDialog(false)}
               className="rounded-xl border-border bg-background text-foreground hover:bg-accent"
             >
-              Cancel
+              {t('hallAvailability.cancel')}
             </Button>
             <Button
               variant="destructive"
@@ -798,7 +831,7 @@ const HallAvailability: React.FC = () => {
               disabled={isBlocking}
               className="rounded-xl bg-rose-500 text-white hover:bg-rose-600"
             >
-              {isBlocking ? 'Saving...' : 'Confirm block'}
+              {isBlocking ? t('hallAvailability.saving', { defaultValue: 'Saving...' }) : t('hallAvailability.confirmBlock', { defaultValue: 'Confirm block' })}
             </Button>
           </DialogFooter>
         </DialogContent>

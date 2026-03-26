@@ -156,7 +156,7 @@ const ProgramOfficers: React.FC = () => {
                                         handleDelete(officer.id, officer.name);
                                     }}
                                     className="text-muted-foreground hover:text-white hover:bg-destructive rounded-full size-8 sm:size-10 z-10"
-                                    title="Remove Officer"
+                                    title={t('personnel.officers.removeOfficer', 'Remove Officer')}
                                 >
                                     <Trash2 className="size-4" />
                                 </Button>

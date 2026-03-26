@@ -17,12 +17,13 @@ import { Calendar as CalendarIcon, CalendarPlus, Plus, X } from 'lucide-react';
 const Dashboard: React.FC = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [allTrainings, setAllTrainings] = useState<Training[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeFilter, setActiveFilter] = useState('all');
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
+  const isMalayalam = i18n.resolvedLanguage?.startsWith('ml') || i18n.language?.startsWith('ml');
 
   const formatDateParam = (date: Date) => {
     const year = date.getFullYear();
@@ -217,6 +218,16 @@ const Dashboard: React.FC = () => {
         mode="single"
         selected={selectedDate}
         onSelect={handleDateSelect}
+        formatters={
+          isMalayalam
+            ? {
+                formatCaption: (date) =>
+                  new Intl.DateTimeFormat('ml-IN', { month: 'long', year: 'numeric' }).format(date),
+                formatWeekdayName: (date) =>
+                  new Intl.DateTimeFormat('ml-IN', { weekday: 'short' }).format(date),
+              }
+            : undefined
+        }
         className="rounded-md border-0 bg-transparent flex justify-center"
       />
       <p className="text-xs text-muted-foreground mt-4 px-2 italic text-center">
@@ -282,7 +293,7 @@ const Dashboard: React.FC = () => {
               <div className="mb-6">
                 <h2 className="text-xl font-bold flex items-center gap-2 mb-4">
                   <CalendarIcon className="size-5 text-primary" />
-                  {t('dashboard.trainingsOn', 'Trainings on')} {selectedDate.toLocaleDateString()}
+                  {t('dashboard.trainingsOn', 'Trainings on')} {selectedDate.toLocaleDateString(isMalayalam ? 'ml-IN' : 'en-IN')}
                 </h2>
                 {!hasTrainingsOnSelectedDate && (
                   <div
@@ -314,10 +325,10 @@ const Dashboard: React.FC = () => {
                       </p>
                       <p className="mt-2 text-sm text-muted-foreground">
                         {selectedDateIsPast
-                          ? 'Training creation is disabled for past dates.'
+                          ? t('dashboard.pastDateCreateDisabled', 'Training creation is disabled for past dates.')
                           : canCreateTraining
-                            ? 'Create a new training session for this date.'
-                            : 'You do not have permission to create a training session for this date.'}
+                            ? t('dashboard.createTrainingForDate', 'Create a new training session for this date.')
+                            : t('dashboard.noCreatePermissionForDate', 'You do not have permission to create a training session for this date.')}
                       </p>
                       <Button
                         type="button"
@@ -329,14 +340,14 @@ const Dashboard: React.FC = () => {
                         disabled={!canCreateTraining || selectedDateIsPast}
                         title={
                           selectedDateIsPast
-                            ? 'Cannot create a training for a past date'
+                            ? t('dashboard.cannotCreatePastDate', 'Cannot create a training for a past date')
                             : !canCreateTraining
-                              ? 'You do not have permission to create trainings'
-                              : 'Create a training for this date'
+                              ? t('dashboard.noCreatePermission', 'You do not have permission to create trainings')
+                              : t('dashboard.createTrainingForDate', 'Create a training for this date')
                         }
                       >
                         <Plus className="mr-2 size-4" />
-                        Create Training
+                        {t('dashboard.createTraining', 'Create Training')}
                       </Button>
                     </div>
                   </div>

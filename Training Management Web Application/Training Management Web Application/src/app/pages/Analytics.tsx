@@ -3,15 +3,12 @@ import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../contexts/AuthContext';
 import { analyticsApi, trainingsApi, institutionsApi } from '../../services/api';
 import { Training, Institution, TrainingAnalytics } from '../../types';
-import { BarChart3, TrendingUp, Users, Calendar } from 'lucide-react';
+import { BarChart3, TrendingUp, Users, Calendar, Search, X, CalendarDays } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../components/ui/card';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '../components/ui/select';
+import { Input } from '../components/ui/input';
+import { Button } from '../components/ui/button';
+import { Badge } from '../components/ui/badge';
+import { Label } from '../components/ui/label';
 import { safeFormatDate } from '../../utils/date';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
@@ -19,12 +16,36 @@ import {
 } from 'recharts';
 import LoadingScreen from '../components/LoadingScreen';
 
+const normalizeMatchValue = (value?: string) => (value || '').trim().replace(/\s+/g, ' ').toLowerCase();
+const formatDateInputValue = (date: string | Date) => {
+  const parsed = new Date(date);
+  if (Number.isNaN(parsed.getTime())) return '';
+  const year = parsed.getFullYear();
+  const month = `${parsed.getMonth() + 1}`.padStart(2, '0');
+  const day = `${parsed.getDate()}`.padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+const formatTimeWindow = (startTime?: string, endTime?: string) =>
+  startTime && endTime ? `${startTime} - ${endTime}` : '';
+const getTrainingSortTimestamp = (training: Training) => {
+  const dateValue = formatDateInputValue(training.date);
+  if (dateValue) {
+    const sessionTimestamp = new Date(`${dateValue}T${training.startTime || '00:00'}`).getTime();
+    if (!Number.isNaN(sessionTimestamp)) return sessionTimestamp;
+  }
+
+  const fallbackTimestamp = new Date(training.date).getTime();
+  return Number.isNaN(fallbackTimestamp) ? 0 : fallbackTimestamp;
+};
+
 const Analytics: React.FC = () => {
   const { t } = useTranslation();
   const { user } = useAuth();
   const [trainings, setTrainings] = useState<Training[]>([]);
   const [institutions, setInstitutions] = useState<Institution[]>([]);
   const [selectedTraining, setSelectedTraining] = useState('');
+  const [trainingSearchTerm, setTrainingSearchTerm] = useState('');
+  const [trainingDateFilter, setTrainingDateFilter] = useState('');
   const [trainingAnalytics, setTrainingAnalytics] = useState<TrainingAnalytics | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -95,6 +116,32 @@ const Analytics: React.FC = () => {
   const totalStatusCount = statusData.reduce((sum, item) => sum + item.count, 0);
   const leadingStatus = [...statusData].sort((first, second) => second.count - first.count)[0];
   const leadingPercentage = totalStatusCount > 0 && leadingStatus ? Math.round((leadingStatus.count / totalStatusCount) * 100) : 0;
+  const searchableTrainings = [...safeTrainings].sort((a, b) => getTrainingSortTimestamp(b) - getTrainingSortTimestamp(a));
+  const normalizedTrainingSearch = normalizeMatchValue(trainingSearchTerm);
+  const filteredTrainings = searchableTrainings.filter((training) => {
+    const matchesDate = !trainingDateFilter || formatDateInputValue(training.date) === trainingDateFilter;
+    if (!matchesDate) return false;
+
+    if (!normalizedTrainingSearch) return true;
+
+    const searchText = [
+      training.title,
+      training.program,
+      training.description,
+      safeFormatDate(training.date, 'MMM dd, yyyy'),
+      formatTimeWindow(training.startTime, training.endTime),
+      training.status,
+    ].join(' ');
+
+    return normalizeMatchValue(searchText).includes(normalizedTrainingSearch);
+  });
+  const selectedTrainingRecord = safeTrainings.find((training) => training.id === selectedTraining);
+  const selectedTrainingPinned = Boolean(
+    selectedTrainingRecord && !filteredTrainings.some((training) => training.id === selectedTraining)
+  );
+  const visibleTrainings = selectedTrainingPinned
+    ? [selectedTrainingRecord!, ...filteredTrainings]
+    : filteredTrainings;
 
   return (
     <div className="pb-12 space-y-10 text-foreground">
@@ -226,20 +273,131 @@ const Analytics: React.FC = () => {
           <CardDescription className="text-muted-foreground text-sm">{t('analyticsPage.trainingIntelDesc')}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-8">
-          <div className="max-w-md">
-            <label className="text-sm font-medium text-muted-foreground mb-2 block">{t('analyticsPage.selectTraining')}</label>
-            <Select value={selectedTraining} onValueChange={setSelectedTraining}>
-              <SelectTrigger className="bg-white/5 border-white/10 hover:border-white/20 transition-colors h-12 rounded-lg text-foreground">
-                <SelectValue placeholder={t('analyticsPage.chooseTraining')} />
-              </SelectTrigger>
-              <SelectContent className="glass border-primary/20">
-                {trainings.map((training) => (
-                  <SelectItem key={training.id} value={training.id} className="hover:bg-primary/10 transition-colors">
-                    {training.title}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          <div className="max-w-3xl space-y-3">
+            <Label className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+              <Calendar className="size-3" />
+              {t('analyticsPage.selectTraining')}
+            </Label>
+
+            <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+              <div className="flex flex-col gap-3">
+                <div className="relative">
+                  <Search className="pointer-events-none absolute left-3 top-3.5 size-4 text-primary/60" />
+                  <Input
+                    value={trainingSearchTerm}
+                    onChange={(e) => setTrainingSearchTerm(e.target.value)}
+                    placeholder={t('analyticsPage.trainingSearchPlaceholder', {
+                      defaultValue: 'Search training title, program, or date',
+                    })}
+                    className="h-11 rounded-xl border-white/10 bg-background pl-10"
+                  />
+                </div>
+
+                <div className="flex flex-col gap-3 sm:flex-row">
+                  <div className="relative flex-1">
+                    <CalendarDays className="pointer-events-none absolute left-3 top-3.5 size-4 text-primary/60" />
+                    <Input
+                      type="date"
+                      value={trainingDateFilter}
+                      onChange={(e) => setTrainingDateFilter(e.target.value)}
+                      className="h-11 rounded-xl border-white/10 bg-background pl-10"
+                    />
+                  </div>
+
+                  {(trainingSearchTerm || trainingDateFilter) && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      onClick={() => {
+                        setTrainingSearchTerm('');
+                        setTrainingDateFilter('');
+                      }}
+                      className="sm:self-stretch"
+                    >
+                      <X className="mr-2 size-4" />
+                      {t('analyticsPage.clearTrainingFilters', { defaultValue: 'Clear filters' })}
+                    </Button>
+                  )}
+                </div>
+              </div>
+
+              <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
+                <p className="text-xs text-muted-foreground">
+                  {t('analyticsPage.trainingShownCount', {
+                    shown: visibleTrainings.length,
+                    total: safeTrainings.length,
+                    defaultValue: `${visibleTrainings.length} of ${safeTrainings.length} trainings shown`,
+                  })}
+                </p>
+                {selectedTrainingPinned && (
+                  <Badge variant="outline" className="border-primary/20 bg-primary/5 text-primary">
+                    {t('analyticsPage.selectedTrainingPinned', {
+                      defaultValue: 'Selected training shown outside current filters',
+                    })}
+                  </Badge>
+                )}
+              </div>
+
+              <div className="mt-4 max-h-[320px] space-y-3 overflow-y-auto pr-1 custom-scrollbar">
+                {visibleTrainings.length === 0 ? (
+                  <div className="rounded-xl border border-dashed border-white/10 bg-white/5 px-4 py-6 text-sm text-muted-foreground">
+                    {t('analyticsPage.noTrainingMatches', {
+                      defaultValue: 'No trainings matched your search or date filter.',
+                    })}
+                  </div>
+                ) : (
+                  visibleTrainings.map((training) => {
+                    const isSelected = training.id === selectedTraining;
+
+                    return (
+                      <button
+                        key={training.id}
+                        type="button"
+                        onClick={() => setSelectedTraining(training.id)}
+                        className={`w-full rounded-xl border p-4 text-left transition-all ${
+                          isSelected
+                            ? 'border-primary bg-primary/5 shadow-sm'
+                            : 'border-white/10 bg-background hover:border-primary/30'
+                        }`}
+                      >
+                        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                          <div className="min-w-0">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <p className="text-sm font-semibold text-foreground">{training.title}</p>
+                              {isSelected && (
+                                <Badge variant="outline" className="border-primary/20 bg-primary/10 text-primary">
+                                  {t('analyticsPage.selectedTrainingTag', { defaultValue: 'Selected' })}
+                                </Badge>
+                              )}
+                            </div>
+                            <p className="mt-1 text-xs text-muted-foreground">
+                              {safeFormatDate(training.date, 'MMM dd, yyyy')}
+                              {formatTimeWindow(training.startTime, training.endTime) ? ` • ${formatTimeWindow(training.startTime, training.endTime)}` : ''}
+                            </p>
+                            {(training.program || training.description) && (
+                              <p className="mt-2 line-clamp-2 text-xs text-muted-foreground">
+                                {[training.program, training.description].filter(Boolean).join(' • ')}
+                              </p>
+                            )}
+                          </div>
+
+                          <div className="flex flex-wrap gap-2">
+                            {training.program && (
+                              <Badge variant="outline" className="border-white/10 bg-white/5 text-muted-foreground">
+                                {training.program}
+                              </Badge>
+                            )}
+                            <Badge variant="outline" className="border-white/10 bg-white/5 text-muted-foreground capitalize">
+                              {training.status}
+                            </Badge>
+                          </div>
+                        </div>
+                      </button>
+                    );
+                  })
+                )}
+              </div>
+            </div>
           </div>
 
           {trainingAnalytics && (

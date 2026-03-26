@@ -54,8 +54,8 @@ const formatDateInputValue = (date: any) => {
   const day = `${parsed.getDate()}`.padStart(2, '0');
   return `${year}-${month}-${day}`;
 };
-const formatSessionWindow = (startTime?: string, endTime?: string) =>
-  startTime && endTime ? `${startTime} - ${endTime}` : 'Time not set';
+const formatSessionWindow = (startTime?: string, endTime?: string, fallbackLabel: string = 'Time not set') =>
+  startTime && endTime ? `${startTime} - ${endTime}` : fallbackLabel;
 const getTrainingSortTimestamp = (training: Training) => {
   const dateValue = formatDateInputValue(training.date);
   if (dateValue) {
@@ -73,11 +73,14 @@ const getNominationDisplayStatus = (status: Nomination['status']): NominationDis
   if (status === 'rejected') return 'rejected';
   return 'assigned';
 };
-const getNominationDisplayLabel = (status: Nomination['status']) => {
+const getNominationDisplayLabel = (
+  status: Nomination['status'],
+  t: (key: string, options?: any) => string,
+) => {
   const displayStatus = getNominationDisplayStatus(status);
-  if (displayStatus === 'assigned') return 'Assigned';
-  if (displayStatus === 'attended') return 'Attended';
-  return 'Rejected';
+  if (displayStatus === 'assigned') return t('nominationsProps.assigned', { defaultValue: 'Assigned' });
+  if (displayStatus === 'attended') return t('nominationsProps.attended', { defaultValue: 'Attended' });
+  return t('nominationsProps.rejected', { defaultValue: 'Rejected' });
 };
 const getNominationStatusClass = (status: Nomination['status']) => {
   const displayStatus = getNominationDisplayStatus(status);
@@ -123,17 +126,18 @@ const Nominations: React.FC = () => {
     designation: '',
     department: '',
   });
+  const sessionWindowFallback = t('nominationsProps.timeNotSet', { defaultValue: 'Time not set' });
 
   // Helper functions with extra safety, memoized with useCallback
   const getTrainingName = useCallback((trainingId: any) => {
     const id = typeof trainingId === 'object' ? trainingId?.id || trainingId?._id : trainingId;
-    return trainings.find(t => t.id === id || (t as any)._id === id)?.title || 'Unknown Training';
-  }, [trainings]);
+    return trainings.find(t => t.id === id || (t as any)._id === id)?.title || t('nominationsProps.unknownTraining', { defaultValue: 'Unknown Training' });
+  }, [t, trainings]);
 
   const getParticipantName = useCallback((participantId: any) => {
     const id = typeof participantId === 'object' ? participantId?.id || participantId?._id : participantId;
-    return users.find(u => u.id === id || (u as any)._id === id)?.name || 'Unknown Personnel';
-  }, [users]);
+    return users.find(u => u.id === id || (u as any)._id === id)?.name || t('nominationsProps.unknownPersonnel', { defaultValue: 'Unknown Personnel' });
+  }, [t, users]);
 
   const getParticipantRecord = useCallback((participantId: any) => {
     const id = typeof participantId === 'object' ? participantId?.id || participantId?._id : participantId;
@@ -147,8 +151,8 @@ const Nominations: React.FC = () => {
 
   const getInstitutionName = useCallback((institutionId: any) => {
     const id = typeof institutionId === 'object' ? institutionId?.id || institutionId?._id : institutionId;
-    return institutions.find(i => i.id === id || (i as any)._id === id)?.name || 'Unknown Sector';
-  }, [institutions]);
+    return institutions.find(i => i.id === id || (i as any)._id === id)?.name || t('nominationsProps.unknownInstitution', { defaultValue: 'Unknown Institution' });
+  }, [institutions, t]);
 
   const fetchData = useCallback(async () => {
     if (!user) {
@@ -348,7 +352,7 @@ const Nominations: React.FC = () => {
     if (!user || !selectedTrainingId || selectedParticipantIds.length === 0) return;
     const selectedTrainingRecord = trainings.find((training) => training.id === selectedTrainingId);
     if (selectedTrainingRecord && new Date() >= getTrainingStartDateTime(selectedTrainingRecord)) {
-      toast.error('Nominations close once the training start time is reached');
+      toast.error(t('nominationsProps.nominationClosed', { defaultValue: 'Nominations close once the training start time is reached' }));
       return;
     }
     setLoading(true);
@@ -539,7 +543,7 @@ const Nominations: React.FC = () => {
         training.program,
         training.description,
         safeFormatDate(training.date, 'MMM dd, yyyy'),
-        formatSessionWindow(training.startTime, training.endTime),
+        formatSessionWindow(training.startTime, training.endTime, sessionWindowFallback),
         ...normalizeAudienceList(training.targetAudience),
         ...normalizeStringList(training.requiredInstitutions).map((institutionId) => getInstitutionName(institutionId)),
       ].join(' ');
@@ -632,10 +636,10 @@ const Nominations: React.FC = () => {
 
     const hasFilters = Boolean(searchTerm.trim()) || statusFilter !== 'all';
     const statusOptions = [
-      { value: 'all', label: `All (${nominationSummary.total})` },
-      { value: 'assigned', label: `Assigned (${nominationSummary.assigned})` },
-      { value: 'attended', label: `Attended (${nominationSummary.attended})` },
-      { value: 'rejected', label: `Rejected (${nominationSummary.rejected})` },
+      { value: 'all', label: `${t('nominationsProps.all', { defaultValue: 'All' })} (${nominationSummary.total})` },
+      { value: 'assigned', label: `${t('nominationsProps.assigned', { defaultValue: 'Assigned' })} (${nominationSummary.assigned})` },
+      { value: 'attended', label: `${t('nominationsProps.attended', { defaultValue: 'Attended' })} (${nominationSummary.attended})` },
+      { value: 'rejected', label: `${t('nominationsProps.rejected', { defaultValue: 'Rejected' })} (${nominationSummary.rejected})` },
     ];
 
     return (
@@ -643,13 +647,13 @@ const Nominations: React.FC = () => {
         <section className="rounded-[28px] border border-border bg-card/70 p-6 shadow-sm backdrop-blur-sm sm:p-8">
           <div className="flex flex-col gap-6 xl:flex-row xl:items-start xl:justify-between">
             <div className="max-w-2xl">
-              <p className="text-xs uppercase tracking-[0.24em] text-muted-foreground">Nomination Hub</p>
+              <p className="text-xs uppercase tracking-[0.24em] text-muted-foreground">{t('nominationsProps.hubLabel', { defaultValue: 'Nomination Hub' })}</p>
               <h1 className="mt-3 flex items-center gap-3 text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
                 <Users className="size-8 text-primary" />
-                Nominations
+                {t('nominationsProps.title')}
               </h1>
               <p className="mt-3 text-sm leading-6 text-muted-foreground sm:text-base">
-                Review previous nominations, track approval progress, and nominate the right personnel without losing context.
+                {t('nominationsProps.pageIntro', { defaultValue: 'Review previous nominations, track approval progress, and nominate the right personnel without losing context.' })}
               </p>
             </div>
 
@@ -690,30 +694,30 @@ const Nominations: React.FC = () => {
           <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
             <Card className="border-border bg-background/80">
               <CardContent className="p-5">
-                <p className="text-xs uppercase tracking-[0.24em] text-muted-foreground">Total nominations</p>
+                <p className="text-xs uppercase tracking-[0.24em] text-muted-foreground">{t('nominationsProps.summaryTotal', { defaultValue: 'Total nominations' })}</p>
                 <p className="mt-3 text-3xl font-semibold text-foreground">{nominationSummary.total}</p>
-                <p className="mt-2 text-sm text-muted-foreground">All historical nomination records visible to your role.</p>
+                <p className="mt-2 text-sm text-muted-foreground">{t('nominationsProps.summaryTotalDesc', { defaultValue: 'All historical nomination records visible to your role.' })}</p>
               </CardContent>
             </Card>
             <Card className="border-border bg-background/80">
               <CardContent className="p-5">
-                <p className="text-xs uppercase tracking-[0.24em] text-muted-foreground">Assigned personnel</p>
+                <p className="text-xs uppercase tracking-[0.24em] text-muted-foreground">{t('nominationsProps.summaryAssigned', { defaultValue: 'Assigned personnel' })}</p>
                 <p className="mt-3 text-3xl font-semibold text-emerald-400">{nominationSummary.assigned}</p>
-                <p className="mt-2 text-sm text-muted-foreground">Personnel you have already nominated for upcoming sessions.</p>
+                <p className="mt-2 text-sm text-muted-foreground">{t('nominationsProps.summaryAssignedDesc', { defaultValue: 'Personnel you have already nominated for upcoming sessions.' })}</p>
               </CardContent>
             </Card>
             <Card className="border-border bg-background/80">
               <CardContent className="p-5">
-                <p className="text-xs uppercase tracking-[0.24em] text-muted-foreground">Attended</p>
+                <p className="text-xs uppercase tracking-[0.24em] text-muted-foreground">{t('nominationsProps.summaryAttended', { defaultValue: 'Attended' })}</p>
                 <p className="mt-3 text-3xl font-semibold text-sky-400">{nominationSummary.attended}</p>
-                <p className="mt-2 text-sm text-muted-foreground">Nominees who completed attendance for their training.</p>
+                <p className="mt-2 text-sm text-muted-foreground">{t('nominationsProps.summaryAttendedDesc', { defaultValue: 'Nominees who completed attendance for their training.' })}</p>
               </CardContent>
             </Card>
             <Card className="border-border bg-background/80">
               <CardContent className="p-5">
-                <p className="text-xs uppercase tracking-[0.24em] text-muted-foreground">Rejected</p>
+                <p className="text-xs uppercase tracking-[0.24em] text-muted-foreground">{t('nominationsProps.summaryRejected', { defaultValue: 'Rejected' })}</p>
                 <p className="mt-3 text-3xl font-semibold text-destructive">{nominationSummary.rejected}</p>
-                <p className="mt-2 text-sm text-muted-foreground">Entries that need replacement or follow-up.</p>
+                <p className="mt-2 text-sm text-muted-foreground">{t('nominationsProps.summaryRejectedDesc', { defaultValue: 'Entries that need replacement or follow-up.' })}</p>
               </CardContent>
             </Card>
           </div>
@@ -741,8 +745,11 @@ const Nominations: React.FC = () => {
 
             <div className="flex flex-col gap-2 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
               <p>
-                {filteredNominations.length} nomination{filteredNominations.length === 1 ? '' : 's'} shown
-                {hasFilters ? ' for the current filter set.' : '.'}
+                {t('nominationsProps.shownCount', {
+                  count: filteredNominations.length,
+                  defaultValue: `${filteredNominations.length} nominations shown`,
+                })}
+                {hasFilters ? ` ${t('nominationsProps.shownCountFiltered', { defaultValue: 'for the current filter set.' })}` : '.'}
               </p>
               {user.role === 'master_admin' && nominations.some((nom) => nom.status === 'nominated') && (
                 <div className="flex items-center gap-2">
@@ -768,9 +775,9 @@ const Nominations: React.FC = () => {
             <Card className="border-dashed border-border bg-card/50">
               <CardContent className="flex flex-col items-center px-6 py-20 text-center">
                 <Users className="mb-4 size-12 text-primary/60" />
-                <h2 className="text-2xl font-semibold text-foreground">No nominations yet</h2>
+                <h2 className="text-2xl font-semibold text-foreground">{t('nominationsProps.noNominationsYetTitle', { defaultValue: 'No nominations yet' })}</h2>
                 <p className="mt-3 max-w-lg text-sm leading-6 text-muted-foreground">
-                  Start by choosing a training session and assigning eligible personnel. Once nominations are created, this page will keep the full history in one place.
+                  {t('nominationsProps.noNominationsYetDesc', { defaultValue: 'Start by choosing a training session and assigning eligible personnel. Once nominations are created, this page will keep the full history in one place.' })}
                 </p>
                 {(user.role === 'program_officer' || user.role === 'master_admin' || user.role === 'medical_officer' || user.role === 'institutional_admin') && (
                   <Button onClick={() => setShowNominateDialog(true)} className="mt-6 gap-2">
@@ -784,9 +791,9 @@ const Nominations: React.FC = () => {
             <Card className="border-dashed border-border bg-card/50">
               <CardContent className="px-6 py-16 text-center">
                 <Search className="mx-auto mb-4 size-10 text-muted-foreground/60" />
-                <h2 className="text-xl font-semibold text-foreground">No nominations match these filters</h2>
+                <h2 className="text-xl font-semibold text-foreground">{t('nominationsProps.noFilterResultsTitle', { defaultValue: 'No nominations match these filters' })}</h2>
                 <p className="mt-2 text-sm text-muted-foreground">
-                  Try a different search term or switch the status filter to see more records.
+                  {t('nominationsProps.noFilterResultsDesc', { defaultValue: 'Try a different search term or switch the status filter to see more records.' })}
                 </p>
               </CardContent>
             </Card>
@@ -813,11 +820,11 @@ const Nominations: React.FC = () => {
                             <div className="min-w-0">
                               <h3 className="truncate text-lg font-semibold text-foreground">{getParticipantName(nomination.participantId)}</h3>
                               <p className="mt-1 text-sm text-muted-foreground">
-                                {participant?.designation || 'Personnel'} • {getInstitutionName(nomination.institutionId)}
+                                {participant?.designation || t('nominationsProps.personnelFallback', { defaultValue: 'Personnel' })} • {getInstitutionName(nomination.institutionId)}
                               </p>
                             </div>
                             <Badge className={`w-fit border font-medium capitalize ${getNominationStatusClass(nomination.status)}`}>
-                              {getNominationDisplayLabel(nomination.status)}
+                              {getNominationDisplayLabel(nomination.status, t)}
                             </Badge>
                           </div>
 
@@ -825,28 +832,33 @@ const Nominations: React.FC = () => {
                             <div className="rounded-xl border border-border bg-background/80 p-4">
                               <p className="flex items-center gap-2 text-xs uppercase tracking-[0.22em] text-muted-foreground">
                                 <Briefcase className="size-3.5" />
-                                Training
+                                {t('nominationsProps.training')}
                               </p>
                               <p className="mt-3 text-sm font-medium text-foreground">{getTrainingName(nomination.trainingId)}</p>
                             </div>
                             <div className="rounded-xl border border-border bg-background/80 p-4">
                               <p className="flex items-center gap-2 text-xs uppercase tracking-[0.22em] text-muted-foreground">
                                 <CalendarDays className="size-3.5" />
-                                Scheduled for
+                                {t('nominationsProps.scheduledFor')}
                               </p>
                               <p className="mt-3 text-sm font-medium text-foreground">
-                                {linkedTraining?.date ? safeFormatDate(linkedTraining.date, 'MMM dd, yyyy') : 'Date not available'}
+                                {linkedTraining?.date ? safeFormatDate(linkedTraining.date, 'MMM dd, yyyy') : t('nominationsProps.dateNotAvailable', { defaultValue: 'Date not available' })}
                               </p>
-                              <p className="mt-1 text-xs text-muted-foreground">{formatSessionWindow(linkedTraining?.startTime, linkedTraining?.endTime)}</p>
+                              <p className="mt-1 text-xs text-muted-foreground">{formatSessionWindow(linkedTraining?.startTime, linkedTraining?.endTime, sessionWindowFallback)}</p>
                             </div>
                             <div className="rounded-xl border border-border bg-background/80 p-4">
                               <p className="flex items-center gap-2 text-xs uppercase tracking-[0.22em] text-muted-foreground">
                                 <Clock className="size-3.5" />
-                                Nominated on
+                                {t('nominationsProps.nominatedOn', { defaultValue: 'Nominated on' })}
                               </p>
                               <p className="mt-3 text-sm font-medium text-foreground">{safeFormatDate(nomination.nominatedAt, 'MMM dd, yyyy')}</p>
                               <p className="mt-1 text-xs text-muted-foreground">
-                                {nomination.approvedAt ? `Reviewed ${safeFormatDate(nomination.approvedAt, 'MMM dd, yyyy')}` : 'Awaiting review'}
+                                {nomination.approvedAt
+                                  ? t('nominationsProps.reviewedOn', {
+                                      date: safeFormatDate(nomination.approvedAt, 'MMM dd, yyyy'),
+                                      defaultValue: `Reviewed ${safeFormatDate(nomination.approvedAt, 'MMM dd, yyyy')}`,
+                                    })
+                                  : t('nominationsProps.awaitingReview', { defaultValue: 'Awaiting review' })}
                               </p>
                             </div>
                           </div>
@@ -861,7 +873,7 @@ const Nominations: React.FC = () => {
                           onClick={() => handleApprove(nomination)}
                           className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-medium"
                         >
-                          Approve
+                          {t('nominationsProps.approve')}
                         </Button>
                         <Button
                           size="sm"
@@ -869,7 +881,7 @@ const Nominations: React.FC = () => {
                           onClick={() => handleRejectClick(nomination)}
                           className="flex-1 font-medium"
                         >
-                          Reject
+                          {t('nominationsProps.reject')}
                         </Button>
                       </div>
                     )}
@@ -892,7 +904,7 @@ const Nominations: React.FC = () => {
             <DialogHeader>
               <DialogTitle>{t('nominationsProps.rejectNomination')}</DialogTitle>
               <DialogDescription>
-                Provide a reason so the personnel can understand why this nomination was rejected.
+                {t('nominationsProps.rejectNominationDesc', { defaultValue: 'Provide a reason so the personnel can understand why this nomination was rejected.' })}
               </DialogDescription>
             </DialogHeader>
             <Textarea
@@ -917,7 +929,7 @@ const Nominations: React.FC = () => {
             <DialogHeader className="border-b border-border px-6 py-5 sm:px-8">
               <DialogTitle>{t('nominationsProps.nominatePersonnel')}</DialogTitle>
               <DialogDescription>
-                Choose a training session, review who has already been nominated, then select the next eligible personnel.
+                {t('nominationsProps.nominateDialogDesc', { defaultValue: 'Choose a training session, review who has already been nominated, then select the next eligible personnel.' })}
               </DialogDescription>
             </DialogHeader>
 
@@ -964,7 +976,11 @@ const Nominations: React.FC = () => {
 
                     <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
                       <p className="text-xs text-muted-foreground">
-                        {filteredSelectableTrainings.length} of {selectableTrainings.length} session(s) shown
+                        {t('nominationsProps.sessionsShown', {
+                          shown: filteredSelectableTrainings.length,
+                          total: selectableTrainings.length,
+                          defaultValue: `${filteredSelectableTrainings.length} of ${selectableTrainings.length} session(s) shown`,
+                        })}
                       </p>
                       {selectedTrainingPinned && (
                         <Badge variant="outline" className="border-primary/20 bg-primary/5 text-primary">
@@ -1019,7 +1035,7 @@ const Nominations: React.FC = () => {
                                     )}
                                   </div>
                                   <p className="mt-1 text-xs text-muted-foreground">
-                                    {safeFormatDate(training.date, 'MMM dd, yyyy')} • {formatSessionWindow(training.startTime, training.endTime)}
+                                    {safeFormatDate(training.date, 'MMM dd, yyyy')} • {formatSessionWindow(training.startTime, training.endTime, sessionWindowFallback)}
                                   </p>
                                   {(training.program || training.description) && (
                                     <p className="mt-2 line-clamp-2 text-xs text-muted-foreground">
@@ -1030,10 +1046,10 @@ const Nominations: React.FC = () => {
 
                                 <div className="flex flex-wrap gap-2">
                                   <Badge variant="outline" className="border-emerald-500/20 bg-emerald-500/10 text-emerald-400">
-                                    {trainingRemainingSeats} seats left
+                                    {t('nominationsProps.seatsLeft', { count: trainingRemainingSeats, defaultValue: `${trainingRemainingSeats} seats left` })}
                                   </Badge>
                                   <Badge variant="outline" className="border-border bg-background text-muted-foreground">
-                                    {trainingAssignedCount} assigned
+                                    {t('nominationsProps.assignedCount', { count: trainingAssignedCount, defaultValue: `${trainingAssignedCount} assigned` })}
                                   </Badge>
                                 </div>
                               </div>
@@ -1059,12 +1075,12 @@ const Nominations: React.FC = () => {
                                 ))}
                                 {trainingAudience.length > 2 && (
                                   <Badge variant="outline" className="border-border bg-background text-muted-foreground">
-                                    +{trainingAudience.length - 2} audience
+                                    {t('nominationsProps.extraAudience', { count: trainingAudience.length - 2, defaultValue: `+${trainingAudience.length - 2} audience` })}
                                   </Badge>
                                 )}
                                 {trainingInstitutions.length > 2 && (
                                   <Badge variant="outline" className="border-border bg-background text-muted-foreground">
-                                    +{trainingInstitutions.length - 2} institutions
+                                    {t('nominationsProps.extraInstitutions', { count: trainingInstitutions.length - 2, defaultValue: `+${trainingInstitutions.length - 2} institutions` })}
                                   </Badge>
                                 )}
                               </div>
@@ -1080,20 +1096,20 @@ const Nominations: React.FC = () => {
                   <div className="grid gap-5 xl:grid-cols-[minmax(0,1.5fr)_minmax(320px,0.9fr)]">
                     <Card className="border-border bg-card/70 shadow-sm">
                       <CardContent className="p-5">
-                        <p className="text-xs uppercase tracking-[0.22em] text-muted-foreground">Selected training</p>
+                        <p className="text-xs uppercase tracking-[0.22em] text-muted-foreground">{t('nominationsProps.selectedTraining', { defaultValue: 'Selected training' })}</p>
                         <div className="mt-3 flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
                           <div>
                             <h3 className="text-xl font-semibold text-foreground">{selectedTraining.title}</h3>
                             <p className="mt-1 text-sm text-muted-foreground">
-                              Review session details before choosing personnel.
+                              {t('nominationsProps.selectedTrainingDesc', { defaultValue: 'Review session details before choosing personnel.' })}
                             </p>
                           </div>
                           <div className="flex flex-wrap gap-2">
                             <Badge variant="outline" className="border-emerald-500/20 bg-emerald-500/10 text-emerald-400">
-                              {selectedTrainingRemainingSeats} seats left
+                              {t('nominationsProps.seatsLeft', { count: selectedTrainingRemainingSeats, defaultValue: `${selectedTrainingRemainingSeats} seats left` })}
                             </Badge>
                             <Badge variant="outline" className="border-border bg-background text-muted-foreground">
-                              {selectedTrainingAssignedCount} already assigned
+                              {t('nominationsProps.alreadyAssignedCount', { count: selectedTrainingAssignedCount, defaultValue: `${selectedTrainingAssignedCount} already assigned` })}
                             </Badge>
                           </div>
                         </div>
@@ -1102,25 +1118,29 @@ const Nominations: React.FC = () => {
                           <div className="rounded-xl border border-border bg-background/80 p-4">
                             <p className="flex items-center gap-2 text-xs uppercase tracking-[0.22em] text-muted-foreground">
                               <CalendarDays className="size-3.5" />
-                              Schedule
+                              {t('nominationsProps.schedule', { defaultValue: 'Schedule' })}
                             </p>
                             <p className="mt-3 text-sm font-medium text-foreground">{safeFormatDate(selectedTraining.date, 'MMM dd, yyyy')}</p>
-                            <p className="mt-1 text-xs text-muted-foreground">{formatSessionWindow(selectedTraining.startTime, selectedTraining.endTime)}</p>
+                            <p className="mt-1 text-xs text-muted-foreground">{formatSessionWindow(selectedTraining.startTime, selectedTraining.endTime, sessionWindowFallback)}</p>
                           </div>
                           <div className="rounded-xl border border-border bg-background/80 p-4">
                             <p className="flex items-center gap-2 text-xs uppercase tracking-[0.22em] text-muted-foreground">
                               <Users className="size-3.5" />
-                              Capacity
+                              {t('nominationsProps.capacity', { defaultValue: 'Capacity' })}
                             </p>
                             <p className="mt-3 text-sm font-medium text-foreground">
-                              {selectedTrainingAssignedCount} assigned / {selectedTraining.capacity} total
+                              {t('nominationsProps.capacitySummary', {
+                                assigned: selectedTrainingAssignedCount,
+                                total: selectedTraining.capacity,
+                                defaultValue: `${selectedTrainingAssignedCount} assigned / ${selectedTraining.capacity} total`,
+                              })}
                             </p>
-                            <p className="mt-1 text-xs text-muted-foreground">{selectedTrainingRemainingSeats} seat(s) remaining</p>
+                            <p className="mt-1 text-xs text-muted-foreground">{t('nominationsProps.remainingSeats', { count: selectedTrainingRemainingSeats, defaultValue: `${selectedTrainingRemainingSeats} seat(s) remaining` })}</p>
                           </div>
                           <div className="rounded-xl border border-border bg-background/80 p-4">
                             <p className="flex items-center gap-2 text-xs uppercase tracking-[0.22em] text-muted-foreground">
                               <Briefcase className="size-3.5" />
-                              Target audience
+                              {t('nominationsProps.targetAudience', { defaultValue: 'Target audience' })}
                             </p>
                             <div className="mt-3 flex flex-wrap gap-2">
                               {selectedTrainingAudience.length > 0 ? (
@@ -1135,11 +1155,11 @@ const Nominations: React.FC = () => {
                                   </Badge>
                                 ))
                               ) : (
-                                <span className="text-sm text-muted-foreground">Open to all designations</span>
+                                <span className="text-sm text-muted-foreground">{t('nominationsProps.openToAllDesignations', { defaultValue: 'Open to all designations' })}</span>
                               )}
                               {selectedTrainingAudience.length > 4 && (
                                 <Badge variant="outline" className="border-border bg-background text-muted-foreground">
-                                  +{selectedTrainingAudience.length - 4} more
+                                  {t('nominationsProps.moreCount', { count: selectedTrainingAudience.length - 4, defaultValue: `+${selectedTrainingAudience.length - 4} more` })}
                                 </Badge>
                               )}
                             </div>
@@ -1147,7 +1167,7 @@ const Nominations: React.FC = () => {
                           <div className="rounded-xl border border-border bg-background/80 p-4">
                             <p className="flex items-center gap-2 text-xs uppercase tracking-[0.22em] text-muted-foreground">
                               <Building2 className="size-3.5" />
-                              Institutions
+                              {t('nominationsProps.institutions', { defaultValue: 'Institutions' })}
                             </p>
                             <div className="mt-3 flex flex-wrap gap-2">
                               {selectedTrainingInstitutionNames.length > 0 ? (
@@ -1162,11 +1182,11 @@ const Nominations: React.FC = () => {
                                   </Badge>
                                 ))
                               ) : (
-                                <span className="text-sm text-muted-foreground">Open to all institutions</span>
+                                <span className="text-sm text-muted-foreground">{t('nominationsProps.openToAllInstitutions', { defaultValue: 'Open to all institutions' })}</span>
                               )}
                               {selectedTrainingInstitutionNames.length > 3 && (
                                 <Badge variant="outline" className="border-border bg-background text-muted-foreground">
-                                  +{selectedTrainingInstitutionNames.length - 3} more
+                                  {t('nominationsProps.moreCount', { count: selectedTrainingInstitutionNames.length - 3, defaultValue: `+${selectedTrainingInstitutionNames.length - 3} more` })}
                                 </Badge>
                               )}
                             </div>
@@ -1179,19 +1199,19 @@ const Nominations: React.FC = () => {
                       <CardContent className="flex h-full flex-col p-5">
                         <div className="flex items-start justify-between gap-4">
                           <div>
-                            <p className="text-xs uppercase tracking-[0.22em] text-muted-foreground">Previous nominations</p>
+                            <p className="text-xs uppercase tracking-[0.22em] text-muted-foreground">{t('nominationsProps.previousNominations', { defaultValue: 'Previous nominations' })}</p>
                             <p className="mt-3 text-3xl font-semibold text-foreground">{selectedTrainingNominations.length}</p>
-                            <p className="mt-1 text-sm text-muted-foreground">Existing records for this session.</p>
+                            <p className="mt-1 text-sm text-muted-foreground">{t('nominationsProps.sessionRecords', { defaultValue: 'Existing records for this session.' })}</p>
                           </div>
                           <Badge variant="outline" className="border-border bg-background text-muted-foreground">
-                            Latest first
+                            {t('nominationsProps.latestFirst', { defaultValue: 'Latest first' })}
                           </Badge>
                         </div>
 
                         <div className="mt-4 flex-1 space-y-2 overflow-y-auto pr-1 custom-scrollbar max-h-[320px] xl:max-h-[420px]">
                           {selectedTrainingNominations.length === 0 ? (
                             <div className="rounded-xl border border-dashed border-border bg-background/60 px-4 py-6 text-sm text-muted-foreground">
-                              No previous nominations for this training yet.
+                              {t('nominationsProps.noPreviousNominations', { defaultValue: 'No previous nominations for this training yet.' })}
                             </div>
                           ) : (
                             selectedTrainingNominations.map((nomination) => (
@@ -1203,7 +1223,7 @@ const Nominations: React.FC = () => {
                                   </p>
                                 </div>
                                 <Badge className={`border text-xs capitalize ${getNominationStatusClass(nomination.status)}`}>
-                                  {getNominationDisplayLabel(nomination.status)}
+                                  {getNominationDisplayLabel(nomination.status, t)}
                                 </Badge>
                               </div>
                             ))
@@ -1224,13 +1244,13 @@ const Nominations: React.FC = () => {
                   {selectedTraining && (
                     <div className="flex flex-wrap gap-2 text-xs">
                       <Badge variant="outline" className="border-emerald-500/20 bg-emerald-500/10 text-emerald-400">
-                        {readyParticipantsCount} ready
+                        {t('nominationsProps.readyCount', { count: readyParticipantsCount, defaultValue: `${readyParticipantsCount} ready` })}
                       </Badge>
                       <Badge variant="outline" className="border-border bg-background text-muted-foreground">
-                        {busyParticipantIds.length} busy
+                        {t('nominationsProps.busyCount', { count: busyParticipantIds.length, defaultValue: `${busyParticipantIds.length} busy` })}
                       </Badge>
                       <Badge variant="outline" className="border-border bg-background text-muted-foreground">
-                        {selectedTrainingAssignedCount} already assigned
+                        {t('nominationsProps.alreadyAssignedCount', { count: selectedTrainingAssignedCount, defaultValue: `${selectedTrainingAssignedCount} already assigned` })}
                       </Badge>
                     </div>
                   )}
@@ -1242,7 +1262,7 @@ const Nominations: React.FC = () => {
                     <Input
                       value={participantSearchTerm}
                       onChange={(e) => setParticipantSearchTerm(e.target.value)}
-                      placeholder="Search personnel by name, designation, or institution"
+                      placeholder={t('nominationsProps.participantSearchPlaceholder', { defaultValue: 'Search personnel by name, designation, or institution' })}
                       className="h-11 rounded-xl bg-background pl-10"
                     />
                   </div>
@@ -1260,7 +1280,7 @@ const Nominations: React.FC = () => {
                     </p>
                   )}
                   {selectedTraining && eligibleParticipants.length > 0 && filteredEligibleParticipants.length === 0 && (
-                    <p className="text-sm text-muted-foreground">No personnel matched your search.</p>
+                    <p className="text-sm text-muted-foreground">{t('nominationsProps.noPersonnelSearchMatches', { defaultValue: 'No personnel matched your search.' })}</p>
                   )}
                   {filteredEligibleParticipants.map((participant) => {
                     const isBusy = busyParticipantIds.includes(participant.id);
@@ -1288,7 +1308,7 @@ const Nominations: React.FC = () => {
                           <div>
                             <p className={`text-sm font-medium ${isDisabled ? 'text-muted-foreground' : 'text-foreground'}`}>{participant.name}</p>
                             <p className="text-xs text-muted-foreground">
-                              {participant.designation || 'Participant'} • {getInstitutionName(participant.institutionId)}
+                              {participant.designation || t('nominationsProps.participantLabel', { defaultValue: 'Participant' })} • {getInstitutionName(participant.institutionId)}
                             </p>
                           </div>
                         </div>
@@ -1303,7 +1323,7 @@ const Nominations: React.FC = () => {
                           </Badge>
                         ) : (
                           <Badge variant="outline" className="text-xs border-emerald-500/20 bg-emerald-500/10 text-emerald-400">
-                            Ready
+                            {t('nominationsProps.ready', { defaultValue: 'Ready' })}
                           </Badge>
                         )}
                       </div>
@@ -1335,30 +1355,30 @@ const Nominations: React.FC = () => {
             <DialogHeader>
               <DialogTitle>{t('nominationsProps.addNewPersonnel', { defaultValue: 'Add New Personnel' })}</DialogTitle>
               <DialogDescription>
-                Add a participant manually when they are not yet available in the personnel list.
+                {t('nominationsProps.addNewPersonnelDesc', { defaultValue: 'Add a participant manually when they are not yet available in the personnel list.' })}
               </DialogDescription>
             </DialogHeader>
 
             <div className="flex-1 overflow-y-auto space-y-4 pr-2 custom-scrollbar">
               <div>
-                <Label className="text-sm font-medium text-foreground mb-1 block">Full Name *</Label>
+                <Label className="text-sm font-medium text-foreground mb-1 block">{t('nominationsProps.fullName', { defaultValue: 'Full Name *' })}</Label>
                 <Input
-                  placeholder="e.g. Dr. John Doe"
+                  placeholder={t('nominationsProps.fullNamePlaceholder', { defaultValue: 'e.g. Dr. John Doe' })}
                   value={newParticipant.name}
                   onChange={(e) => setNewParticipant({ ...newParticipant, name: e.target.value })}
                 />
               </div>
               <div>
-                <Label className="text-sm font-medium text-foreground mb-1 block">Email Address *</Label>
+                <Label className="text-sm font-medium text-foreground mb-1 block">{t('nominationsProps.emailAddress', { defaultValue: 'Email Address *' })}</Label>
                 <Input
                   type="email"
-                  placeholder="john@example.com"
+                  placeholder={t('nominationsProps.emailPlaceholder', { defaultValue: 'john@example.com' })}
                   value={newParticipant.email}
                   onChange={(e) => setNewParticipant({ ...newParticipant, email: e.target.value })}
                 />
               </div>
               <div>
-                <Label className="text-sm font-medium text-foreground mb-1 block">Phone Number</Label>
+                <Label className="text-sm font-medium text-foreground mb-1 block">{t('nominationsProps.phoneNumber', { defaultValue: 'Phone Number' })}</Label>
                 <Input
                   placeholder="9876543210"
                   value={newParticipant.phone}
@@ -1369,17 +1389,17 @@ const Nominations: React.FC = () => {
                 />
               </div>
               <div>
-                <Label className="text-sm font-medium text-foreground mb-1 block">Designation</Label>
+                <Label className="text-sm font-medium text-foreground mb-1 block">{t('nominationsProps.designation', { defaultValue: 'Designation' })}</Label>
                 <Input
-                  placeholder="e.g. Senior Medical Officer"
+                  placeholder={t('nominationsProps.designationPlaceholder', { defaultValue: 'e.g. Senior Medical Officer' })}
                   value={newParticipant.designation}
                   onChange={(e) => setNewParticipant({ ...newParticipant, designation: e.target.value })}
                 />
               </div>
               <div>
-                <Label className="text-sm font-medium text-foreground mb-1 block">Department</Label>
+                <Label className="text-sm font-medium text-foreground mb-1 block">{t('nominationsProps.department', { defaultValue: 'Department' })}</Label>
                 <Input
-                  placeholder="e.g. Cardiology"
+                  placeholder={t('nominationsProps.departmentPlaceholder', { defaultValue: 'e.g. Cardiology' })}
                   value={newParticipant.department}
                   onChange={(e) => setNewParticipant({ ...newParticipant, department: e.target.value })}
                 />
@@ -1394,7 +1414,7 @@ const Nominations: React.FC = () => {
                 onClick={handleManualAddSubmit}
                 disabled={!newParticipant.name || !newParticipant.email || loading}
               >
-                {loading ? t('nominationsProps.submitting', { defaultValue: 'Saving...' }) : t('nominationsProps.saveParticipant', { defaultValue: 'Save Participant' })}
+                {loading ? t('nominationsProps.saving', { defaultValue: 'Saving...' }) : t('nominationsProps.saveParticipant', { defaultValue: 'Save Participant' })}
               </Button>
             </DialogFooter>
           </DialogContent>
