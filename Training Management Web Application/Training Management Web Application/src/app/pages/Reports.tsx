@@ -11,6 +11,7 @@ import { Button } from '../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../components/ui/card';
 import { Input } from '../components/ui/input';
 import { Badge } from '../components/ui/badge';
+import DateInputWithPickerIcon from '../components/DateInputWithPickerIcon';
 import {
   Select,
   SelectContent,
@@ -103,6 +104,23 @@ const Reports: React.FC = () => {
   const [trainingDateFilter, setTrainingDateFilter] = useState('');
   const [loading, setLoading] = useState(false);
   const currentInstitutionId = getEntityId(user?.institution) || getEntityId(user?.institutionId);
+  const isInstitutionScopedUser = user?.role === 'institutional_admin';
+
+  const ensureCurrentInstitutionOption = (items: Institution[]) => {
+    if (!currentInstitutionId) return items;
+    if (items.some((entry) => getEntityId(entry) === currentInstitutionId)) return items;
+
+    return [
+      {
+        id: currentInstitutionId,
+        name: asDisplayValue(user?.institution?.name, 'My Institution'),
+        type: 'institution',
+        location: '',
+        createdAt: new Date(),
+      } as Institution,
+      ...items,
+    ];
+  };
 
   useEffect(() => {
     if (!user) return;
@@ -114,18 +132,25 @@ const Reports: React.FC = () => {
           institutionsApi.getAll(),
         ]);
         setTrainings(Array.isArray(trainingsData) ? trainingsData : []);
-        setInstitutions(Array.isArray(institutionsData) ? institutionsData : []);
+        setInstitutions(ensureCurrentInstitutionOption(Array.isArray(institutionsData) ? institutionsData : []));
 
-        if ((user.role === 'institutional_admin' || user.role === 'medical_officer') && currentInstitutionId) {
+        if (isInstitutionScopedUser && currentInstitutionId) {
           setSelectedInstitution(currentInstitutionId);
         }
       } catch (error) {
         console.error('Error fetching data:', error);
+        setInstitutions(ensureCurrentInstitutionOption([]));
         toast.error(t('reportsPage.failLoad'));
       }
     };
     fetchData();
   }, [user, currentInstitutionId]);
+
+  useEffect(() => {
+    if (isInstitutionScopedUser && currentInstitutionId) {
+      setSelectedInstitution(currentInstitutionId);
+    }
+  }, [isInstitutionScopedUser, currentInstitutionId, selectedReport]);
 
   useEffect(() => {
     if (selectedReport !== 'training') {
@@ -271,14 +296,14 @@ const Reports: React.FC = () => {
       const allUsers = Array.isArray(usersRes) ? usersRes : [];
       const halls = Array.isArray(hallsRes) ? hallsRes : [];
 
-      // Filter data for Institution Admins and Medical Officers
-      if ((user?.role === 'institutional_admin' || user?.role === 'medical_officer') && currentInstitutionId) {
+      // Filter data only for institution-scoped admins
+      if (user?.role === 'institutional_admin' && currentInstitutionId) {
         nominations = nominations.filter((n) => getEntityId(n.institutionId) === currentInstitutionId);
         const institutionalParticipantIds = nominations.map((n) => getEntityId(n.participantId));
         attendanceRecords = attendanceRecords.filter((a) => institutionalParticipantIds.includes(getEntityId(a.participantId)));
       }
 
-      const analytics = (user?.role === 'institutional_admin' || user?.role === 'medical_officer')
+      const analytics = user?.role === 'institutional_admin'
         ? getTrainingAnalyticsSnapshot(nominations, attendanceRecords)
         : {
             totalNominated: analyticsResObj.totalNominated ?? nominations.length,
@@ -368,8 +393,8 @@ const Reports: React.FC = () => {
       const allUsers = Array.isArray(usersRes) ? usersRes : [];
       const halls = Array.isArray(hallsRes) ? hallsRes : [];
 
-      // Filter data for Institution Admins and Medical Officers
-      if ((user?.role === 'institutional_admin' || user?.role === 'medical_officer') && currentInstitutionId) {
+      // Filter data only for institution-scoped admins
+      if (user?.role === 'institutional_admin' && currentInstitutionId) {
         nominations = nominations.filter((n) => getEntityId(n.institutionId) === currentInstitutionId);
         const institutionalParticipantIds = nominations.map((n) => getEntityId(n.participantId));
         attendanceRecords = attendanceRecords.filter((a) => institutionalParticipantIds.includes(getEntityId(a.participantId)));
@@ -885,7 +910,7 @@ const Reports: React.FC = () => {
               <Select value={selectedReport} onValueChange={(value) => {
                 setSelectedReport(value);
                 setSelectedTraining('');
-                setSelectedInstitution('');
+                setSelectedInstitution(value === 'institution' && isInstitutionScopedUser && currentInstitutionId ? currentInstitutionId : '');
               }}>
                 <SelectTrigger className="bg-background text-foreground">
                   <SelectValue placeholder={t('reportsPage.selectType')} />
@@ -920,15 +945,12 @@ const Reports: React.FC = () => {
                       />
                     </div>
                     <div className="flex flex-col gap-3 sm:flex-row">
-                      <div className="relative flex-1">
-                        <Calendar className="pointer-events-none absolute left-3 top-3.5 size-4 text-primary/60" />
-                        <Input
-                          type="date"
-                          value={trainingDateFilter}
-                          onChange={(e) => setTrainingDateFilter(e.target.value)}
-                          className="h-11 rounded-xl bg-input-background pl-10"
-                        />
-                      </div>
+                      <DateInputWithPickerIcon
+                        wrapperClassName="flex-1"
+                        value={trainingDateFilter}
+                        onChange={(e) => setTrainingDateFilter(e.target.value)}
+                        className="h-11 rounded-xl bg-input-background"
+                      />
                       {(trainingSearchTerm || trainingDateFilter) && (
                         <Button
                           type="button"
@@ -1025,14 +1047,14 @@ const Reports: React.FC = () => {
                 <Select
                   value={selectedInstitution}
                   onValueChange={setSelectedInstitution}
-                  disabled={user?.role === 'institutional_admin' || user?.role === 'medical_officer'}
+                  disabled={isInstitutionScopedUser}
                 >
                   <SelectTrigger className="bg-background text-foreground">
                     <SelectValue placeholder={t('reportsPage.identifyInst')} />
                   </SelectTrigger>
                   <SelectContent>
                     {institutions.map((institution) => (
-                      <SelectItem key={institution.id} value={institution.id}>
+                      <SelectItem key={getEntityId(institution)} value={getEntityId(institution)}>
                         {institution.name} ({institution.type.toUpperCase()})
                       </SelectItem>
                     ))}

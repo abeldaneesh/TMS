@@ -9,6 +9,7 @@ import { Input } from '../components/ui/input';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
 import { Label } from '../components/ui/label';
+import DateInputWithPickerIcon from '../components/DateInputWithPickerIcon';
 import { safeFormatDate } from '../../utils/date';
 import {
   getTrainingDateInputValue,
@@ -279,15 +280,12 @@ const Analytics: React.FC = () => {
                 </div>
 
                 <div className="flex flex-col gap-3 sm:flex-row">
-                  <div className="relative flex-1">
-                    <CalendarDays className="pointer-events-none absolute left-3 top-3.5 size-4 text-primary/60" />
-                    <Input
-                      type="date"
-                      value={trainingDateFilter}
-                      onChange={(e) => setTrainingDateFilter(e.target.value)}
-                      className="h-11 rounded-xl border-white/10 bg-background pl-10"
-                    />
-                  </div>
+                  <DateInputWithPickerIcon
+                    wrapperClassName="flex-1"
+                    value={trainingDateFilter}
+                    onChange={(e) => setTrainingDateFilter(e.target.value)}
+                    className="h-11 rounded-xl border-white/10 bg-background"
+                  />
 
                   {(trainingSearchTerm || trainingDateFilter) && (
                     <Button

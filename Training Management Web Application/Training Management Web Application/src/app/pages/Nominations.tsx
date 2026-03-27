@@ -7,6 +7,7 @@ import { CheckCircle, XCircle, Clock, Users, Search, CalendarDays, Building2, Br
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Badge } from '../components/ui/badge';
+import DateInputWithPickerIcon from '../components/DateInputWithPickerIcon';
 import { Checkbox } from '../components/ui/checkbox';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import {
@@ -934,15 +935,12 @@ const Nominations: React.FC = () => {
                           className="h-11 rounded-xl bg-background pl-10"
                         />
                       </div>
-                      <div className="relative w-full lg:w-[210px]">
-                        <CalendarDays className="pointer-events-none absolute left-3 top-3.5 size-4 text-primary/60" />
-                        <Input
-                          type="date"
-                          value={trainingDateFilter}
-                          onChange={(e) => setTrainingDateFilter(e.target.value)}
-                          className="h-11 rounded-xl bg-background pl-10"
-                        />
-                      </div>
+                      <DateInputWithPickerIcon
+                        wrapperClassName="w-full lg:w-[210px]"
+                        value={trainingDateFilter}
+                        onChange={(e) => setTrainingDateFilter(e.target.value)}
+                        className="h-11 rounded-xl bg-background"
+                      />
                       {(trainingSearchTerm || trainingDateFilter) && (
                         <Button
                           type="button"

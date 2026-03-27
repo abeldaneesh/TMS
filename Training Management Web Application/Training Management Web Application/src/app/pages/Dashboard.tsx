@@ -62,20 +62,27 @@ const Dashboard: React.FC = () => {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
+  const normalizeDate = (date: Date | string) => {
+    const normalized = new Date(date);
+    normalized.setHours(0, 0, 0, 0);
+    return normalized;
+  };
+
+  const selectedDateValue = selectedDate ? normalizeDate(selectedDate) : undefined;
+  const selectedDateIsPast = Boolean(selectedDateValue && selectedDateValue < today);
+  const selectedDateIsToday = Boolean(selectedDateValue && selectedDateValue.getTime() === today.getTime());
+
   const upcomingTrainings = allTrainings
     .filter(t => {
       if (!t || t.status === 'cancelled') return false;
       // If participant, hide if already attended
       if (user?.role === 'participant' && t.userStatus === 'attended') return false;
 
-      const tDate = new Date(t.date);
-      tDate.setHours(0, 0, 0, 0);
+      const tDate = normalizeDate(t.date);
 
-      if (selectedDate) {
-        const sDate = new Date(selectedDate);
-        sDate.setHours(0, 0, 0, 0);
-        // Only show in upcoming if the selected date is today or in the future
-        return tDate.getTime() === sDate.getTime() && sDate >= today;
+      if (selectedDateValue) {
+        // Only scheduled sessions should appear in the upcoming bucket for the selected day.
+        return tDate.getTime() === selectedDateValue.getTime() && selectedDateValue >= today && t.status === 'scheduled';
       }
 
       return tDate >= today && t.status === 'scheduled';
@@ -84,19 +91,21 @@ const Dashboard: React.FC = () => {
 
   const completedTrainings = allTrainings
     .filter(t => {
-      if (!t) return false;
+      if (!t || t.status === 'cancelled') return false;
+      const tDate = normalizeDate(t.date);
+
+      if (selectedDateValue && tDate.getTime() !== selectedDateValue.getTime()) {
+        return false;
+      }
+
       // If participant, it's completed for them IF they attended OR the training is officially completed
       if (user?.role === 'participant') {
         return t.userStatus === 'attended' || t.status === 'completed';
       }
 
-      if (selectedDate) {
-        const tDate = new Date(t.date);
-        tDate.setHours(0, 0, 0, 0);
-        const sDate = new Date(selectedDate);
-        sDate.setHours(0, 0, 0, 0);
-        // Only show in past if the selected date is in the past
-        return tDate.getTime() === sDate.getTime() && sDate < today;
+      if (selectedDateValue) {
+        // When a past day is selected, every non-cancelled session from that date belongs in past sessions.
+        return selectedDateIsPast || t.status === 'completed';
       }
 
       return t.status === 'completed';
@@ -105,19 +114,21 @@ const Dashboard: React.FC = () => {
 
   const activeOrOngoing = allTrainings
     .filter(t => {
-      if (!t) return false;
+      if (!t || t.status === 'cancelled') return false;
       if (user?.role === 'participant' && t.userStatus === 'attended') return false;
-
-      if (selectedDate) {
-        const tDate = new Date(t.date);
-        tDate.setHours(0, 0, 0, 0);
-        const sDate = new Date(selectedDate);
-        sDate.setHours(0, 0, 0, 0);
-        return tDate.getTime() === sDate.getTime();
-      }
 
       return t.status === 'ongoing';
     });
+
+  const selectedDateActiveTrainings = allTrainings
+    .filter(t => {
+      if (!selectedDateValue || !t || t.status === 'cancelled') return false;
+      if (user?.role === 'participant' && t.userStatus === 'attended') return false;
+
+      const tDate = normalizeDate(t.date);
+      return tDate.getTime() === selectedDateValue.getTime() && selectedDateIsToday && t.status === 'ongoing';
+    })
+    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
   const actionRequired = allTrainings
     .filter(t => {
@@ -146,9 +157,8 @@ const Dashboard: React.FC = () => {
     });
 
   const hasTrainingsOnSelectedDate =
-    activeOrOngoing.length > 0 || upcomingTrainings.length > 0 || completedTrainings.length > 0;
+    selectedDateActiveTrainings.length > 0 || upcomingTrainings.length > 0 || completedTrainings.length > 0;
   const canCreateTraining = user?.role === 'master_admin' || user?.role === 'program_officer';
-  const selectedDateIsPast = Boolean(selectedDate && selectedDate < today);
   const showDashboardCalendar =
     user?.role === 'medical_officer' ||
     user?.role === 'program_officer' ||
@@ -356,12 +366,12 @@ const Dashboard: React.FC = () => {
             )}
 
             {/* Action Required / Ongoing Trainings */}
-            {actionRequired.length > 0 && (activeFilter === 'all' || activeFilter === 'action') && (
+            {(selectedDate ? selectedDateActiveTrainings.length > 0 : actionRequired.length > 0) && (activeFilter === 'all' || activeFilter === 'action') && (
               <HorizontalScrollList
                 title={selectedDate ? t('dashboard.sections.activeOnDate.title', 'Active Sessions') : (activeFilter === 'action' ? t('dashboard.sections.actionRequired.title', 'Action Required') : t('dashboard.sections.ongoing.title', 'Ongoing Trainings'))}
                 subtitle={selectedDate ? t('dashboard.sections.activeOnDate.subtitle', 'Sessions for the selected day') : (activeFilter === 'action' ? t('dashboard.sections.actionRequired.subtitle', 'Items needing your attention') : t('dashboard.sections.ongoing.subtitle', 'Currently active sessions'))}
               >
-                {actionRequired.map(training => (
+                {(selectedDate ? selectedDateActiveTrainings : actionRequired).map(training => (
                   <MediaCard
                     key={training.id}
                     id={training.id}

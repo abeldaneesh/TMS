@@ -23,6 +23,7 @@ import {
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
+import DateInputWithPickerIcon from '../components/DateInputWithPickerIcon';
 import { Badge } from '../components/ui/badge';
 import { toast } from 'sonner';
 import { useAuth } from '../../contexts/AuthContext';
@@ -546,15 +547,12 @@ const HallAvailability: React.FC = () => {
         <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_auto]">
           <div className="space-y-2">
             <Label className="text-xs font-medium uppercase tracking-[0.24em] text-muted-foreground">{t('hallAvailability.date')}</Label>
-            <div className="relative">
-              <Calendar className="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                type="date"
-                value={selectedDate}
-                onChange={(e) => setSelectedDate(e.target.value)}
-                className="h-12 rounded-2xl border-border bg-background pl-11 text-foreground focus:border-primary/50 focus:ring-2 focus:ring-primary/10"
-              />
-            </div>
+            <DateInputWithPickerIcon
+              value={selectedDate}
+              onChange={(e) => setSelectedDate(e.target.value)}
+              className="h-12 rounded-2xl border-border bg-background pl-11 text-foreground focus:border-primary/50 focus:ring-2 focus:ring-primary/10"
+              buttonClassName="left-4 text-foreground/80 hover:text-foreground"
+            />
           </div>
 
           <div className="space-y-2">

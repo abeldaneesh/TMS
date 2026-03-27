@@ -158,26 +158,29 @@ body {
 
 input[type="date"] {
   color-scheme: light;
-  appearance: none;
-  -webkit-appearance: none;
-  background-image: var(--date-picker-icon);
-  background-position: right 0.875rem center;
-  background-repeat: no-repeat;
-  background-size: 1rem 1rem;
-  padding-right: 2.75rem;
 }
 
 input[type="date"]::-webkit-calendar-picker-indicator {
   cursor: pointer;
-  opacity: 0;
-}
-
-input[type="date"]::-webkit-calendar-picker-indicator:hover {
   opacity: 1;
 }
 
 .dark input[type="date"] {
   color-scheme: dark;
+}
+
+.dark input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(1);
+}
+
+input[type="date"].date-input-with-leading-icon {
+  background-image: none;
+  padding-right: 0.75rem;
+}
+
+input[type="date"].date-input-with-leading-icon::-webkit-calendar-picker-indicator {
+  opacity: 0;
+  pointer-events: none;
 }
 
 h1,
