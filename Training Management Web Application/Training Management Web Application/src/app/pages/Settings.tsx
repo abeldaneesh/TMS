@@ -5,6 +5,7 @@ import { usersApi, institutionsApi, BASE_URL } from '../../services/api';
 import { Institution } from '../../types';
 import { toast } from 'sonner';
 import { User, Lock, Save, Loader2, Camera } from 'lucide-react';
+import { getNotificationMode, NotificationMode, setNotificationMode } from '../../utils/notificationPreferences';
 import { Avatar, AvatarFallback, AvatarImage } from '../components/ui/avatar';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -49,6 +50,7 @@ const Settings: React.FC = () => {
     const [uploading, setUploading] = useState(false);
     const fileInputRef = React.useRef<HTMLInputElement>(null);
     const [institutions, setInstitutions] = useState<Institution[]>([]);
+    const [notificationMode, setNotificationModeState] = useState<NotificationMode>(getNotificationMode(user?.id));
 
     useEffect(() => {
         const fetchInstitutions = async () => {
@@ -83,6 +85,7 @@ const Settings: React.FC = () => {
                 profilePicture: user.profilePicture || '',
                 institutionId: (typeof user.institutionId === 'object' ? (user.institutionId as any)?.id || (user.institutionId as any)?._id : user.institutionId) || '',
             });
+            setNotificationModeState(getNotificationMode(user.id));
         }
     }, [user]);
 
@@ -178,6 +181,11 @@ const Settings: React.FC = () => {
         }
     };
 
+    const onSaveNotificationPreferences = () => {
+        setNotificationMode(user?.id, notificationMode);
+        toast.success(t('settings.notifications.saved', 'Notification preference updated'));
+    };
+
     return (
         <div className="pb-12 space-y-6 text-foreground max-w-4xl mx-auto">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 mb-6">
@@ -198,6 +206,9 @@ const Settings: React.FC = () => {
                     </TabsTrigger>
                     <TabsTrigger value="security" className="data-[state=active]:bg-transparent data-[state=active]:text-foreground data-[state=active]:border-foreground bg-transparent border-b-2 border-transparent text-muted-foreground rounded-none py-3 px-1 font-semibold text-base transition-colors">
                         {t('settings.tabs.security', 'Security')}
+                    </TabsTrigger>
+                    <TabsTrigger value="notifications" className="data-[state=active]:bg-transparent data-[state=active]:text-foreground data-[state=active]:border-foreground bg-transparent border-b-2 border-transparent text-muted-foreground rounded-none py-3 px-1 font-semibold text-base transition-colors">
+                        {t('settings.tabs.notifications', 'Notifications')}
                     </TabsTrigger>
                 </TabsList>
 
@@ -402,6 +413,48 @@ const Settings: React.FC = () => {
                                     </Button>
                                 </div>
                             </form>
+                        </CardContent>
+                    </Card>
+                </TabsContent>
+
+                <TabsContent value="notifications" className="mt-0 focus-visible:outline-none">
+                    <Card className="bg-card shadow-sm border-border">
+                        <CardHeader>
+                            <CardTitle>{t('settings.notifications.title', 'Notification Preferences')}</CardTitle>
+                            <CardDescription>{t('settings.notifications.desc', 'Choose how this app should alert you when a new notification arrives while you are using it.')}</CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-6">
+                            <div className="space-y-2 max-w-md">
+                                <Label htmlFor="notificationMode">{t('settings.notifications.modeLabel', 'Alert mode')}</Label>
+                                <Select
+                                    value={notificationMode}
+                                    onValueChange={(value) => setNotificationModeState(value as NotificationMode)}
+                                >
+                                    <SelectTrigger id="notificationMode" className="bg-background">
+                                        <SelectValue placeholder={t('settings.notifications.modeLabel', 'Alert mode')} />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="sound">{t('settings.notifications.modes.sound', 'Sound')}</SelectItem>
+                                        <SelectItem value="vibrate">{t('settings.notifications.modes.vibrate', 'Vibrate')}</SelectItem>
+                                        <SelectItem value="silent">{t('settings.notifications.modes.silent', 'Silent')}</SelectItem>
+                                        <SelectItem value="off">{t('settings.notifications.modes.off', 'Off')}</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+
+                            <div className="rounded-2xl border border-border bg-background/60 p-4 text-sm text-muted-foreground">
+                                {notificationMode === 'sound' && t('settings.notifications.help.sound', 'Play sound and show in-app notification popups.')}
+                                {notificationMode === 'vibrate' && t('settings.notifications.help.vibrate', 'Vibrate and show in-app notification popups without sound.')}
+                                {notificationMode === 'silent' && t('settings.notifications.help.silent', 'Show in-app notification popups without sound or vibration.')}
+                                {notificationMode === 'off' && t('settings.notifications.help.off', 'Turn off in-app notification alerts. Notifications will still appear in your notification list.')}
+                            </div>
+
+                            <div className="flex justify-end">
+                                <Button type="button" onClick={onSaveNotificationPreferences}>
+                                    <Save className="mr-2 size-4" />
+                                    {t('settings.notifications.save', 'Save Notification Settings')}
+                                </Button>
+                            </div>
                         </CardContent>
                     </Card>
                 </TabsContent>

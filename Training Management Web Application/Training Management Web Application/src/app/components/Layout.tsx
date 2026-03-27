@@ -17,6 +17,7 @@ import TmsLogo from './TmsLogo';
 import { AnimatePresence } from 'framer-motion';
 import PageTransition from './PageTransition';
 import LoginWelcomeOverlay from './LoginWelcomeOverlay';
+import { getNotificationMode, NotificationMode } from '../../utils/notificationPreferences';
 
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
@@ -50,9 +51,36 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const [unreadCount, setUnreadCount] = useState(0);
   const prevUnreadCountRef = useRef(0);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const [notificationMode, setNotificationMode] = useState<NotificationMode>(getNotificationMode(user.id));
+
+  const triggerVibration = () => {
+    if (typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function') {
+      navigator.vibrate([180, 80, 180]);
+    }
+  };
+
+  const playNotificationFeedback = (mode: NotificationMode) => {
+    if (mode === 'sound' && audioRef.current) {
+      audioRef.current.play().catch(e => console.log('Audio prevented', e));
+    }
+
+    if (mode === 'vibrate') {
+      triggerVibration();
+    }
+  };
 
   useEffect(() => {
     audioRef.current = new Audio('/notification.mp3');
+    setNotificationMode(getNotificationMode(user.id));
+
+    const handleModeChange = (event: Event) => {
+      const customEvent = event as CustomEvent<{ userId?: string; mode?: NotificationMode }>;
+      if (!customEvent.detail?.userId || customEvent.detail.userId === user.id) {
+        setNotificationMode(getNotificationMode(user.id));
+      }
+    };
+
+    window.addEventListener('dmo-notification-mode-changed', handleModeChange as EventListener);
 
     // Request native Push Notification permissions and register (Only on actual devices)
     const registerPush = async () => {
@@ -83,11 +111,20 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         // Listen for incoming pushes while the app is OPEN
         PushNotifications.addListener('pushNotificationReceived', (notification: PushNotificationSchema) => {
           console.log('Push received: ', notification);
-          // Play the sound manually since we're in the foreground
-          if (audioRef.current) {
-            audioRef.current.play().catch(e => console.log('Audio prevented', e));
-          }
           fetchNotifications(); // Update UI badges
+
+          if (notificationMode === 'off') {
+            return;
+          }
+
+          playNotificationFeedback(notificationMode);
+
+          const channelId =
+            notificationMode === 'vibrate'
+              ? 'dmo_alerts_vibrate_v1'
+              : notificationMode === 'silent'
+                ? 'dmo_alerts_silent_v1'
+                : 'dmo_alerts_sound_v1';
 
           // Trigger Local Notification for foreground popups
           LocalNotifications.schedule({
@@ -97,10 +134,10 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 body: notification.body || '',
                 id: new Date().getTime(),
                 schedule: { at: new Date(Date.now() + 100) },
-                sound: 'notification',
+                sound: notificationMode === 'sound' ? 'notification' : undefined,
                 actionTypeId: '',
                 extra: null,
-                channelId: 'dmo_alerts_v3', // Match backend channel
+                channelId,
               }
             ]
           });
@@ -111,25 +148,58 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           console.log('Push action performed: ', notification);
         });
 
-        // Create the default channel (Required for Android 8+)
-        // v3 bypasses Android cached channel states that might be silencing the app
+        // Create dedicated channels for sound/vibrate/silent foreground handling.
         await PushNotifications.createChannel({
-          id: 'dmo_alerts_v3',
-          name: 'DMO Alerts (Urgent)',
-          description: 'Important notifications from the system',
+          id: 'dmo_alerts_sound_v1',
+          name: 'DMO Alerts (Sound)',
+          description: 'Sound alerts from the system',
           importance: 5,
           visibility: 1,
-          sound: 'notification'
+          sound: 'notification',
+          vibration: true,
+        });
+        await LocalNotifications.createChannel({
+          id: 'dmo_alerts_sound_v1',
+          name: 'DMO Alerts (Sound)',
+          description: 'Sound alerts from the system',
+          importance: 5,
+          visibility: 1,
+          sound: 'notification',
+          vibration: true,
         });
 
-        // Also create channel for LocalNotifications
-        await LocalNotifications.createChannel({
-          id: 'dmo_alerts_v3',
-          name: 'DMO Alerts (Urgent)',
-          description: 'Important notifications from the system',
+        await PushNotifications.createChannel({
+          id: 'dmo_alerts_vibrate_v1',
+          name: 'DMO Alerts (Vibrate)',
+          description: 'Vibration-only alerts from the system',
           importance: 5,
           visibility: 1,
-          sound: 'notification'
+          vibration: true,
+        });
+        await LocalNotifications.createChannel({
+          id: 'dmo_alerts_vibrate_v1',
+          name: 'DMO Alerts (Vibrate)',
+          description: 'Vibration-only alerts from the system',
+          importance: 5,
+          visibility: 1,
+          vibration: true,
+        });
+
+        await PushNotifications.createChannel({
+          id: 'dmo_alerts_silent_v1',
+          name: 'DMO Alerts (Silent)',
+          description: 'Silent alerts from the system',
+          importance: 3,
+          visibility: 1,
+          vibration: false,
+        });
+        await LocalNotifications.createChannel({
+          id: 'dmo_alerts_silent_v1',
+          name: 'DMO Alerts (Silent)',
+          description: 'Silent alerts from the system',
+          importance: 3,
+          visibility: 1,
+          vibration: false,
         });
       } catch (e) {
         console.log('Push setup failed (likely not on device)', e);
@@ -138,12 +208,13 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     registerPush();
 
     return () => {
+      window.removeEventListener('dmo-notification-mode-changed', handleModeChange as EventListener);
       // Cleanup listeners on unmount
       if (Capacitor.isNativePlatform()) {
         PushNotifications.removeAllListeners();
       }
     }
-  }, []);
+  }, [user.id, notificationMode]);
 
   const getActionUrl = (notification: any) => {
     if (notification.actionUrl) return notification.actionUrl;
@@ -177,8 +248,8 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       // Only play the fallback web sound if unread count increased while in foreground on the web
       // (The Push Notification listener handles actual pushes on mobile)
       if (currentUnread > prevUnreadCountRef.current && !Capacitor.isNativePlatform()) {
-        if (audioRef.current) {
-          audioRef.current.play().catch(e => console.log('Audio play prevented', e));
+        if (notificationMode !== 'off' && notificationMode !== 'silent') {
+          playNotificationFeedback(notificationMode);
         }
       }
       prevUnreadCountRef.current = currentUnread;
@@ -191,7 +262,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     fetchNotifications();
     const interval = setInterval(fetchNotifications, 15000); // Poll every 15s instead of 60s
     return () => clearInterval(interval);
-  }, []);
+  }, [notificationMode]);
 
   useEffect(() => {
     if (!user) return;

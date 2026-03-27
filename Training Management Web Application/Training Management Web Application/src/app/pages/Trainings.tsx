@@ -13,6 +13,7 @@ import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Badge } from '../components/ui/badge';
 import { safeFormatDate } from '../../utils/date';
+import { getTrainingStatusPresentation } from '../../utils/trainingStatus';
 import { toast } from 'sonner';
 
 import FilterChips from '../components/FilterChips';
@@ -101,10 +102,31 @@ const Trainings: React.FC = () => {
       draft: 'text-muted-foreground',
       scheduled: 'text-blue-400',
       ongoing: 'text-emerald-500',
+      overdue: 'text-amber-400',
       completed: 'text-purple-400',
       cancelled: 'text-destructive',
     };
     return variants[status as keyof typeof variants] || variants.draft;
+  };
+
+  const getStatusLabel = (training: Training) => {
+    const presentation = getTrainingStatusPresentation(training);
+
+    if (presentation === 'overdue') {
+      return t('trainings.statuses.overdue', 'Update Required');
+    }
+
+    return t(`trainings.filters.${presentation}`, presentation.charAt(0).toUpperCase() + presentation.slice(1));
+  };
+
+  const getStatusMessage = (training: Training) => {
+    const presentation = getTrainingStatusPresentation(training);
+    if (presentation !== 'overdue') return null;
+
+    return t(
+      'trainings.statusMessages.overdue',
+      'Session date has passed. Mark this training as completed or aborted.'
+    );
   };
 
   const filteredTrainings = trainings.filter(training => {
@@ -308,7 +330,11 @@ const Trainings: React.FC = () => {
             <div className="w-48 shrink-0"></div>
           </div>
 
-          {sortedTrainings.map((training, index) => (
+          {sortedTrainings.map((training, index) => {
+            const statusPresentation = getTrainingStatusPresentation(training);
+            const statusMessage = getStatusMessage(training);
+
+            return (
             <div
               key={training.id}
               className="group flex flex-col sm:min-h-[84px] sm:flex-row sm:items-center py-3 px-2 sm:px-4 hover:bg-white/5 rounded-lg transition-colors border-b border-border/30 cursor-pointer"
@@ -333,6 +359,11 @@ const Trainings: React.FC = () => {
                   <p className="text-sm text-muted-foreground truncate mt-0.5">
                     {training.program} • {getTrainerName(training)}
                   </p>
+                  {statusMessage && (
+                    <p className="mt-1 text-xs text-amber-400/90 truncate">
+                      {statusMessage}
+                    </p>
+                  )}
                 </div>
               </div>
 
@@ -348,8 +379,11 @@ const Trainings: React.FC = () => {
               </div>
 
               <div className="hidden lg:flex h-full items-center w-32 shrink-0 px-4">
-                <span className={`text-xs font-medium uppercase tracking-wider ${getStatusBadge(training.status)}`}>
-                  {training.status}
+                <span
+                  className={`text-xs font-medium uppercase tracking-wider ${getStatusBadge(statusPresentation)}`}
+                  title={statusMessage || undefined}
+                >
+                  {getStatusLabel(training)}
                 </span>
               </div>
 
@@ -431,7 +465,8 @@ const Trainings: React.FC = () => {
                 )}
               </div>
             </div>
-          ))}
+            );
+          })}
         </div>
       )}
 

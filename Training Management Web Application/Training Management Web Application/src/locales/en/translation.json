@@ -115,15 +115,19 @@
     "clearDate": "Clear date",
       "filters": {
         "all": "All Deployments",
-        "draft": "Drafts",
-        "scheduled": "Scheduled",
-        "ongoing": "Active",
-        "completed": "Completed",
-        "cancelled": "Aborted"
-      },
-      "scope": {
-        "all": "All Trainings",
-        "mine": "My Trainings"
+      "draft": "Drafts",
+      "scheduled": "Scheduled",
+      "ongoing": "Active",
+      "overdue": "Update Required",
+      "completed": "Completed",
+      "cancelled": "Aborted"
+    },
+    "statusMessages": {
+      "overdue": "Session date has passed. Mark this training as completed or aborted."
+    },
+    "scope": {
+      "all": "All Trainings",
+      "mine": "My Trainings"
       },
       "noResults": "No matching results",
     "adjustSearch": "Try adjusting your search terms or filters to find what you are looking for.",
@@ -219,7 +223,8 @@
     "subtitle": "Manage your account configuration and security",
     "tabs": {
       "profile": "Profile",
-      "security": "Security"
+      "security": "Security",
+      "notifications": "Notifications"
     },
     "profile": {
       "title": "Personal Information",
@@ -239,6 +244,25 @@
       "newPassword": "New Password",
       "confirmPassword": "Confirm New Password",
       "update": "Update Password"
+    },
+    "notifications": {
+      "title": "Notification Preferences",
+      "desc": "Choose how this app should alert you when a new notification arrives while you are using it.",
+      "modeLabel": "Alert mode",
+      "save": "Save Notification Settings",
+      "saved": "Notification preference updated",
+      "modes": {
+        "sound": "Sound",
+        "vibrate": "Vibrate",
+        "silent": "Silent",
+        "off": "Off"
+      },
+      "help": {
+        "sound": "Play sound and show in-app notification popups.",
+        "vibrate": "Vibrate and show in-app notification popups without sound.",
+        "silent": "Show in-app notification popups without sound or vibration.",
+        "off": "Turn off in-app notification alerts. Notifications will still appear in your notification list."
+      }
     }
   },
   "userApprovals": {

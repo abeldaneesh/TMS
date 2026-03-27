@@ -16,6 +16,7 @@ import AttendanceSessionManager from '../components/AttendanceSessionManager';
 import LoadingScreen from '../components/LoadingScreen';
 import { generateCertificatePDF } from '../../utils/certificateGenerator';
 import { generateTrainingFeedbackPdf } from '../../utils/feedbackReport';
+import { getTrainingStatusPresentation } from '../../utils/trainingStatus';
 import { trainingsApi, feedbackApi, institutionsApi } from '../../services/api';
 import FeedbackSubmissionDialog from '../components/FeedbackSubmissionDialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
@@ -244,6 +245,7 @@ const TrainingDetails: React.FC = () => {
             draft: 'bg-gray-200 text-gray-800',
             scheduled: 'bg-blue-100 text-blue-800',
             ongoing: 'bg-green-100 text-green-800',
+            overdue: 'bg-amber-100 text-amber-800',
             completed: 'bg-purple-100 text-purple-800',
             cancelled: 'bg-red-100 text-red-800',
         };
@@ -328,9 +330,15 @@ const TrainingDetails: React.FC = () => {
     const canSubmitFeedback = Boolean(user?.role === 'participant' && training.status === 'completed' && training.userStatus === 'attended');
     const assignedParticipantsCount = training.assignedParticipantsCount || 0;
     const remainingCapacity = training.remainingCapacity !== undefined ? training.remainingCapacity : training.capacity;
-    const statusLabel = training.status
-        ? `${training.status.charAt(0).toUpperCase()}${training.status.slice(1)}`
+    const statusPresentation = getTrainingStatusPresentation(training as any);
+    const statusLabel = statusPresentation === 'overdue'
+        ? 'Update Required'
+        : statusPresentation
+        ? `${statusPresentation.charAt(0).toUpperCase()}${statusPresentation.slice(1)}`
         : 'Draft';
+    const overdueStatusMessage = statusPresentation === 'overdue'
+        ? 'This session date has passed. Mark it as completed or cancelled to keep the training history accurate.'
+        : null;
     const formattedFullDate = format(new Date(training.date), 'EEEE, MMMM do, yyyy');
     const formattedShortDate = format(new Date(training.date), 'EEE, MMM d');
     const sessionTime = `${training.startTime} - ${training.endTime}`;
@@ -383,11 +391,16 @@ const TrainingDetails: React.FC = () => {
                     <div className="flex flex-col gap-6 xl:flex-row xl:items-start xl:justify-between">
                         <div className="max-w-3xl">
                             <div className="mb-4 flex flex-wrap items-center gap-3">
-                                <Badge className={`px-3 py-1.5 text-xs uppercase tracking-[0.24em] ${getStatusBadge(training.status)}`}>
+                                <Badge className={`px-3 py-1.5 text-xs uppercase tracking-[0.24em] ${getStatusBadge(statusPresentation)}`}>
                                     {statusLabel}
                                 </Badge>
                                 <span className="text-sm text-muted-foreground">Session overview</span>
                             </div>
+                            {overdueStatusMessage && (
+                                <div className="mb-4 max-w-2xl rounded-2xl border border-amber-500/20 bg-amber-500/10 px-4 py-3 text-sm text-amber-300">
+                                    {overdueStatusMessage}
+                                </div>
+                            )}
                             <h1 className="text-3xl font-bold tracking-tight text-foreground sm:text-5xl">{training.title}</h1>
                             <p className="mt-3 text-lg font-medium text-primary sm:text-xl">{training.program}</p>
                             <p className="mt-4 max-w-2xl text-sm leading-7 text-muted-foreground sm:text-base">
