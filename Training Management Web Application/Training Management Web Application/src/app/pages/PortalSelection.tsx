@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { ShieldCheck, UserCog, Users, Database, Cpu, Activity } from 'lucide-react';
 import { Card } from '../components/ui/card';
 import { motion } from 'framer-motion';
+import AuthHeroPanel from '../components/AuthHeroPanel';
 import TmsLogo from '../components/TmsLogo';
 
 const PortalSelection: React.FC = () => {
@@ -53,32 +54,7 @@ const PortalSelection: React.FC = () => {
     return (
         <div className="min-h-screen flex flex-col md:flex-row bg-background text-foreground transition-colors duration-300">
             {/* Left Column: Background Image (Desktop only) */}
-            <div className="hidden md:flex md:w-1/2 relative overflow-hidden">
-                <img
-                    src="https://images.unsplash.com/photo-1562774053-701939374585?q=80&w=1986&auto=format&fit=crop"
-                    alt="Institutional Campus"
-                    className="absolute inset-0 w-full h-full object-cover"
-                />
-                <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" />
-                <div className="relative z-10 flex flex-col items-center justify-center w-full p-12 text-white">
-                    <div className="mb-8">
-                        <TmsLogo className="size-28 text-white" />
-                    </div>
-                    <h1
-                        className="text-4xl font-semibold tracking-tight text-center text-white drop-shadow-[0_6px_24px_rgba(0,0,0,0.65)]"
-                        style={{ color: '#ffffff' }}
-                    >
-                        DMO TMS
-                    </h1>
-                    <p
-                        className="text-xl mt-4 font-medium opacity-90 text-center text-white drop-shadow-[0_4px_18px_rgba(0,0,0,0.5)]"
-                        style={{ color: '#ffffff' }}
-                    >
-                        Training Management System
-                    </p>
-                    <div className="mt-8 h-1 w-32 bg-primary/50 rounded-full" />
-                </div>
-            </div>
+            <AuthHeroPanel subtitle={t('portalSelection.heroSubtitle', 'Training Management System')} />
 
             {/* Right Column: Portal Selection */}
             <div className="flex-1 flex flex-col items-center justify-center p-8 md:p-12 overflow-y-auto relative bg-background">

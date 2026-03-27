@@ -3,7 +3,8 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../contexts/ThemeContext';
-import { Mail, Lock, AlertCircle, ArrowLeft, ShieldCheck, Database, Cpu, Sun, Moon } from 'lucide-react';
+import { Mail, Lock, AlertCircle, ArrowLeft, Sun, Moon } from 'lucide-react';
+import AuthHeroPanel from '../components/AuthHeroPanel';
 import TmsLogo from '../components/TmsLogo';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
@@ -82,25 +83,7 @@ const Login: React.FC<LoginProps> = ({ roleTitle = 'Sign In', allowedRoles }) =>
       </div>
 
       {/* Left Column */}
-      <div className="hidden md:flex md:w-1/2 relative overflow-hidden">
-        <img
-          src="https://images.unsplash.com/photo-1562774053-701939374585?q=80&w=1986&auto=format&fit=crop"
-          alt="Institutional Campus"
-          className="absolute inset-0 w-full h-full object-cover"
-        />
-        <div className="absolute inset-0 bg-slate-900/58 backdrop-blur-sm" />
-        <div className="relative z-10 flex flex-col items-center justify-center w-full p-12 text-white">
-          <div className="mb-8">
-            <TmsLogo className="size-28 text-white" />
-          </div>
-          <h1
-            className="text-4xl font-semibold tracking-tight text-center text-white drop-shadow-[0_6px_24px_rgba(0,0,0,0.65)]"
-            style={{ color: '#ffffff' }}
-          >
-            DMO TMS
-          </h1>
-        </div>
-      </div>
+      <AuthHeroPanel />
 
       {/* Right Column: Login Form */}
       <div className={`flex-1 flex flex-col items-center justify-center p-8 md:p-12 overflow-y-auto relative ${formPanelClass}`}>

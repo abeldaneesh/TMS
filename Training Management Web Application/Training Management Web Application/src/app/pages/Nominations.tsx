@@ -24,6 +24,12 @@ import { toast } from 'sonner';
 import LoadingScreen from '../components/LoadingScreen';
 import FilterChips from '../components/FilterChips';
 import { getTrainingStartDateTime } from '../../utils/trainingTime';
+import {
+  getTrainingDateInputValue,
+  getTrainingSearchableDateText,
+  getTrainingSortTimestamp,
+  normalizeTrainingMatchValue,
+} from '../../utils/trainingFilters';
 
 const safeFormatDate = (date: any, formatStr: string = 'MMM dd, yyyy') => {
   if (!date) return 'N/A';
@@ -44,28 +50,8 @@ const normalizeAudienceList = (value: string[] | string | undefined) =>
   normalizeStringList(value).flatMap((item) =>
     item.split(',').map((part) => part.trim()).filter(Boolean)
   );
-const normalizeMatchValue = (value?: string) => (value || '').trim().replace(/\s+/g, ' ').toLowerCase();
-const formatDateInputValue = (date: any) => {
-  if (!date) return '';
-  const parsed = new Date(date);
-  if (Number.isNaN(parsed.getTime())) return '';
-  const year = parsed.getFullYear();
-  const month = `${parsed.getMonth() + 1}`.padStart(2, '0');
-  const day = `${parsed.getDate()}`.padStart(2, '0');
-  return `${year}-${month}-${day}`;
-};
 const formatSessionWindow = (startTime?: string, endTime?: string, fallbackLabel: string = 'Time not set') =>
   startTime && endTime ? `${startTime} - ${endTime}` : fallbackLabel;
-const getTrainingSortTimestamp = (training: Training) => {
-  const dateValue = formatDateInputValue(training.date);
-  if (dateValue) {
-    const sessionTimestamp = new Date(`${dateValue}T${training.startTime || '00:00'}`).getTime();
-    if (!Number.isNaN(sessionTimestamp)) return sessionTimestamp;
-  }
-
-  const fallbackTimestamp = new Date(training.date).getTime();
-  return Number.isNaN(fallbackTimestamp) ? 0 : fallbackTimestamp;
-};
 
 type NominationDisplayStatus = 'assigned' | 'attended' | 'rejected';
 const getNominationDisplayStatus = (status: Nomination['status']): NominationDisplayStatus => {
@@ -531,9 +517,9 @@ const Nominations: React.FC = () => {
       return getTrainingSortTimestamp(a) - getTrainingSortTimestamp(b);
     });
 
-    const normalizedTrainingSearch = normalizeMatchValue(trainingSearchTerm);
+    const normalizedTrainingSearch = normalizeTrainingMatchValue(trainingSearchTerm);
     const matchingSelectableTrainings = selectableTrainings.filter((training) => {
-      const matchesDate = !trainingDateFilter || formatDateInputValue(training.date) === trainingDateFilter;
+      const matchesDate = !trainingDateFilter || getTrainingDateInputValue(training.date) === trainingDateFilter;
       if (!matchesDate) return false;
 
       if (!normalizedTrainingSearch) return true;
@@ -542,13 +528,13 @@ const Nominations: React.FC = () => {
         training.title,
         training.program,
         training.description,
-        safeFormatDate(training.date, 'MMM dd, yyyy'),
+        getTrainingSearchableDateText(training.date),
         formatSessionWindow(training.startTime, training.endTime, sessionWindowFallback),
         ...normalizeAudienceList(training.targetAudience),
         ...normalizeStringList(training.requiredInstitutions).map((institutionId) => getInstitutionName(institutionId)),
       ].join(' ');
 
-      return normalizeMatchValue(searchText).includes(normalizedTrainingSearch);
+      return normalizeTrainingMatchValue(searchText).includes(normalizedTrainingSearch);
     });
     const selectedTrainingIsSelectable = Boolean(
       selectedTraining && selectableTrainings.some((training) => training.id === selectedTrainingId)
@@ -558,9 +544,7 @@ const Nominations: React.FC = () => {
       selectedTraining &&
       !matchingSelectableTrainings.some((training) => training.id === selectedTrainingId)
     );
-    const filteredSelectableTrainings = selectedTrainingPinned
-      ? [selectedTraining!, ...matchingSelectableTrainings]
-      : matchingSelectableTrainings;
+    const filteredSelectableTrainings = matchingSelectableTrainings;
 
     const selectedTrainingNominations = nominations
       .filter((nomination) => getEntityId(nomination.trainingId) === selectedTrainingId)
@@ -573,7 +557,7 @@ const Nominations: React.FC = () => {
       .map((institutionId) => institutions.find((institution) => institution.id === institutionId)?.name || '')
       .filter(Boolean);
     const selectedAudienceTokens = selectedTrainingAudience
-      .map((audience) => normalizeMatchValue(audience))
+      .map((audience) => normalizeTrainingMatchValue(audience))
       .filter(Boolean);
     const selectedTrainingExistingParticipantIds = new Set(
       selectedTrainingNominations
@@ -585,7 +569,7 @@ const Nominations: React.FC = () => {
       if (!selectedTraining) return false;
 
       const participantInstitutionId = getEntityId(participant.institutionId);
-      const participantDesignation = normalizeMatchValue(participant.designation);
+      const participantDesignation = normalizeTrainingMatchValue(participant.designation);
 
       if (user.role === 'institutional_admin' && participantInstitutionId !== currentUserInstitutionId) {
         return false;

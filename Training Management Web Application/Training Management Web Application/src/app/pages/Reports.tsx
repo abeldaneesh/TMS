@@ -26,6 +26,12 @@ import { format } from 'date-fns';
 import { safeFormatDate } from '../../utils/date';
 import { toast } from 'sonner';
 import { downloadFile } from '../../utils/fileDownloader';
+import {
+  getTrainingDateInputValue,
+  getTrainingSearchableDateText,
+  getTrainingSortTimestamp,
+  normalizeTrainingMatchValue,
+} from '../../utils/trainingFilters';
 
 const getEntityId = (value: any): string => {
   if (typeof value === 'string' || typeof value === 'number') return String(value);
@@ -42,15 +48,6 @@ const formatExportDate = (value: any, formatStr: string = 'MMM dd, yyyy'): strin
   const formatted = safeFormatDate(value, formatStr);
   return formatted === 'Invalid Date' ? 'N/A' : formatted;
 };
-const formatDateInputValue = (value: any): string => {
-  if (!value) return '';
-  const parsed = new Date(value);
-  if (Number.isNaN(parsed.getTime())) return '';
-  const year = parsed.getFullYear();
-  const month = `${parsed.getMonth() + 1}`.padStart(2, '0');
-  const day = `${parsed.getDate()}`.padStart(2, '0');
-  return `${year}-${month}-${day}`;
-};
 
 const formatStatusLabel = (value: any, fallback = 'Unknown'): string => {
   const normalized = asDisplayValue(value, fallback).replace(/_/g, ' ').toLowerCase();
@@ -65,17 +62,6 @@ const formatTimeWindow = (startTime: any, endTime: any): string => {
   const end = asDisplayValue(endTime, '');
   if (start && end) return `${start} - ${end}`;
   return start || end || 'N/A';
-};
-const normalizeMatchValue = (value?: string) => (value || '').trim().replace(/\s+/g, ' ').toLowerCase();
-const getTrainingSortTimestamp = (training: Training) => {
-  const dateValue = formatDateInputValue(training.date);
-  if (dateValue) {
-    const sessionTimestamp = new Date(`${dateValue}T${training.startTime || '00:00'}`).getTime();
-    if (!Number.isNaN(sessionTimestamp)) return sessionTimestamp;
-  }
-
-  const fallbackTimestamp = new Date(training.date).getTime();
-  return Number.isNaN(fallbackTimestamp) ? 0 : fallbackTimestamp;
 };
 
 const formatPhoneForCsv = (value: any): string => {
@@ -843,9 +829,9 @@ const Reports: React.FC = () => {
   };
 
   const searchableTrainings = [...trainings].sort((a, b) => getTrainingSortTimestamp(b) - getTrainingSortTimestamp(a));
-  const normalizedTrainingSearch = normalizeMatchValue(trainingSearchTerm);
+  const normalizedTrainingSearch = normalizeTrainingMatchValue(trainingSearchTerm);
   const filteredTrainings = searchableTrainings.filter((training) => {
-    const matchesDate = !trainingDateFilter || formatDateInputValue(training.date) === trainingDateFilter;
+    const matchesDate = !trainingDateFilter || getTrainingDateInputValue(training.date) === trainingDateFilter;
     if (!matchesDate) return false;
 
     if (!normalizedTrainingSearch) return true;
@@ -854,20 +840,18 @@ const Reports: React.FC = () => {
       training.title,
       training.program,
       training.description,
-      formatExportDate(training.date, 'MMM dd, yyyy'),
+      getTrainingSearchableDateText(training.date),
       formatTimeWindow(training.startTime, training.endTime),
       training.status,
     ].join(' ');
 
-    return normalizeMatchValue(searchText).includes(normalizedTrainingSearch);
+    return normalizeTrainingMatchValue(searchText).includes(normalizedTrainingSearch);
   });
   const selectedTrainingRecord = trainings.find((training) => training.id === selectedTraining);
   const selectedTrainingPinned = Boolean(
     selectedTrainingRecord && !filteredTrainings.some((training) => training.id === selectedTraining)
   );
-  const visibleTrainings = selectedTrainingPinned
-    ? [selectedTrainingRecord!, ...filteredTrainings]
-    : filteredTrainings;
+  const visibleTrainings = filteredTrainings;
 
   return (
     <div className="max-w-4xl mx-auto space-y-8 pb-12">
@@ -964,7 +948,7 @@ const Reports: React.FC = () => {
 
                   <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
                     <p className="text-xs text-muted-foreground">
-                      {visibleTrainings.length} of {trainings.length} training(s) shown
+                      {filteredTrainings.length} of {trainings.length} training(s) shown
                     </p>
                     {selectedTrainingPinned && (
                       <Badge variant="outline" className="border-primary/20 bg-primary/5 text-primary">

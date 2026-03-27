@@ -11,32 +11,19 @@ import { Badge } from '../components/ui/badge';
 import { Label } from '../components/ui/label';
 import { safeFormatDate } from '../../utils/date';
 import {
+  getTrainingDateInputValue,
+  getTrainingSearchableDateText,
+  getTrainingSortTimestamp,
+  normalizeTrainingMatchValue,
+} from '../../utils/trainingFilters';
+import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
   ResponsiveContainer
 } from 'recharts';
 import LoadingScreen from '../components/LoadingScreen';
 
-const normalizeMatchValue = (value?: string) => (value || '').trim().replace(/\s+/g, ' ').toLowerCase();
-const formatDateInputValue = (date: string | Date) => {
-  const parsed = new Date(date);
-  if (Number.isNaN(parsed.getTime())) return '';
-  const year = parsed.getFullYear();
-  const month = `${parsed.getMonth() + 1}`.padStart(2, '0');
-  const day = `${parsed.getDate()}`.padStart(2, '0');
-  return `${year}-${month}-${day}`;
-};
 const formatTimeWindow = (startTime?: string, endTime?: string) =>
   startTime && endTime ? `${startTime} - ${endTime}` : '';
-const getTrainingSortTimestamp = (training: Training) => {
-  const dateValue = formatDateInputValue(training.date);
-  if (dateValue) {
-    const sessionTimestamp = new Date(`${dateValue}T${training.startTime || '00:00'}`).getTime();
-    if (!Number.isNaN(sessionTimestamp)) return sessionTimestamp;
-  }
-
-  const fallbackTimestamp = new Date(training.date).getTime();
-  return Number.isNaN(fallbackTimestamp) ? 0 : fallbackTimestamp;
-};
 
 const Analytics: React.FC = () => {
   const { t } = useTranslation();
@@ -117,9 +104,9 @@ const Analytics: React.FC = () => {
   const leadingStatus = [...statusData].sort((first, second) => second.count - first.count)[0];
   const leadingPercentage = totalStatusCount > 0 && leadingStatus ? Math.round((leadingStatus.count / totalStatusCount) * 100) : 0;
   const searchableTrainings = [...safeTrainings].sort((a, b) => getTrainingSortTimestamp(b) - getTrainingSortTimestamp(a));
-  const normalizedTrainingSearch = normalizeMatchValue(trainingSearchTerm);
+  const normalizedTrainingSearch = normalizeTrainingMatchValue(trainingSearchTerm);
   const filteredTrainings = searchableTrainings.filter((training) => {
-    const matchesDate = !trainingDateFilter || formatDateInputValue(training.date) === trainingDateFilter;
+    const matchesDate = !trainingDateFilter || getTrainingDateInputValue(training.date) === trainingDateFilter;
     if (!matchesDate) return false;
 
     if (!normalizedTrainingSearch) return true;
@@ -128,20 +115,18 @@ const Analytics: React.FC = () => {
       training.title,
       training.program,
       training.description,
-      safeFormatDate(training.date, 'MMM dd, yyyy'),
+      getTrainingSearchableDateText(training.date),
       formatTimeWindow(training.startTime, training.endTime),
       training.status,
     ].join(' ');
 
-    return normalizeMatchValue(searchText).includes(normalizedTrainingSearch);
+    return normalizeTrainingMatchValue(searchText).includes(normalizedTrainingSearch);
   });
   const selectedTrainingRecord = safeTrainings.find((training) => training.id === selectedTraining);
   const selectedTrainingPinned = Boolean(
     selectedTrainingRecord && !filteredTrainings.some((training) => training.id === selectedTraining)
   );
-  const visibleTrainings = selectedTrainingPinned
-    ? [selectedTrainingRecord!, ...filteredTrainings]
-    : filteredTrainings;
+  const visibleTrainings = filteredTrainings;
 
   return (
     <div className="pb-12 space-y-10 text-foreground">
@@ -324,9 +309,9 @@ const Analytics: React.FC = () => {
               <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
                 <p className="text-xs text-muted-foreground">
                   {t('analyticsPage.trainingShownCount', {
-                    shown: visibleTrainings.length,
+                    shown: filteredTrainings.length,
                     total: safeTrainings.length,
-                    defaultValue: `${visibleTrainings.length} of ${safeTrainings.length} trainings shown`,
+                    defaultValue: `${filteredTrainings.length} of ${safeTrainings.length} trainings shown`,
                   })}
                 </p>
                 {selectedTrainingPinned && (
