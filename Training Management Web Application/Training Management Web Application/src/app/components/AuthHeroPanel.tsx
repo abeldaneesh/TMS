@@ -15,11 +15,12 @@ const AuthHeroPanel: React.FC<AuthHeroPanelProps> = ({ subtitle }) => {
         alt="Blurred illustration of medical training operations and attendance management"
         className="absolute inset-0 h-full w-full object-cover scale-[1.03]"
       />
-      <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(15,23,42,0.18),rgba(15,23,42,0.48))]" />
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.22),transparent_28%),linear-gradient(120deg,rgba(7,18,34,0.18),rgba(7,18,34,0.38))]" />
+      <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(2,6,23,0.28),rgba(2,6,23,0.72))]" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(79,70,229,0.22),transparent_34%),linear-gradient(120deg,rgba(3,3,3,0.08),rgba(3,3,3,0.28))]" />
+      <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(3,3,3,0.14),rgba(3,3,3,0.08),rgba(3,3,3,0.24))]" />
 
       <div className="relative z-10 flex w-full flex-col items-center justify-center p-12 text-white">
-        <div className="mb-6 rounded-full border border-white/20 bg-white/10 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.28em] text-white/85 backdrop-blur-md">
+        <div className="mb-6 rounded-full border border-white/12 bg-white/6 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.28em] text-white/80 backdrop-blur-md">
           District Medical Office
         </div>
 
@@ -43,7 +44,7 @@ const AuthHeroPanel: React.FC<AuthHeroPanelProps> = ({ subtitle }) => {
           </p>
         )}
 
-        <div className="mt-8 h-1 w-32 rounded-full bg-white/40" />
+        <div className="mt-8 h-1 w-32 rounded-full bg-primary/55" />
       </div>
     </div>
   );
