@@ -22,13 +22,13 @@ import HallAvailability from './pages/HallAvailability';
 import Register from './pages/Register';
 import UserApprovals from './pages/UserApprovals';
 import ProgramOfficers from './pages/ProgramOfficers';
+import MedicalOfficers from './pages/MedicalOfficers';
 import NotificationsMobile from './pages/NotificationsMobile';
 import Participants from './pages/Participants';
 import Institutions from './pages/Institutions';
 import Halls from './pages/Halls';
 import Settings from './pages/Settings';
 import HallRequests from './pages/HallRequests';
-import Personnel from './pages/Personnel';
 import UserDetails from './pages/UserDetails';
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode; allowedRoles?: string[] }> = ({ children, allowedRoles }) => {
@@ -110,7 +110,23 @@ const AppRoutes: React.FC = () => {
         <Route path="/analytics" element={<Analytics />} />
         <Route path="/reports" element={<Reports />} />
         <Route path="/admin/approvals" element={<UserApprovals />} />
-        <Route path="/officers" element={<ProgramOfficers />} />
+        <Route path="/officers" element={<Navigate to="/program-officers" replace />} />
+        <Route
+          path="/program-officers"
+          element={
+            <ProtectedRoute allowedRoles={['master_admin', 'institutional_admin', 'medical_officer']}>
+              <ProgramOfficers />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/medical-officers"
+          element={
+            <ProtectedRoute allowedRoles={['master_admin', 'institutional_admin', 'medical_officer']}>
+              <MedicalOfficers />
+            </ProtectedRoute>
+          }
+        />
         <Route path="/participants" element={<Participants />} />
         <Route path="/institutions" element={<Institutions />} />
         <Route path="/halls" element={<Halls />} />
@@ -119,9 +135,7 @@ const AppRoutes: React.FC = () => {
         <Route
           path="/personnel"
           element={
-            <ProtectedRoute allowedRoles={['master_admin', 'institutional_admin', 'medical_officer']}>
-              <Personnel />
-            </ProtectedRoute>
+            <Navigate to="/program-officers" replace />
           }
         />
         <Route

@@ -194,7 +194,7 @@ const Dashboard: React.FC = () => {
       title: t('dashboard.actions.viewPersonnel.title', 'View Personnel'),
       subtitle: t('dashboard.actions.viewPersonnel.subtitle', 'Manage staff'),
       iconUrl: 'https://images.unsplash.com/photo-1552664730-d307ca884978?auto=format&fit=crop&q=80&w=200&h=200',
-      path: '/personnel',
+      path: '/program-officers',
       roles: ['master_admin'],
     },
     {
