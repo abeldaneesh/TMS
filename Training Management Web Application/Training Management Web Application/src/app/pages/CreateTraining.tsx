@@ -122,6 +122,7 @@ const CreateTraining: React.FC = () => {
   const [institutions, setInstitutions] = useState<Institution[]>([]);
   const [availableHalls, setAvailableHalls] = useState<Hall[]>([]);
   const [loading, setLoading] = useState(false);
+  const [saveMode, setSaveMode] = useState<'draft' | 'scheduled' | null>(null);
   const [checkingAvailability, setCheckingAvailability] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
 
@@ -396,9 +397,7 @@ const CreateTraining: React.FC = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
+  const saveTraining = async (status: TrainingStatus) => {
     if (!validateForm()) {
       toast.error('Please fix the errors in the form');
       return;
@@ -407,6 +406,7 @@ const CreateTraining: React.FC = () => {
     if (!user) return;
 
     setLoading(true);
+    setSaveMode(status);
     try {
       const payload = {
         title: formData.title,
@@ -421,19 +421,19 @@ const CreateTraining: React.FC = () => {
         hallId: formData.hallId,
         capacity: parseInt(formData.capacity),
         requiredInstitutions: formData.requiredInstitutions,
-        status: 'scheduled' as TrainingStatus,
+        status,
       };
 
       if (isEditMode && id) {
         await api.put(`/trainings/${id}`, payload);
-        toast.success('Training updated successfully!');
+        toast.success(status === 'draft' ? 'Draft updated successfully!' : 'Training updated successfully!');
       } else {
         await trainingsApi.create({
           ...payload,
           trainerId: user.id,
           createdById: user.id,
         });
-        toast.success('Training created successfully!');
+        toast.success(status === 'draft' ? 'Draft saved successfully!' : 'Training created successfully!');
       }
       navigate('/trainings');
     } catch (error: any) {
@@ -441,7 +441,17 @@ const CreateTraining: React.FC = () => {
       toast.error(error.response?.data?.message || error.message || 'Error saving training');
     } finally {
       setLoading(false);
+      setSaveMode(null);
     }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await saveTraining('scheduled');
+  };
+
+  const handleSaveDraft = async () => {
+    await saveTraining('draft');
   };
 
   const handleRequestHall = async () => {
@@ -968,10 +978,20 @@ const CreateTraining: React.FC = () => {
           </CardContent>
         </Card>
 
-        <div className="flex gap-4">
+        <div className="flex flex-wrap gap-4">
+          {!isEditMode && (
+            <Button type="button" variant="outline" disabled={loading} onClick={handleSaveDraft} className="flex items-center gap-2">
+              <Save className="size-4" />
+              {loading && saveMode === 'draft'
+                ? t('createTraining.buttons.savingDraft', 'Saving draft...')
+                : t('createTraining.buttons.saveDraft', 'Save as Draft')}
+            </Button>
+          )}
           <Button type="submit" disabled={loading} className="flex items-center gap-2">
             <Save className="size-4" />
-            {loading ? t('createTraining.buttons.saving', 'Saving...') : (isEditMode ? t('createTraining.buttons.update', 'Update Training') : t('createTraining.buttons.create', 'Create Training'))}
+            {loading && saveMode !== 'draft'
+              ? t('createTraining.buttons.saving', 'Saving...')
+              : (isEditMode ? t('createTraining.buttons.update', 'Update Training') : t('createTraining.buttons.create', 'Create Training'))}
           </Button>
           <Button type="button" variant="outline" onClick={() => navigate('/trainings')}>
             {t('createTraining.buttons.cancel', 'Cancel')}

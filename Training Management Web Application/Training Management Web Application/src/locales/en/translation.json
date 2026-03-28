@@ -190,7 +190,9 @@
     "buttons": {
       "create": "Create Training",
       "update": "Update Training",
+      "saveDraft": "Save as Draft",
       "saving": "Saving...",
+      "savingDraft": "Saving draft...",
       "cancel": "Cancel",
       "sendRequest": "Send Request",
       "sending": "Sending...",
