@@ -25,6 +25,7 @@ import { Checkbox } from '../components/ui/checkbox';
 import { toast } from 'sonner';
 import { MultiSelect } from '../components/ui/multi-select';
 import { ClockTimePicker } from '../components/ui/clock-time-picker';
+import DateInputWithPickerIcon from '../components/DateInputWithPickerIcon';
 import { motion } from 'framer-motion';
 
 const programs = [
@@ -670,13 +671,13 @@ const CreateTraining: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="date">{t('createTraining.fields.date', 'Date *')}</Label>
-                <Input
+                <DateInputWithPickerIcon
                   id="date"
-                  type="date"
                   value={formData.date}
                   onChange={(e) => handleChange('date', e.target.value)}
                   min={new Date().toISOString().split('T')[0]}
-                  className="date-input-visible"
+                  className={errors.date ? "border-red-500" : ""}
+                  buttonClassName="text-foreground/80 hover:text-foreground"
                 />
                 {errors.date && <p className="text-sm text-red-600 mt-1">{errors.date}</p>}
               </div>
