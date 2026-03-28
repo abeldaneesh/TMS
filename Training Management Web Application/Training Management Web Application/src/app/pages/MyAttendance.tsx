@@ -592,21 +592,27 @@ const MyAttendance: React.FC = () => {
                                         />
                                     </div>
 
-                                    <DateInputWithPickerIcon
-                                        wrapperClassName="w-full"
-                                        value={fromDate}
-                                        onChange={(e) => setFromDate(e.target.value)}
-                                        className="h-11 rounded-xl bg-input-background"
-                                        aria-label="Filter attendance from date"
-                                    />
+                                    <div className="space-y-1">
+                                        <p className="text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">From</p>
+                                        <DateInputWithPickerIcon
+                                            wrapperClassName="w-full"
+                                            value={fromDate}
+                                            onChange={(e) => setFromDate(e.target.value)}
+                                            className="h-11 rounded-xl bg-input-background"
+                                            aria-label="Filter attendance from date"
+                                        />
+                                    </div>
 
-                                    <DateInputWithPickerIcon
-                                        wrapperClassName="w-full"
-                                        value={toDate}
-                                        onChange={(e) => setToDate(e.target.value)}
-                                        className="h-11 rounded-xl bg-input-background"
-                                        aria-label="Filter attendance to date"
-                                    />
+                                    <div className="space-y-1">
+                                        <p className="text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">To</p>
+                                        <DateInputWithPickerIcon
+                                            wrapperClassName="w-full"
+                                            value={toDate}
+                                            onChange={(e) => setToDate(e.target.value)}
+                                            className="h-11 rounded-xl bg-input-background"
+                                            aria-label="Filter attendance to date"
+                                        />
+                                    </div>
 
                                     <Button
                                         type="button"
