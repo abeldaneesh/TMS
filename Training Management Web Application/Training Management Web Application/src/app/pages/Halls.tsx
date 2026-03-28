@@ -428,7 +428,7 @@ const Halls: React.FC = () => {
                                             key={day} 
                                             title={`Day ${day}: Morning ${morningLabel}, Evening ${eveningLabel}`}
                                             className={cn(
-                                                "relative h-24 overflow-hidden rounded-2xl border border-border/60 p-3 transition-all group hover:border-primary/30 hover:bg-secondary/20",
+                                                "relative min-h-[7.5rem] overflow-hidden rounded-2xl border border-border/60 p-3 transition-all group hover:border-primary/30 hover:bg-secondary/20",
                                                 morning.status === 'booked' && evening.status === 'booked' ? "bg-rose-500/5" : "bg-secondary/10"
                                             )}
                                         >
