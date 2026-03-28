@@ -231,7 +231,7 @@ const Trainings: React.FC = () => {
         {(user?.role === 'program_officer' || user?.role === 'master_admin') && (
           <Button onClick={() => navigate('/trainings/create')} className="bg-foreground text-background hover:bg-white/90 font-semibold rounded-full px-6">
             <Plus className="size-5 mr-2" />
-            {t('trainings.newMission', 'New Mission')}
+            {t('trainings.newMission', 'New Training')}
           </Button>
         )}
       </div>
