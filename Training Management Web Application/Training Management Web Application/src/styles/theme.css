@@ -183,6 +183,15 @@ input[type="date"].date-input-with-leading-icon::-webkit-calendar-picker-indicat
   pointer-events: none;
 }
 
+input[type="date"].date-input-visible {
+  color-scheme: dark;
+}
+
+input[type="date"].date-input-visible::-webkit-calendar-picker-indicator {
+  filter: invert(1) brightness(1.1);
+  opacity: 0.9;
+}
+
 h1,
 h2,
 h3,

@@ -676,6 +676,7 @@ const CreateTraining: React.FC = () => {
                   value={formData.date}
                   onChange={(e) => handleChange('date', e.target.value)}
                   min={new Date().toISOString().split('T')[0]}
+                  className="date-input-visible"
                 />
                 {errors.date && <p className="text-sm text-red-600 mt-1">{errors.date}</p>}
               </div>
