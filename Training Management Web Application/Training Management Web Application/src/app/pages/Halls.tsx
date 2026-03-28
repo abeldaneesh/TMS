@@ -6,6 +6,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { Trash2, MapPin, Users, Activity, ShieldCheck, Clock, Settings2, Plus, AlertCircle, CheckCircle2, Calendar, LayoutGrid, List, Search, ChevronLeft, ChevronRight, Sun, Sunset } from 'lucide-react';
 import { Hall, HallBlock, Training } from '../../types';
 import { hallsApi, hallBlocksApi, trainingsApi } from '../../services/api';
