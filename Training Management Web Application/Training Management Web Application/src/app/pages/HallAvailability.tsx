@@ -254,6 +254,21 @@ const HallAvailability: React.FC = () => {
     };
   };
 
+  const windowOverview = useMemo(() => {
+    const grouped = {
+      available: [] as Hall[],
+      partial: [] as Hall[],
+      booked: [] as Hall[],
+    };
+
+    filteredHalls.forEach((hall) => {
+      const status = getSelectedWindowStatus(hall.id);
+      grouped[status].push(hall);
+    });
+
+    return grouped;
+  }, [filteredHalls, availability, trainings, blocks, selectedDate, startTime, endTime]);
+
   const submitBlock = async () => {
     if (!blockingHall || !user) return;
     setIsBlocking(true);
@@ -595,19 +610,80 @@ const HallAvailability: React.FC = () => {
           <p className="mt-2 text-sm text-muted-foreground">{t('hallAvailability.noSearchDesc', { defaultValue: 'Try a broader keyword or clear the search to see all venue options.' })}</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
+        <div className="space-y-6">
+          <section className={cn(PANEL_CARD, 'p-5 md:p-6')}>
+            <div className="flex flex-col gap-4 border-b border-border pb-4 md:flex-row md:items-start md:justify-between">
+              <div>
+                <p className="text-xs uppercase tracking-[0.28em] text-muted-foreground">
+                  {t('hallAvailability.selectedWindowSummaryLabel', { defaultValue: 'Selected Window Overview' })}
+                </p>
+                <h3 className="mt-2 text-xl font-semibold text-foreground">
+                  {startTime} - {endTime}
+                </h3>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  {t('hallAvailability.selectedWindowSummaryDesc', {
+                    date: formatFullDate(new Date(selectedDate)),
+                    defaultValue: `One shared status summary for all halls on ${formatFullDate(new Date(selectedDate))}. Individual cards below show booking details only.`,
+                  })}
+                </p>
+              </div>
+              <div className="rounded-2xl border border-border bg-background px-4 py-3 text-sm text-muted-foreground">
+                {t('hallAvailability.hallsInView', { count: filteredHalls.length, defaultValue: `${filteredHalls.length} halls in view` })}
+              </div>
+            </div>
+
+            <div className="mt-4 grid gap-4 md:grid-cols-3">
+              {(['available', 'partial', 'booked'] as SlotStatus[]).map((status) => {
+                const meta = getStatusMeta(status);
+                const hallsForStatus = windowOverview[status];
+                const title =
+                  status === 'available'
+                    ? t('hallAvailability.statusAvailable', { defaultValue: 'Available' })
+                    : status === 'partial'
+                      ? t('hallAvailability.statusPartial', { defaultValue: 'Partially Busy' })
+                      : t('hallAvailability.statusBooked', { defaultValue: 'Booked' });
+
+                return (
+                  <div key={status} className={cn('rounded-[20px] border p-4', meta.border, status === 'available' ? 'bg-emerald-500/5' : status === 'partial' ? 'bg-amber-500/5' : 'bg-rose-500/5')}>
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-2">
+                        {status === 'available' ? (
+                          <CheckCircle2 className={cn('size-4', meta.accent)} />
+                        ) : status === 'partial' ? (
+                          <Info className={cn('size-4', meta.accent)} />
+                        ) : (
+                          <XCircle className={cn('size-4', meta.accent)} />
+                        )}
+                        <span className="text-sm font-semibold text-foreground">{title}</span>
+                      </div>
+                      <Badge className={cn('rounded-full border px-2.5 py-1 text-xs font-medium', meta.badge)}>
+                        {hallsForStatus.length}
+                      </Badge>
+                    </div>
+
+                    <div className="mt-3 min-h-12">
+                      {hallsForStatus.length === 0 ? (
+                        <p className="text-sm text-muted-foreground">
+                          {t('hallAvailability.noneForStatus', { defaultValue: 'No halls in this group.' })}
+                        </p>
+                      ) : (
+                        <p className="text-sm leading-6 text-muted-foreground">
+                          {hallsForStatus.map((hall) => hall.name).join(', ')}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
           {filteredHalls.map((hall, index) => {
             const events = getEventsForHallOnDate(hall.id);
             const windowStatus = getSelectedWindowStatus(hall.id);
             const windowMeta = getStatusMeta(windowStatus);
-            const breakdown = getDayBreakdown(hall.id);
             const eventCount = events.trainings.length + events.blocks.length;
-            const statusLabel =
-              windowStatus === 'available'
-                ? t('hallAvailability.statusAvailableFor', { time: `${startTime} - ${endTime}`, defaultValue: `Available for ${startTime} - ${endTime}` })
-                : windowStatus === 'partial'
-                  ? t('hallAvailability.statusPartialFor', { time: `${startTime} - ${endTime}`, defaultValue: `Partially busy for ${startTime} - ${endTime}` })
-                  : t('hallAvailability.statusBookedFor', { time: `${startTime} - ${endTime}`, defaultValue: `Booked for ${startTime} - ${endTime}` });
 
             return (
               <motion.article
@@ -642,14 +718,6 @@ const HallAvailability: React.FC = () => {
                   </div>
 
                   <div className="space-y-2 text-right">
-                    <Badge className={cn('rounded-full border px-3 py-1 text-xs font-medium', windowMeta.badge)}>
-                      {windowStatus === 'available' ? (
-                        <CheckCircle2 className="mr-2 size-3.5" />
-                      ) : (
-                        <XCircle className="mr-2 size-3.5" />
-                      )}
-                      {statusLabel}
-                    </Badge>
                     <Badge className="rounded-full border border-border bg-background px-3 py-1 text-xs font-medium text-foreground">
                       <Users className="mr-2 size-3.5 text-muted-foreground" />
                       {t('hallAvailability.seats', { count: hall.capacity, defaultValue: `${hall.capacity} seats` })}
@@ -657,55 +725,10 @@ const HallAvailability: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="mt-6 grid gap-4 rounded-[20px] border border-border bg-background/60 p-4">
-                  <div className="grid gap-4 md:grid-cols-2">
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between text-sm text-muted-foreground">
-                        <span className="flex items-center gap-2">
-                          <Sun className="size-4 text-amber-500 dark:text-amber-300" />
-                          {t('hallAvailability.morning', { defaultValue: 'Morning' })}
-                        </span>
-                        <span>{t('hallAvailability.freePercent', { count: breakdown.morning.availablePercent, defaultValue: `${breakdown.morning.availablePercent}% free` })}</span>
-                      </div>
-                      <Progress
-                        value={breakdown.morning.availablePercent}
-                        className="h-2 bg-muted"
-                        indicatorClassName={getStatusMeta(breakdown.morning.status).progress}
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between text-sm text-muted-foreground">
-                        <span className="flex items-center gap-2">
-                          <Sunset className="size-4 text-violet-500 dark:text-violet-300" />
-                          {t('hallAvailability.evening', { defaultValue: 'Evening' })}
-                        </span>
-                        <span>{t('hallAvailability.freePercent', { count: breakdown.evening.availablePercent, defaultValue: `${breakdown.evening.availablePercent}% free` })}</span>
-                      </div>
-                      <Progress
-                        value={breakdown.evening.availablePercent}
-                        className="h-2 bg-muted"
-                        indicatorClassName={getStatusMeta(breakdown.evening.status).progress}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="flex items-center justify-between border-t border-border pt-4 text-sm">
-                    <span className="text-muted-foreground">{t('hallAvailability.selectedWindow', { defaultValue: 'Selected window' })}</span>
-                    <span className="font-medium text-foreground">
-                      {startTime} - {endTime}
-                    </span>
-                  </div>
-                </div>
-
                 <div className="mt-6 space-y-3">
                   <div className="flex items-center justify-between">
                     <p className="text-xs uppercase tracking-[0.28em] text-muted-foreground">{t('hallAvailability.bookingDetails', { defaultValue: 'Booking Details' })}</p>
                     <p className="text-xs text-muted-foreground">{t('hallAvailability.eventsOnDate', { count: eventCount, date: formatMonthDay(new Date(selectedDate)), defaultValue: `${eventCount} events on ${formatMonthDay(new Date(selectedDate))}` })}</p>
-                  </div>
-
-                  <div className="rounded-[18px] border border-border bg-background px-4 py-3 text-sm text-muted-foreground">
-                    {t('hallAvailability.dayNote', { defaultValue: 'Hall status above is for the selected time window only. Booking details below show all events scheduled on this day.' })}
                   </div>
 
                   {eventCount === 0 ? (
@@ -762,6 +785,7 @@ const HallAvailability: React.FC = () => {
               </motion.article>
             );
           })}
+          </div>
         </div>
       )}
 
