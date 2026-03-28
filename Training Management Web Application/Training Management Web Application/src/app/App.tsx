@@ -30,6 +30,7 @@ import Halls from './pages/Halls';
 import Settings from './pages/Settings';
 import HallRequests from './pages/HallRequests';
 import UserDetails from './pages/UserDetails';
+import GlobalSearch from './pages/GlobalSearch';
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode; allowedRoles?: string[] }> = ({ children, allowedRoles }) => {
   const { isAuthenticated, user } = useAuth();
@@ -109,6 +110,7 @@ const AppRoutes: React.FC = () => {
         />
         <Route path="/analytics" element={<Analytics />} />
         <Route path="/reports" element={<Reports />} />
+        <Route path="/search" element={<GlobalSearch />} />
         <Route path="/admin/approvals" element={<UserApprovals />} />
         <Route path="/officers" element={<Navigate to="/program-officers" replace />} />
         <Route

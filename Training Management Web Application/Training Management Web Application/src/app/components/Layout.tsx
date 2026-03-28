@@ -378,7 +378,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
   const handleGlobalSearch = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && globalSearchTerm.trim()) {
-      navigate(`/trainings?search=${encodeURIComponent(globalSearchTerm.trim())}`);
+      navigate(`/search?q=${encodeURIComponent(globalSearchTerm.trim())}`);
       setGlobalSearchTerm('');
       (e.target as HTMLInputElement).blur();
     }

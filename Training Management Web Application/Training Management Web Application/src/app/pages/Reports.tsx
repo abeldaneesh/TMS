@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../contexts/AuthContext';
 import {
@@ -95,6 +96,7 @@ const getAttendanceStatusLabel = (attendanceRecord?: Attendance | null) => {
 const Reports: React.FC = () => {
   const { t } = useTranslation();
   const { user } = useAuth();
+  const location = useLocation();
   const [trainings, setTrainings] = useState<Training[]>([]);
   const [institutions, setInstitutions] = useState<Institution[]>([]);
   const [selectedReport, setSelectedReport] = useState('');
@@ -158,6 +160,23 @@ const Reports: React.FC = () => {
       setTrainingDateFilter('');
     }
   }, [selectedReport]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const reportType = params.get('type');
+
+    if (reportType === 'training' || reportType === 'institution' || reportType === 'district') {
+      setSelectedReport(reportType);
+
+      if (reportType !== 'training') {
+        setSelectedTraining('');
+      }
+
+      if (reportType !== 'institution' && !(isInstitutionScopedUser && currentInstitutionId)) {
+        setSelectedInstitution('');
+      }
+    }
+  }, [location.search, currentInstitutionId, isInstitutionScopedUser]);
 
   const buildTrainingParticipantRows = (
     nominations: Nomination[],
