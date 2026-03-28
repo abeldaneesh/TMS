@@ -6,10 +6,9 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { Trash2, MapPin, Users, Activity, ShieldCheck, Clock, Settings2, Plus, AlertCircle, CheckCircle2, Calendar, LayoutGrid, List, Search, ChevronLeft, ChevronRight, Sun, Sunset } from 'lucide-react';
-import { Hall, HallBlock, User, Training } from '../../types';
-import { hallsApi, hallBlocksApi, usersApi, trainingsApi } from '../../services/api';
+import { Hall, HallBlock, Training } from '../../types';
+import { hallsApi, hallBlocksApi, trainingsApi } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
@@ -40,7 +39,6 @@ const Halls: React.FC = () => {
     const isAdmin = user?.role === 'master_admin';
 
     const [halls, setHalls] = useState<Hall[]>([]);
-    const [officers, setOfficers] = useState<User[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
@@ -58,18 +56,8 @@ const Halls: React.FC = () => {
         }
     };
 
-    const fetchOfficers = async () => {
-        try {
-            const data = await usersApi.getAll({ role: 'program_officer' });
-            setOfficers(data);
-        } catch (error) {
-            console.error('Failed to fetch officers');
-        }
-    };
-
     useEffect(() => {
         fetchHalls();
-        fetchOfficers();
     }, []);
 
     const [selectedHall, setSelectedHall] = useState<Hall | null>(null);
@@ -98,8 +86,7 @@ const Halls: React.FC = () => {
         id: '',
         name: '',
         location: '',
-        capacity: 50,
-        programOfficerId: ''
+        capacity: 50
     });
 
     const filteredHalls = useMemo(() => {
@@ -120,12 +107,11 @@ const Halls: React.FC = () => {
             await hallsApi.create({
                 name: hallForm.name,
                 location: hallForm.location,
-                capacity: hallForm.capacity,
-                programOfficerId: hallForm.programOfficerId
+                capacity: hallForm.capacity
             });
             toast.success(t('halls.alerts.createSuccess', 'Sector registered successfully'));
             setShowCreateDialog(false);
-            setHallForm({ id: '', name: '', location: '', capacity: 50, programOfficerId: '' });
+            setHallForm({ id: '', name: '', location: '', capacity: 50 });
             fetchHalls();
         } catch (error: any) {
             toast.error(error.response?.data?.message || t('halls.alerts.createFail', 'Failed to create sector'));
@@ -141,8 +127,7 @@ const Halls: React.FC = () => {
             await hallsApi.update(hallForm.id, {
                 name: hallForm.name,
                 location: hallForm.location,
-                capacity: hallForm.capacity,
-                programOfficerId: hallForm.programOfficerId
+                capacity: hallForm.capacity
             });
             toast.success(t('halls.alerts.updateSuccess', 'Sector updated successfully'));
             setShowEditDialog(false);
@@ -159,8 +144,7 @@ const Halls: React.FC = () => {
             id: hall.id,
             name: hall.name,
             location: hall.location,
-            capacity: hall.capacity,
-            programOfficerId: hall.programOfficerId || ''
+            capacity: hall.capacity
         });
         setShowEditDialog(true);
     };
@@ -398,11 +382,6 @@ const Halls: React.FC = () => {
                                     </h4>
                                     <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
                                         <span className="rounded-full bg-background/60 px-3 py-1">{hall.location}</span>
-                                        {hall.programOfficer?.name ? (
-                                            <span className="rounded-full bg-background/60 px-3 py-1">
-                                                Officer: {hall.programOfficer.name}
-                                            </span>
-                                        ) : null}
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-4">
@@ -572,13 +551,12 @@ const Halls: React.FC = () => {
                         </CardHeader>
                     <CardContent className="pt-6">
                         <Table>
-                            <TableHeader>
-                                <TableRow className="hover:bg-transparent border-border/60">
-                                    <TableHead className="text-xs uppercase tracking-wider text-muted-foreground">{t('halls.table.name', 'Sector Name')}</TableHead>
-                                    <TableHead className="text-xs uppercase tracking-wider text-muted-foreground">{t('halls.table.officer', 'Program Officer')}</TableHead>
-                                    <TableHead className="text-xs uppercase tracking-wider text-muted-foreground">{t('halls.table.capacity', 'Capacity')}</TableHead>
-                                    <TableHead className="text-right text-xs uppercase tracking-wider text-muted-foreground">{t('halls.table.actions', 'Actions')}</TableHead>
-                                </TableRow>
+                                <TableHeader>
+                                    <TableRow className="hover:bg-transparent border-border/60">
+                                        <TableHead className="text-xs uppercase tracking-wider text-muted-foreground">{t('halls.table.name', 'Sector Name')}</TableHead>
+                                        <TableHead className="text-xs uppercase tracking-wider text-muted-foreground">{t('halls.table.capacity', 'Capacity')}</TableHead>
+                                        <TableHead className="text-right text-xs uppercase tracking-wider text-muted-foreground">{t('halls.table.actions', 'Actions')}</TableHead>
+                                    </TableRow>
                             </TableHeader>
                             <TableBody>
                                 {filteredHalls.map((hall) => (
@@ -593,21 +571,6 @@ const Halls: React.FC = () => {
                                                 </div>
                                                 <span className="text-xs text-muted-foreground ml-[3.25rem]">{hall.location}</span>
                                             </div>
-                                        </TableCell>
-                                        <TableCell className="py-4">
-                                            {hall.programOfficer ? (
-                                                <div className="flex items-center gap-2">
-                                                    <div className="size-8 rounded-full bg-primary/10 flex items-center justify-center text-xs font-semibold text-primary">
-                                                        {hall.programOfficer.name.charAt(0)}
-                                                    </div>
-                                                    <div className="flex flex-col">
-                                                        <span className="text-sm font-medium">{hall.programOfficer.name}</span>
-                                                        <span className="text-xs text-muted-foreground">{hall.programOfficer.email}</span>
-                                                    </div>
-                                                </div>
-                                            ) : (
-                                                <span className="text-sm italic text-muted-foreground">Not Assigned</span>
-                                            )}
                                         </TableCell>
                                         <TableCell className="py-4">
                                             <div className="flex items-center gap-2">
@@ -928,23 +891,6 @@ const Halls: React.FC = () => {
                                 className="h-11 bg-secondary/20 border-transparent focus-visible:border-primary/40"
                             />
                         </div>
-                        <div className="grid gap-2">
-                            <Label className="text-sm font-medium">Assign program officer</Label>
-                            <Select 
-                                value={hallForm.programOfficerId} 
-                                onValueChange={(val) => setHallForm({ ...hallForm, programOfficerId: val })}
-                            >
-                                <SelectTrigger className="h-11 bg-secondary/20 border-transparent focus:border-primary/40">
-                                    <SelectValue placeholder="Select officer (optional)" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="none">None</SelectItem>
-                                    {officers.map(off => (
-                                        <SelectItem key={off.id} value={off.id}>{off.name}</SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
                     </div>
                     <DialogFooter>
                         <Button
@@ -967,7 +913,7 @@ const Halls: React.FC = () => {
                             {t('halls.dialog.editTitle', 'Edit Hall')}
                         </DialogTitle>
                         <p className="text-muted-foreground text-sm mt-1">
-                            {t('halls.dialog.editDesc', 'Update the hall details or assigned officer.')}
+                            {t('halls.dialog.editDesc', 'Update the hall details.')}
                         </p>
                     </DialogHeader>
                     <div className="grid gap-4 py-4">
@@ -998,23 +944,6 @@ const Halls: React.FC = () => {
                                 onChange={(e) => setHallForm({ ...hallForm, capacity: parseInt(e.target.value) })}
                                 className="h-11 bg-secondary/20 border-transparent focus-visible:border-primary/40"
                             />
-                        </div>
-                        <div className="grid gap-2">
-                            <Label className="text-sm font-medium">Assign program officer</Label>
-                            <Select 
-                                value={hallForm.programOfficerId || "none"} 
-                                onValueChange={(val) => setHallForm({ ...hallForm, programOfficerId: val === 'none' ? '' : val })}
-                            >
-                                <SelectTrigger className="h-11 bg-secondary/20 border-transparent focus:border-primary/40">
-                                    <SelectValue placeholder="Select officer" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="none">None</SelectItem>
-                                    {officers.map(off => (
-                                        <SelectItem key={off.id} value={off.id}>{off.name}</SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
                         </div>
                     </div>
                     <DialogFooter>
