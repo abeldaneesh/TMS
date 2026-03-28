@@ -363,13 +363,13 @@ const Halls: React.FC = () => {
                         </div>
                     </div>
 
-                    <div className="flex flex-wrap gap-2 rounded-2xl border border-border/60 bg-secondary/10 p-3 text-xs text-muted-foreground">
-                        <div className="flex items-center gap-2 rounded-full bg-background/60 px-3 py-1.5"><div className="size-2 rounded-full bg-emerald-500" /> Morning available</div>
-                        <div className="flex items-center gap-2 rounded-full bg-background/60 px-3 py-1.5"><div className="size-2 rounded-full bg-rose-500" /> Morning booked</div>
-                        <div className="flex items-center gap-2 rounded-full bg-background/60 px-3 py-1.5"><div className="size-2 rounded-full bg-amber-400" /> Partial window</div>
-                        <div className="flex items-center gap-2 rounded-full bg-background/60 px-3 py-1.5"><div className="size-2 rounded-full bg-emerald-500/70" /> Evening available</div>
-                        <div className="flex items-center gap-2 rounded-full bg-background/60 px-3 py-1.5"><div className="size-2 rounded-full bg-rose-500/70" /> Evening booked</div>
-                    </div>
+                        <div className="flex flex-wrap gap-2 rounded-2xl border border-border/60 bg-secondary/10 p-3 text-xs text-muted-foreground">
+                            <div className="flex items-center gap-2 rounded-full bg-background/60 px-3 py-1.5"><div className="size-2 rounded-full bg-emerald-500" /> Morning available</div>
+                            <div className="flex items-center gap-2 rounded-full bg-background/60 px-3 py-1.5"><div className="size-2 rounded-full bg-rose-500" /> Morning booked</div>
+                            <div className="flex items-center gap-2 rounded-full bg-background/60 px-3 py-1.5"><div className="size-2 rounded-full bg-amber-400" /> Partial window</div>
+                            <div className="flex items-center gap-2 rounded-full bg-background/60 px-3 py-1.5"><div className="size-2 rounded-full bg-cyan-400" /> Evening available</div>
+                            <div className="flex items-center gap-2 rounded-full bg-background/60 px-3 py-1.5"><div className="size-2 rounded-full bg-rose-400" /> Evening booked</div>
+                        </div>
                 </div>
 
                 <div className="grid gap-12">
@@ -409,17 +409,17 @@ const Halls: React.FC = () => {
                                     };
                                     const getBarClass = (slot: { status: SlotStatus }, tone: 'morning' | 'evening') => {
                                         if (slot.status === 'booked') {
-                                            return 'bg-rose-500/70';
+                                            return tone === 'morning' ? 'bg-rose-500/80' : 'bg-rose-400/85';
                                         }
                                         if (slot.status === 'partial') {
-                                            return tone === 'morning' ? 'bg-amber-400/80' : 'bg-amber-300/80';
+                                            return tone === 'morning' ? 'bg-amber-400/85' : 'bg-sky-400/85';
                                         }
-                                        return tone === 'morning' ? 'bg-emerald-500/30' : 'bg-emerald-500/25';
+                                        return tone === 'morning' ? 'bg-emerald-500/65' : 'bg-cyan-400/80';
                                     };
-                                    const getTextClass = (slot: { status: SlotStatus }) => {
-                                        if (slot.status === 'booked') return 'text-rose-500';
-                                        if (slot.status === 'partial') return 'text-amber-400';
-                                        return 'text-emerald-500';
+                                    const getTextClass = (slot: { status: SlotStatus }, tone: 'morning' | 'evening') => {
+                                        if (slot.status === 'booked') return tone === 'morning' ? 'text-rose-500' : 'text-rose-400';
+                                        if (slot.status === 'partial') return tone === 'morning' ? 'text-amber-400' : 'text-sky-400';
+                                        return tone === 'morning' ? 'text-emerald-400' : 'text-cyan-400';
                                     };
                                     const morningLabel = getSlotLabel(morning);
                                     const eveningLabel = getSlotLabel(evening);
@@ -437,18 +437,18 @@ const Halls: React.FC = () => {
                                             <div className="mt-6 flex flex-col gap-2.5">
                                                 <div className="flex items-center justify-between gap-2">
                                                     <div className="flex items-center gap-1.5">
-                                                        <Sun className={cn("size-3", getTextClass(morning))} />
+                                                        <Sun className={cn("size-3", getTextClass(morning, 'morning'))} />
                                                         <span className="text-[10px] font-medium text-foreground">Morning</span>
                                                     </div>
-                                                    <span className={cn("text-[10px] font-semibold", getTextClass(morning))}>{morningLabel}</span>
+                                                    <span className={cn("text-[10px] font-semibold", getTextClass(morning, 'morning'))}>{morningLabel}</span>
                                                 </div>
                                                 <div className={cn("h-1.5 rounded-full", getBarClass(morning, 'morning'))} />
                                                 <div className="flex items-center justify-between gap-2">
                                                     <div className="flex items-center gap-1.5">
-                                                        <Sunset className={cn("size-3", getTextClass(evening))} />
+                                                        <Sunset className={cn("size-3", getTextClass(evening, 'evening'))} />
                                                         <span className="text-[10px] font-medium text-foreground">Evening</span>
                                                     </div>
-                                                    <span className={cn("text-[10px] font-semibold", getTextClass(evening))}>{eveningLabel}</span>
+                                                    <span className={cn("text-[10px] font-semibold", getTextClass(evening, 'evening'))}>{eveningLabel}</span>
                                                 </div>
                                                 <div className={cn("h-1.5 rounded-full", getBarClass(evening, 'evening'))} />
                                             </div>
