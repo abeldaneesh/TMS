@@ -4,6 +4,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { analyticsApi, trainingsApi, BASE_URL } from '../../services/api';
 import { DashboardStats, Training } from '../../types';
 import { safeFormatDate } from '../../utils/date';
+import { getTrainingStatusPresentation } from '../../utils/trainingStatus';
 import { useTranslation } from 'react-i18next';
 import LoadingScreen from '../components/LoadingScreen';
 
@@ -88,12 +89,13 @@ const Dashboard: React.FC = () => {
         if (user?.role === 'participant' && t.userStatus === 'attended') return false;
 
         const tDate = normalizeDate(t.date);
+        const statusPresentation = getTrainingStatusPresentation(t);
 
         if (selectedDateValue) {
-          return tDate.getTime() === selectedDateValue.getTime() && selectedDateValue >= today && t.status === 'scheduled';
+          return tDate.getTime() === selectedDateValue.getTime() && selectedDateValue >= today && statusPresentation === 'scheduled';
         }
 
-        return tDate >= today && t.status === 'scheduled';
+        return tDate >= today && statusPresentation === 'scheduled';
       })
       .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
@@ -101,20 +103,21 @@ const Dashboard: React.FC = () => {
       .filter(t => {
         if (!t || t.status === 'cancelled') return false;
         const tDate = normalizeDate(t.date);
+        const statusPresentation = getTrainingStatusPresentation(t);
 
         if (selectedDateValue && tDate.getTime() !== selectedDateValue.getTime()) {
           return false;
         }
 
         if (user?.role === 'participant') {
-          return t.userStatus === 'attended' || t.status === 'completed';
+          return t.userStatus === 'attended' || statusPresentation === 'completed';
         }
 
         if (selectedDateValue) {
-          return selectedDateIsPast || t.status === 'completed';
+          return selectedDateIsPast || statusPresentation === 'completed';
         }
 
-        return t.status === 'completed';
+        return statusPresentation === 'completed';
       })
       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
@@ -122,7 +125,7 @@ const Dashboard: React.FC = () => {
       if (!t || t.status === 'cancelled') return false;
       if (user?.role === 'participant' && t.userStatus === 'attended') return false;
 
-      return t.status === 'ongoing';
+      return getTrainingStatusPresentation(t) === 'ongoing';
     });
 
     const selectedDateActiveTrainings = trainings
@@ -131,14 +134,16 @@ const Dashboard: React.FC = () => {
         if (user?.role === 'participant' && t.userStatus === 'attended') return false;
 
         const tDate = normalizeDate(t.date);
-        return tDate.getTime() === selectedDateValue.getTime() && selectedDateIsToday && t.status === 'ongoing';
+        return tDate.getTime() === selectedDateValue.getTime() && selectedDateIsToday && getTrainingStatusPresentation(t) === 'ongoing';
       })
       .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
     const actionRequired = trainings.filter(t => {
       if (!t) return false;
+      const statusPresentation = getTrainingStatusPresentation(t);
+
       if (user?.role === 'participant') {
-        return (t.status === 'ongoing' || t.status === 'scheduled') && t.userStatus !== 'attended';
+        return (statusPresentation === 'ongoing' || statusPresentation === 'scheduled') && t.userStatus !== 'attended';
       }
 
       if (selectedDate) {
@@ -153,7 +158,7 @@ const Dashboard: React.FC = () => {
       tDate.setHours(0, 0, 0, 0);
       const isPast = tDate < today;
 
-      return t.status === 'ongoing' || (t.status === 'scheduled' && isPast);
+      return statusPresentation === 'ongoing' || statusPresentation === 'overdue' || (statusPresentation === 'scheduled' && isPast);
     });
 
     return {
@@ -393,15 +398,35 @@ const Dashboard: React.FC = () => {
                 subtitle={selectedDate ? t('dashboard.sections.activeOnDate.subtitle', 'Sessions for the selected day') : (activeFilter === 'action' ? t('dashboard.sections.actionRequired.subtitle', 'Items needing your attention') : t('dashboard.sections.ongoing.subtitle', 'Currently active sessions'))}
               >
                 {(selectedDate ? selectedDateActiveTrainings : actionRequired).map(training => (
-                  <MediaCard
-                    key={training.id}
-                    id={training.id}
-                    title={training.title}
-                    subtitle={`${safeFormatDate(training.date)} • ${training.program}`}
-                    statusBadge={training.status === 'ongoing' ? "LIVE" : (training.userStatus === 'approved' ? "CONFIRMED" : "NOMINATED")}
-                    statusColor={training.status === 'ongoing' ? "bg-red-600 text-white" : "bg-blue-600 text-white"}
-                    onClick={() => navigate(`/trainings/${training.id}`)}
-                  />
+                  (() => {
+                    const statusPresentation = getTrainingStatusPresentation(training);
+
+                    return (
+                      <MediaCard
+                        key={training.id}
+                        id={training.id}
+                        title={training.title}
+                        subtitle={`${safeFormatDate(training.date)} • ${training.program}`}
+                        statusBadge={
+                          statusPresentation === 'ongoing'
+                            ? 'LIVE'
+                            : statusPresentation === 'overdue'
+                              ? 'UPDATE'
+                              : training.userStatus === 'approved'
+                                ? 'CONFIRMED'
+                                : 'NOMINATED'
+                        }
+                        statusColor={
+                          statusPresentation === 'ongoing'
+                            ? 'bg-red-600 text-white'
+                            : statusPresentation === 'overdue'
+                              ? 'bg-amber-500 text-black'
+                              : 'bg-blue-600 text-white'
+                        }
+                        onClick={() => navigate(`/trainings/${training.id}`)}
+                      />
+                    );
+                  })()
                 ))}
               </HorizontalScrollList>
             )}
