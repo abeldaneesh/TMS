@@ -3,6 +3,7 @@ import Hall from '../models/Hall';
 import Training from '../models/Training';
 import HallBlock from '../models/HallBlock';
 import { v4 as uuidv4 } from 'uuid';
+import { HALL_TURNOVER_BUFFER_MINUTES, getHallTurnoverEndTime, hasBufferedTrainingConflict } from '../utils/hallScheduling';
 
 export const getHalls = async (req: Request, res: Response): Promise<void> => {
     try {
@@ -59,17 +60,9 @@ export const getAvailableHalls = async (req: Request, res: Response): Promise<vo
         const startOfDay = new Date(`${dateStr}T00:00:00.000Z`);
         const endOfDay = new Date(`${dateStr}T23:59:59.999Z`);
 
-        // 1. Find conflicting trainings
+        // 1. Find same-day trainings and apply the hall turnaround buffer locally.
         const trainingQuery: any = {
             date: { $gte: startOfDay, $lte: endOfDay },
-            $or: [
-                {
-                    $and: [
-                        { startTime: { $lt: endTime as string } }, // strict overlap: start < end
-                        { endTime: { $gt: startTime as string } }, // strict overlap: end > start
-                    ],
-                }
-            ],
             status: { $in: ['scheduled', 'ongoing', 'completed'] } // Exclude drafts from blocking
         };
 
@@ -77,7 +70,10 @@ export const getAvailableHalls = async (req: Request, res: Response): Promise<vo
             trainingQuery._id = { $ne: excludeTrainingId as string };
         }
 
-        const conflictingTrainings = await Training.find(trainingQuery).select('hallId');
+        const sameDayTrainings = await Training.find(trainingQuery).select('hallId startTime endTime');
+        const conflictingTrainings = sameDayTrainings.filter((training: any) =>
+            hasBufferedTrainingConflict(startTime as string, endTime as string, training.startTime, training.endTime)
+        );
 
         // 2. Find conflicting blocks
         const conflictingBlocks = await HallBlock.find({
@@ -270,14 +266,6 @@ export const getHallAvailabilityDetails = async (req: Request, res: Response): P
         const trainingQuery: any = {
             hallId,
             date: { $gte: startOfDay, $lte: endOfDay },
-            $or: [
-                {
-                    $and: [
-                        { startTime: { $lt: endTime as string } },
-                        { endTime: { $gt: startTime as string } },
-                    ],
-                }
-            ],
             status: { $in: ['scheduled', 'ongoing', 'completed'] }
         };
 
@@ -285,12 +273,17 @@ export const getHallAvailabilityDetails = async (req: Request, res: Response): P
             trainingQuery._id = { $ne: excludeTrainingId as string };
         }
 
-        const conflictingTraining = await Training.findOne(trainingQuery).populate('createdById', 'name');
+        const sameDayTrainings = await Training.find(trainingQuery)
+            .populate('createdById', 'name')
+            .sort({ startTime: 1 });
+        const conflictingTraining = sameDayTrainings.find((training: any) =>
+            hasBufferedTrainingConflict(startTime as string, endTime as string, training.startTime, training.endTime)
+        );
 
         if (conflictingTraining) {
             res.json({
                 isAvailable: false,
-                reason: `Booked for training: ${conflictingTraining.title}`,
+                reason: `Unavailable until ${getHallTurnoverEndTime(conflictingTraining.endTime, HALL_TURNOVER_BUFFER_MINUTES)} after "${conflictingTraining.title}"`,
                 type: 'training',
                 // @ts-ignore
                 bookedBy: conflictingTraining.createdById?.name

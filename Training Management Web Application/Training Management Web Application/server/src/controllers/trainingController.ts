@@ -8,6 +8,7 @@ import Notification from '../models/Notification';
 import TrainingFeedback from '../models/TrainingFeedback';
 import { createAndSendNotification } from '../utils/notificationUtils';
 import { parseTrainingDateTime, withEffectiveTrainingStatus } from '../utils/trainingStatus';
+import { HALL_TURNOVER_BUFFER_MINUTES, getHallTurnoverEndTime, hasBufferedTrainingConflict } from '../utils/hallScheduling';
 
 const LATE_ATTENDANCE_WINDOW_HOURS = Math.max(2, Math.min(6, Number(process.env.LATE_ATTENDANCE_WINDOW_HOURS || 4)));
 
@@ -29,6 +30,38 @@ const getPastTimeSlotError = (dateValue: Date | string, startTime: string, endTi
     }
 
     return null;
+};
+
+const findHallConflictWithBuffer = async ({
+    hallId,
+    startOfDay,
+    endOfDay,
+    startTime,
+    endTime,
+    excludeTrainingId,
+}: {
+    hallId: string;
+    startOfDay: Date;
+    endOfDay: Date;
+    startTime: string;
+    endTime: string;
+    excludeTrainingId?: string;
+}) => {
+    const query: any = {
+        hallId,
+        date: { $gte: startOfDay, $lte: endOfDay },
+        status: { $in: ['scheduled', 'ongoing', 'completed'] }
+    };
+
+    if (excludeTrainingId) {
+        query._id = { $ne: excludeTrainingId };
+    }
+
+    const sameDayTrainings = await Training.find(query).select('_id title startTime endTime');
+
+    return sameDayTrainings.find((entry: any) =>
+        hasBufferedTrainingConflict(startTime, endTime, entry.startTime, entry.endTime)
+    ) || null;
 };
 
 const resolveTrainerId = (trainingLike: { trainerId?: unknown; createdById?: unknown }, fallbackUserId?: string) => {
@@ -259,15 +292,18 @@ export const createTraining = async (req: AuthRequest, res: Response): Promise<v
 
         // 1. Check Training Conflict (Skip if draft)
         if (status !== 'draft') {
-            const conflictingTraining = await Training.findOne({
+            const conflictingTraining = await findHallConflictWithBuffer({
                 hallId,
-                date: { $gte: startOfDay, $lte: endOfDay },
-                $and: buildTimeOverlapQuery(startTime, endTime),
-                status: { $in: ['scheduled', 'ongoing'] } // Only check confirmed
+                startOfDay,
+                endOfDay,
+                startTime,
+                endTime,
             });
 
             if (conflictingTraining) {
-                res.status(409).json({ message: 'Hall is already booked for this time slot.' });
+                res.status(409).json({
+                    message: `Hall is unavailable until ${getHallTurnoverEndTime(conflictingTraining.endTime, HALL_TURNOVER_BUFFER_MINUTES)} because a one-hour cleaning buffer is required after "${conflictingTraining.title}".`
+                });
                 return;
             }
 
@@ -403,16 +439,19 @@ export const updateTraining = async (req: AuthRequest, res: Response): Promise<v
 
         // Check conflicts
         if (status !== 'draft') {
-            const conflictingTraining = await Training.findOne({
-                _id: { $ne: id },
-                hallId: hallId || training.hallId,
-                date: { $gte: startOfDay, $lte: endOfDay },
-                $and: buildTimeOverlapQuery(nextStartTime, nextEndTime),
-                status: { $in: ['scheduled', 'ongoing'] }
+            const conflictingTraining = await findHallConflictWithBuffer({
+                hallId: String(hallId || training.hallId),
+                startOfDay,
+                endOfDay,
+                startTime: nextStartTime,
+                endTime: nextEndTime,
+                excludeTrainingId: id,
             });
 
             if (conflictingTraining) {
-                res.status(409).json({ message: 'Hall is already booked for this time slot.' });
+                res.status(409).json({
+                    message: `Hall is unavailable until ${getHallTurnoverEndTime(conflictingTraining.endTime, HALL_TURNOVER_BUFFER_MINUTES)} because a one-hour cleaning buffer is required after "${conflictingTraining.title}".`
+                });
                 return;
             }
 

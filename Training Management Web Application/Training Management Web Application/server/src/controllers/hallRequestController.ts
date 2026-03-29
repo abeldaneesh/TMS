@@ -4,6 +4,7 @@ import Training, { TrainingStatus } from '../models/Training';
 import HallBlock from '../models/HallBlock';
 import { AuthRequest } from '../middleware/authMiddleware';
 import { createAndSendNotification } from '../utils/notificationUtils';
+import { HALL_TURNOVER_BUFFER_MINUTES, getHallTurnoverEndTime, hasBufferedTrainingConflict } from '../utils/hallScheduling';
 
 export const createRequest = async (req: AuthRequest, res: Response): Promise<void> => {
     try {
@@ -84,19 +85,20 @@ export const updateRequestStatus = async (req: AuthRequest, res: Response): Prom
             const endOfDay = new Date(date); endOfDay.setHours(23, 59, 59, 999);
 
             // 1. Check existing confirmed trainings
-            const conflictingTraining = await Training.findOne({
+            const sameDayTrainings = await Training.find({
                 hallId: request.hallId,
                 date: { $gte: startOfDay, $lte: endOfDay },
-                status: { $in: [TrainingStatus.SCHEDULED, TrainingStatus.ONGOING] }, // Check confirmed ones
-                $and: [
-                    { startTime: { $lt: endTime } },
-                    { endTime: { $gt: startTime } }
-                ],
+                status: { $in: [TrainingStatus.SCHEDULED, TrainingStatus.ONGOING, TrainingStatus.COMPLETED] },
                 _id: { $ne: training._id } // Exclude self
             });
+            const conflictingTraining = sameDayTrainings.find((entry: any) =>
+                hasBufferedTrainingConflict(startTime, endTime, entry.startTime, entry.endTime)
+            );
 
             if (conflictingTraining) {
-                res.status(409).json({ message: 'Hall is blocked by another confirmed training.' });
+                res.status(409).json({
+                    message: `Hall is unavailable until ${getHallTurnoverEndTime(conflictingTraining.endTime, HALL_TURNOVER_BUFFER_MINUTES)} because a one-hour cleaning buffer is required after "${conflictingTraining.title}".`
+                });
                 return;
             }
 
