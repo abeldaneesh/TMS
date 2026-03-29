@@ -49,6 +49,11 @@ export const nominateParticipant = async (req: AuthRequest, res: Response): Prom
             return;
         }
 
+        if (participant.role !== 'participant') {
+            res.status(400).json({ message: `${participant.name || 'This user'} is not a participant account` });
+            return;
+        }
+
         const participantSnapshot = buildParticipantSnapshot(participant, (participant as any).institutionId);
 
         const participantName = participant.name || 'User';

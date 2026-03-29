@@ -19,7 +19,8 @@ const Dashboard: React.FC = () => {
   const navigate = useNavigate();
   const { t, i18n } = useTranslation();
   const [stats, setStats] = useState<DashboardStats | null>(null);
-  const [allTrainings, setAllTrainings] = useState<Training[]>([]);
+  const [dashboardTrainings, setDashboardTrainings] = useState<Training[]>([]);
+  const [calendarTrainings, setCalendarTrainings] = useState<Training[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeFilter, setActiveFilter] = useState('all');
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
@@ -37,13 +38,21 @@ const Dashboard: React.FC = () => {
       if (!user) return;
 
       try {
-        const [statsData, trainingsData] = await Promise.all([
+        const dashboardTrainingsPromise = trainingsApi.getAll(
+          user.role === 'program_officer' ? { createdById: user.id } : {}
+        );
+        const calendarTrainingsPromise =
+          user.role === 'program_officer' ? trainingsApi.getAll({}) : dashboardTrainingsPromise;
+
+        const [statsData, trainingsData, visibleCalendarTrainings] = await Promise.all([
           analyticsApi.getDashboardStats(user.id, user.role),
-          trainingsApi.getAll(user.role === 'program_officer' ? { createdById: user.id } : {}),
+          dashboardTrainingsPromise,
+          calendarTrainingsPromise,
         ]);
 
         setStats(statsData);
-        setAllTrainings(Array.isArray(trainingsData) ? trainingsData : []);
+        setDashboardTrainings(Array.isArray(trainingsData) ? trainingsData : []);
+        setCalendarTrainings(Array.isArray(visibleCalendarTrainings) ? visibleCalendarTrainings : []);
       } catch (error) {
         console.error('Error fetching dashboard data:', error);
       } finally {
@@ -72,69 +81,63 @@ const Dashboard: React.FC = () => {
   const selectedDateIsPast = Boolean(selectedDateValue && selectedDateValue < today);
   const selectedDateIsToday = Boolean(selectedDateValue && selectedDateValue.getTime() === today.getTime());
 
-  const upcomingTrainings = allTrainings
-    .filter(t => {
-      if (!t || t.status === 'cancelled') return false;
-      // If participant, hide if already attended
-      if (user?.role === 'participant' && t.userStatus === 'attended') return false;
+  const buildTrainingBuckets = (trainings: Training[]) => {
+    const upcomingTrainings = trainings
+      .filter(t => {
+        if (!t || t.status === 'cancelled') return false;
+        if (user?.role === 'participant' && t.userStatus === 'attended') return false;
 
-      const tDate = normalizeDate(t.date);
+        const tDate = normalizeDate(t.date);
 
-      if (selectedDateValue) {
-        // Only scheduled sessions should appear in the upcoming bucket for the selected day.
-        return tDate.getTime() === selectedDateValue.getTime() && selectedDateValue >= today && t.status === 'scheduled';
-      }
+        if (selectedDateValue) {
+          return tDate.getTime() === selectedDateValue.getTime() && selectedDateValue >= today && t.status === 'scheduled';
+        }
 
-      return tDate >= today && t.status === 'scheduled';
-    })
-    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+        return tDate >= today && t.status === 'scheduled';
+      })
+      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
-  const completedTrainings = allTrainings
-    .filter(t => {
-      if (!t || t.status === 'cancelled') return false;
-      const tDate = normalizeDate(t.date);
+    const completedTrainings = trainings
+      .filter(t => {
+        if (!t || t.status === 'cancelled') return false;
+        const tDate = normalizeDate(t.date);
 
-      if (selectedDateValue && tDate.getTime() !== selectedDateValue.getTime()) {
-        return false;
-      }
+        if (selectedDateValue && tDate.getTime() !== selectedDateValue.getTime()) {
+          return false;
+        }
 
-      // If participant, it's completed for them IF they attended OR the training is officially completed
-      if (user?.role === 'participant') {
-        return t.userStatus === 'attended' || t.status === 'completed';
-      }
+        if (user?.role === 'participant') {
+          return t.userStatus === 'attended' || t.status === 'completed';
+        }
 
-      if (selectedDateValue) {
-        // When a past day is selected, every non-cancelled session from that date belongs in past sessions.
-        return selectedDateIsPast || t.status === 'completed';
-      }
+        if (selectedDateValue) {
+          return selectedDateIsPast || t.status === 'completed';
+        }
 
-      return t.status === 'completed';
-    })
-    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+        return t.status === 'completed';
+      })
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
-  const activeOrOngoing = allTrainings
-    .filter(t => {
+    const activeOrOngoing = trainings.filter(t => {
       if (!t || t.status === 'cancelled') return false;
       if (user?.role === 'participant' && t.userStatus === 'attended') return false;
 
       return t.status === 'ongoing';
     });
 
-  const selectedDateActiveTrainings = allTrainings
-    .filter(t => {
-      if (!selectedDateValue || !t || t.status === 'cancelled') return false;
-      if (user?.role === 'participant' && t.userStatus === 'attended') return false;
+    const selectedDateActiveTrainings = trainings
+      .filter(t => {
+        if (!selectedDateValue || !t || t.status === 'cancelled') return false;
+        if (user?.role === 'participant' && t.userStatus === 'attended') return false;
 
-      const tDate = normalizeDate(t.date);
-      return tDate.getTime() === selectedDateValue.getTime() && selectedDateIsToday && t.status === 'ongoing';
-    })
-    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+        const tDate = normalizeDate(t.date);
+        return tDate.getTime() === selectedDateValue.getTime() && selectedDateIsToday && t.status === 'ongoing';
+      })
+      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
-  const actionRequired = allTrainings
-    .filter(t => {
+    const actionRequired = trainings.filter(t => {
       if (!t) return false;
       if (user?.role === 'participant') {
-        // Action: Nominations I haven't attended yet for active trainings
         return (t.status === 'ongoing' || t.status === 'scheduled') && t.userStatus !== 'attended';
       }
 
@@ -146,15 +149,33 @@ const Dashboard: React.FC = () => {
         return tDate.getTime() === sDate.getTime();
       }
 
-      // For PO/Admin, action is required if:
-      // 1. It's ongoing (needs completion)
-      // 2. It's scheduled but the date is in the past (needs status update)
       const tDate = new Date(t.date);
       tDate.setHours(0, 0, 0, 0);
       const isPast = tDate < today;
 
       return t.status === 'ongoing' || (t.status === 'scheduled' && isPast);
     });
+
+    return {
+      upcomingTrainings,
+      completedTrainings,
+      activeOrOngoing,
+      selectedDateActiveTrainings,
+      actionRequired,
+    };
+  };
+
+  const ownTrainingBuckets = buildTrainingBuckets(dashboardTrainings);
+  const selectedDateTrainingBuckets =
+    selectedDate && user?.role === 'program_officer'
+      ? buildTrainingBuckets(calendarTrainings)
+      : ownTrainingBuckets;
+
+  const upcomingTrainings = selectedDate ? selectedDateTrainingBuckets.upcomingTrainings : ownTrainingBuckets.upcomingTrainings;
+  const completedTrainings = selectedDate ? selectedDateTrainingBuckets.completedTrainings : ownTrainingBuckets.completedTrainings;
+  const activeOrOngoing = ownTrainingBuckets.activeOrOngoing;
+  const selectedDateActiveTrainings = selectedDate ? selectedDateTrainingBuckets.selectedDateActiveTrainings : ownTrainingBuckets.selectedDateActiveTrainings;
+  const actionRequired = ownTrainingBuckets.actionRequired;
 
   const hasTrainingsOnSelectedDate =
     selectedDateActiveTrainings.length > 0 || upcomingTrainings.length > 0 || completedTrainings.length > 0;

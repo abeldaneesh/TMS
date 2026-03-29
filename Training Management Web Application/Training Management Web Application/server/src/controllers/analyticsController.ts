@@ -33,7 +33,11 @@ export const getDashboardStats = async (req: AuthRequest, res: Response): Promis
             status: 'completed'
         });
 
-        const totalParticipants = await User.countDocuments({ role: 'participant' });
+        const activeParticipantIds = await User.distinct('_id', {
+            role: 'participant',
+            isDeleted: { $ne: true }
+        });
+        const totalParticipants = activeParticipantIds.length;
 
         // For PO, only count nominations for their trainings
         const nominationFilter: any = {};
@@ -54,7 +58,10 @@ export const getDashboardStats = async (req: AuthRequest, res: Response): Promis
         const attendanceRate = totalNominations > 0 ? (totalAttendance / totalNominations) * 100 : 0;
 
         // Trained staff (unique participants in attendance for these trainings)
-        const trainedStaff = await Attendance.distinct('participantId', nominationFilter);
+        const trainedStaff = await Attendance.distinct('participantId', {
+            ...nominationFilter,
+            participantId: { $in: activeParticipantIds }
+        });
         const trainedStaffCount = trainedStaff.length;
 
         res.json({
@@ -64,7 +71,7 @@ export const getDashboardStats = async (req: AuthRequest, res: Response): Promis
             totalParticipants,
             attendanceRate: Math.round(attendanceRate),
             trainedStaff: trainedStaffCount,
-            untrainedStaff: totalParticipants - trainedStaffCount,
+            untrainedStaff: Math.max(0, totalParticipants - trainedStaffCount),
         });
     } catch (error) {
         console.error('Analytics error:', error);
