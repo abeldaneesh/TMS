@@ -91,6 +91,29 @@ const notifyTrainingCreatorOfAttendance = async ({
     }
 };
 
+const notifyParticipantOfAttendance = async ({
+    participantId,
+    trainingId,
+    trainingTitle,
+}: {
+    participantId: string;
+    trainingId: string;
+    trainingTitle: string;
+}) => {
+    try {
+        await createAndSendNotification({
+            userId: participantId,
+            title: 'Attendance Marked Successfully',
+            message: `Your attendance has been marked successfully for "${trainingTitle}".`,
+            type: 'success',
+            relatedId: trainingId,
+            actionUrl: `/trainings/${trainingId}`
+        });
+    } catch (error) {
+        console.error(`Failed to notify participant ${participantId} about attendance for ${trainingId}`, error);
+    }
+};
+
 // Mark attendance
 export const markAttendance = async (req: AuthRequest, res: Response): Promise<void> => {
     try {
@@ -224,6 +247,12 @@ export const markAttendance = async (req: AuthRequest, res: Response): Promise<v
             participantName: participantSnapshot?.fullName || participant?.name || 'A participant',
         });
 
+        await notifyParticipantOfAttendance({
+            participantId,
+            trainingId,
+            trainingTitle: training.title,
+        });
+
         res.status(201).json({
             ...attendance.toObject(),
             id: attendance._id
@@ -329,6 +358,12 @@ export const markLateAttendance = async (req: AuthRequest, res: Response): Promi
                 { trainingId, participantId, status: { $in: ['nominated', 'approved'] } },
                 { status: 'attended' }
             );
+
+            await notifyParticipantOfAttendance({
+                participantId,
+                trainingId,
+                trainingTitle: training.title,
+            });
 
             createdAttendances.push(attendance);
         }
@@ -442,6 +477,12 @@ export const markManualAttendance = async (req: AuthRequest, res: Response): Pro
                 { trainingId, participantId, status: { $in: ['nominated', 'approved'] } },
                 { status: 'attended' }
             );
+
+            await notifyParticipantOfAttendance({
+                participantId,
+                trainingId,
+                trainingTitle: training.title,
+            });
 
             createdAttendances.push(attendance);
         }

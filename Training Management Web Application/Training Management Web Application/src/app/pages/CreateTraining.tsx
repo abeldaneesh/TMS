@@ -83,6 +83,19 @@ const isPresetTrainingSession = (startTime: string, endTime: string) =>
   getTrainingSessionType(startTime, endTime) !== 'custom' &&
   getTrainingSessionType(startTime, endTime) !== '';
 
+const parseFormDateTime = (dateValue: string, timeValue: string) => {
+  if (!dateValue || !timeValue) return null;
+
+  const [year, month, day] = dateValue.split('-').map(Number);
+  const [hours, minutes] = timeValue.split(':').map(Number);
+
+  if ([year, month, day, hours, minutes].some((value) => Number.isNaN(value))) {
+    return null;
+  }
+
+  return new Date(year, month - 1, day, hours, minutes, 0, 0);
+};
+
 const normalizeTargetAudienceForForm = (value: string[] | string | undefined) => {
   const audienceList = Array.isArray(value) ? value.filter(Boolean) : value ? [value] : [];
   const presetSelections = audienceList.filter((audience) => presetTargetAudienceOptions.includes(audience));
@@ -269,14 +282,24 @@ const CreateTraining: React.FC = () => {
     formData.endTime &&
     formData.startTime >= formData.endTime
   );
+  const selectedStartDateTime = parseFormDateTime(formData.date, formData.startTime);
+  const hasPastTimeSelection = Boolean(
+    !isEditMode &&
+    selectedStartDateTime &&
+    selectedStartDateTime.getTime() <= Date.now()
+  );
   const timeRangeMessage = hasInvalidTimeRange
     ? 'The selected time range is not applicable. Please choose an end time that is later than the start time.'
+    : '';
+  const pastTimeSelectionMessage = hasPastTimeSelection
+    ? 'For today, the training start time must be later than the current time.'
     : '';
   const canCheckAvailability = Boolean(
     formData.date &&
     formData.startTime &&
     formData.endTime &&
-    !hasInvalidTimeRange
+    !hasInvalidTimeRange &&
+    !hasPastTimeSelection
   );
   const selectedSessionType = getTrainingSessionType(formData.startTime, formData.endTime);
   const hallCards = useMemo(() => {
@@ -391,6 +414,10 @@ const CreateTraining: React.FC = () => {
 
     if (formData.startTime && formData.endTime && formData.startTime >= formData.endTime) {
       newErrors.endTime = 'End time must be after start time';
+    }
+
+    if (!isEditMode && hasPastTimeSelection) {
+      newErrors.startTime = 'Start time must be later than the current time';
     }
 
     setErrors(newErrors);
@@ -737,6 +764,7 @@ const CreateTraining: React.FC = () => {
                 </Select>
                 {(errors.startTime || errors.endTime) && <p className="text-sm text-red-600 mt-1">{errors.startTime || errors.endTime}</p>}
                 {timeRangeMessage && <p className="text-sm text-amber-400 mt-1">{timeRangeMessage}</p>}
+                {pastTimeSelectionMessage && <p className="text-sm text-amber-400 mt-1">{pastTimeSelectionMessage}</p>}
               </div>
             </div>
 

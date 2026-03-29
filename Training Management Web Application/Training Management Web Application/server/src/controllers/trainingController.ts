@@ -7,7 +7,7 @@ import Attendance from '../models/Attendance';
 import Notification from '../models/Notification';
 import TrainingFeedback from '../models/TrainingFeedback';
 import { createAndSendNotification } from '../utils/notificationUtils';
-import { withEffectiveTrainingStatus } from '../utils/trainingStatus';
+import { parseTrainingDateTime, withEffectiveTrainingStatus } from '../utils/trainingStatus';
 
 const LATE_ATTENDANCE_WINDOW_HOURS = Math.max(2, Math.min(6, Number(process.env.LATE_ATTENDANCE_WINDOW_HOURS || 4)));
 
@@ -15,6 +15,21 @@ const buildTimeOverlapQuery = (startTime: string, endTime: string) => ([
     { startTime: { $lt: endTime } },
     { endTime: { $gt: startTime } }
 ]);
+
+const getPastTimeSlotError = (dateValue: Date | string, startTime: string, endTime: string, now = new Date()) => {
+    const startDateTime = parseTrainingDateTime(dateValue, startTime);
+    const endDateTime = parseTrainingDateTime(dateValue, endTime);
+
+    if (startDateTime >= endDateTime) {
+        return 'End time must be after start time.';
+    }
+
+    if (startDateTime <= now || endDateTime <= now) {
+        return 'Selected training time has already passed. Please choose a future time slot.';
+    }
+
+    return null;
+};
 
 const resolveTrainerId = (trainingLike: { trainerId?: unknown; createdById?: unknown }, fallbackUserId?: string) => {
     if (typeof trainingLike.trainerId === 'string' && trainingLike.trainerId) {
@@ -236,6 +251,12 @@ export const createTraining = async (req: AuthRequest, res: Response): Promise<v
         const endOfDay = new Date(trainingDateObj);
         endOfDay.setHours(23, 59, 59, 999);
 
+        const pastTimeSlotError = getPastTimeSlotError(trainingDateObj, startTime, endTime);
+        if (pastTimeSlotError) {
+            res.status(400).json({ message: pastTimeSlotError });
+            return;
+        }
+
         // 1. Check Training Conflict (Skip if draft)
         if (status !== 'draft') {
             const conflictingTraining = await Training.findOne({
@@ -360,10 +381,24 @@ export const updateTraining = async (req: AuthRequest, res: Response): Promise<v
         const nextStartTime = startTime || training.startTime;
         const nextEndTime = endTime || training.endTime;
         const nextTrainerId = resolveTrainerId(training, req.user!.userId);
+        const nextStatus = status || training.status;
 
         if (!nextTrainerId) {
             res.status(400).json({ message: 'Trainer could not be resolved for this training.' });
             return;
+        }
+
+        const shouldValidateScheduleWindow =
+            (date !== undefined || startTime !== undefined || endTime !== undefined || (status !== undefined && status !== training.status)) &&
+            nextStatus !== 'completed' &&
+            nextStatus !== 'cancelled';
+
+        if (shouldValidateScheduleWindow) {
+            const pastTimeSlotError = getPastTimeSlotError(trainingDateObj, nextStartTime, nextEndTime);
+            if (pastTimeSlotError) {
+                res.status(400).json({ message: pastTimeSlotError });
+                return;
+            }
         }
 
         // Check conflicts
@@ -495,8 +530,42 @@ export const updateTrainingStatus = async (req: AuthRequest, res: Response): Pro
             return;
         }
 
+        const previousStatus = training.status;
         training.status = status;
         await training.save();
+
+        if (status === 'completed' && previousStatus !== 'completed') {
+            const [pendingNominations, attendanceRecords] = await Promise.all([
+                Nomination.find({
+                    trainingId: id,
+                    status: { $in: ['nominated', 'approved'] }
+                }).select('participantId'),
+                Attendance.find({ trainingId: id }).select('participantId')
+            ]);
+
+            const attendedParticipantIds = new Set(
+                attendanceRecords.map((record: any) => String(record.participantId))
+            );
+
+            const absentParticipantIds = pendingNominations
+                .map((nomination: any) => String(nomination.participantId))
+                .filter((participantId) => !attendedParticipantIds.has(participantId));
+
+            await Promise.all(
+                absentParticipantIds.map((participantId) =>
+                    createAndSendNotification({
+                        userId: participantId,
+                        title: 'Attendance Marked Absent',
+                        message: `You have been marked as absent for "${training.title}".`,
+                        type: 'warning',
+                        relatedId: training._id,
+                        actionUrl: `/trainings/${training._id}`
+                    }).catch((error) => {
+                        console.error(`Failed to notify participant ${participantId} about absence for ${id}`, error);
+                    })
+                )
+            );
+        }
 
         res.json(withEffectiveTrainingStatus({
             ...training.toObject(),

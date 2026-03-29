@@ -44,6 +44,8 @@ const getEntityId = (value: any): string => value?.id || value?._id || value?.to
 
 const DAY_CARD = 'rounded-[22px] border border-border bg-card/90 backdrop-blur-xl shadow-sm';
 const PANEL_CARD = 'rounded-[24px] border border-border bg-card shadow-sm';
+const MORNING_SLOT = { start: '10:00', end: '13:30' };
+const EVENING_SLOT = { start: '14:00', end: '17:00' };
 
 const timeToMinutes = (time: string) => {
   const [hours, minutes] = time.split(':').map(Number);
@@ -248,8 +250,8 @@ const HallAvailability: React.FC = () => {
   const getDayBreakdown = (hallId: string, dateString = selectedDate) => {
     const events = getEventsForHallOnDate(hallId, dateString);
     return {
-      morning: getWindowAnalytics(events, '09:00', '12:00'),
-      evening: getWindowAnalytics(events, '13:00', '17:00'),
+      morning: getWindowAnalytics(events, MORNING_SLOT.start, MORNING_SLOT.end),
+      evening: getWindowAnalytics(events, EVENING_SLOT.start, EVENING_SLOT.end),
       events,
     };
   };
