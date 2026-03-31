@@ -6,6 +6,7 @@ interface AuthHeroPanelProps {
 }
 
 const HERO_IMAGE = '/login-training-hero.svg';
+const HOSPITAL_OVERLAY = '/hospital-overlay.svg';
 
 const AuthHeroPanel: React.FC<AuthHeroPanelProps> = ({ subtitle }) => {
   return (
@@ -14,6 +15,12 @@ const AuthHeroPanel: React.FC<AuthHeroPanelProps> = ({ subtitle }) => {
         src={HERO_IMAGE}
         alt="Blurred illustration of medical training operations and attendance management"
         className="absolute inset-0 h-full w-full object-cover scale-[1.03]"
+      />
+      <img
+        src={HOSPITAL_OVERLAY}
+        alt=""
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-x-0 bottom-0 mx-auto h-[82%] w-[88%] object-contain opacity-28"
       />
       <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(2,6,23,0.28),rgba(2,6,23,0.72))]" />
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(79,70,229,0.22),transparent_34%),linear-gradient(120deg,rgba(3,3,3,0.08),rgba(3,3,3,0.28))]" />

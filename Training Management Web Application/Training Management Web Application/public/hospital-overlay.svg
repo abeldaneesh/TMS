@@ -1,0 +1,49 @@
+<svg width="1200" height="1200" viewBox="0 0 1200 1200" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="hospitalStroke" x1="177" y1="167" x2="1045" y2="1017" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F8FAFC" stop-opacity="0.78"/>
+      <stop offset="1" stop-color="#A5B4FC" stop-opacity="0.36"/>
+    </linearGradient>
+    <linearGradient id="hospitalFill" x1="600" y1="200" x2="600" y2="1020" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFFFFF" stop-opacity="0.18"/>
+      <stop offset="1" stop-color="#6366F1" stop-opacity="0.06"/>
+    </linearGradient>
+    <filter id="softGlow" x="80" y="120" width="1040" height="980" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="22"/>
+    </filter>
+  </defs>
+
+  <g opacity="0.24" filter="url(#softGlow)">
+    <rect x="248" y="214" width="704" height="730" rx="42" fill="#818CF8"/>
+  </g>
+
+  <g opacity="0.82">
+    <path d="M304 978V438C304 420.327 318.327 406 336 406H470V302C470 284.327 484.327 270 502 270H698C715.673 270 730 284.327 730 302V406H864C881.673 406 896 420.327 896 438V978" fill="url(#hospitalFill)"/>
+    <path d="M304 978V438C304 420.327 318.327 406 336 406H470V302C470 284.327 484.327 270 502 270H698C715.673 270 730 284.327 730 302V406H864C881.673 406 896 420.327 896 438V978" stroke="url(#hospitalStroke)" stroke-width="18" stroke-linejoin="round"/>
+
+    <path d="M566 212H634V276H566V212Z" fill="url(#hospitalFill)" stroke="url(#hospitalStroke)" stroke-width="16" stroke-linejoin="round"/>
+    <path d="M600 136V246" stroke="url(#hospitalStroke)" stroke-width="18" stroke-linecap="round"/>
+    <path d="M546 190H654" stroke="url(#hospitalStroke)" stroke-width="18" stroke-linecap="round"/>
+
+    <path d="M538 628H662C673.046 628 682 636.954 682 648V978H518V648C518 636.954 526.954 628 538 628Z" fill="url(#hospitalFill)" stroke="url(#hospitalStroke)" stroke-width="18"/>
+
+    <g opacity="0.9">
+      <rect x="376" y="498" width="78" height="92" rx="16" fill="url(#hospitalFill)" stroke="url(#hospitalStroke)" stroke-width="14"/>
+      <rect x="376" y="654" width="78" height="92" rx="16" fill="url(#hospitalFill)" stroke="url(#hospitalStroke)" stroke-width="14"/>
+      <rect x="376" y="810" width="78" height="92" rx="16" fill="url(#hospitalFill)" stroke="url(#hospitalStroke)" stroke-width="14"/>
+
+      <rect x="746" y="498" width="78" height="92" rx="16" fill="url(#hospitalFill)" stroke="url(#hospitalStroke)" stroke-width="14"/>
+      <rect x="746" y="654" width="78" height="92" rx="16" fill="url(#hospitalFill)" stroke="url(#hospitalStroke)" stroke-width="14"/>
+      <rect x="746" y="810" width="78" height="92" rx="16" fill="url(#hospitalFill)" stroke="url(#hospitalStroke)" stroke-width="14"/>
+
+      <rect x="528" y="350" width="60" height="70" rx="14" fill="url(#hospitalFill)" stroke="url(#hospitalStroke)" stroke-width="12"/>
+      <rect x="612" y="350" width="60" height="70" rx="14" fill="url(#hospitalFill)" stroke="url(#hospitalStroke)" stroke-width="12"/>
+
+      <rect x="528" y="470" width="60" height="70" rx="14" fill="url(#hospitalFill)" stroke="url(#hospitalStroke)" stroke-width="12"/>
+      <rect x="612" y="470" width="60" height="70" rx="14" fill="url(#hospitalFill)" stroke="url(#hospitalStroke)" stroke-width="12"/>
+    </g>
+
+    <path d="M250 978H950" stroke="url(#hospitalStroke)" stroke-width="18" stroke-linecap="round" opacity="0.8"/>
+    <path d="M206 1042H994" stroke="url(#hospitalStroke)" stroke-width="10" stroke-linecap="round" opacity="0.35"/>
+  </g>
+</svg>
