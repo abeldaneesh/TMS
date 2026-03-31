@@ -52,28 +52,29 @@ const PortalSelection: React.FC = () => {
     };
 
     return (
-        <div className="min-h-screen flex flex-col md:flex-row bg-background text-foreground transition-colors duration-300">
+        <div className="min-h-screen flex flex-col md:flex-row bg-[linear-gradient(135deg,#eef4ff_0%,#f8fbff_44%,#ffffff_100%)] text-slate-900 transition-colors duration-300">
             {/* Left Column: Background Image (Desktop only) */}
             <AuthHeroPanel subtitle={t('portalSelection.heroSubtitle', 'Training Management System')} />
 
             {/* Right Column: Portal Selection */}
-            <div className="flex-1 flex flex-col items-center justify-center p-8 md:p-12 overflow-y-auto relative bg-background">
-                <div className="absolute inset-0 cyber-grid opacity-10 pointer-events-none" />
+            <div className="flex-1 flex flex-col items-center justify-center p-8 md:p-12 overflow-y-auto relative bg-transparent">
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(79,70,229,0.08),transparent_28%),radial-gradient(circle_at_bottom_right,rgba(14,165,233,0.08),transparent_24%)] pointer-events-none" />
+                <div className="absolute inset-0 cyber-grid opacity-[0.05] pointer-events-none" />
 
                 {/* Mobile Header */}
-                <div className="flex md:hidden flex-col items-center mb-10 relative z-10 rounded-3xl bg-slate-950/55 px-8 py-6 backdrop-blur-sm">
+                <div className="flex md:hidden flex-col items-center mb-10 relative z-10 rounded-3xl border border-slate-200 bg-white/90 px-8 py-6 shadow-[0_22px_60px_rgba(15,23,42,0.08)] backdrop-blur-sm">
                     <div className="mb-4">
-                        <TmsLogo className="size-16" />
+                        <TmsLogo className="size-16 border border-slate-200 shadow-sm" />
                     </div>
                     <h1
-                        className="text-3xl font-bold text-white text-center tracking-tight drop-shadow-[0_6px_24px_rgba(0,0,0,0.65)]"
-                        style={{ color: '#ffffff' }}
+                        className="text-3xl font-bold text-center tracking-tight text-slate-900"
+                        style={{ color: '#0f172a' }}
                     >
                         DMO TMS
                     </h1>
                     <p
-                        className="text-sm text-white/80 mt-1 text-center font-medium drop-shadow-[0_4px_18px_rgba(0,0,0,0.5)]"
-                        style={{ color: 'rgba(255,255,255,0.92)' }}
+                        className="text-sm mt-1 text-center font-medium text-slate-600"
+                        style={{ color: '#475569' }}
                     >
                         Training Management System
                     </p>
@@ -86,8 +87,11 @@ const PortalSelection: React.FC = () => {
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.4 }}
                     >
-                        <h3 className="text-2xl font-bold text-foreground tracking-tight">{t('portalSelection.title', 'Select Portal')}</h3>
-                        <p className="text-muted-foreground text-sm">
+                        <div className="inline-flex items-center rounded-full border border-slate-200 bg-white/90 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-500 shadow-sm">
+                            {t('portalSelection.badge', 'Secure Access')}
+                        </div>
+                        <h3 className="text-3xl font-bold text-slate-900 tracking-tight">{t('portalSelection.title', 'Select Portal')}</h3>
+                        <p className="text-slate-600 text-sm leading-6">
                             {t('portalSelection.desc', 'Choose your role to access the training management portal.')}
                         </p>
                     </motion.div>
@@ -115,7 +119,7 @@ const PortalSelection: React.FC = () => {
                                     className="pointer-events-none absolute inset-0 rounded-2xl bg-primary/10 ring-1 ring-primary/30"
                                 />
                                 <Card
-                                    className="border bg-card hover:bg-accent transition-all cursor-pointer overflow-hidden shadow-sm hover:shadow-md"
+                                    className="border border-slate-200 bg-white/92 hover:bg-white transition-all cursor-pointer overflow-hidden shadow-[0_20px_50px_rgba(15,23,42,0.08)] hover:shadow-[0_24px_60px_rgba(15,23,42,0.12)]"
                                     style={{
                                         transform: activePortalPath === portal.path ? 'scale(0.97)' : 'scale(1)',
                                         opacity: activePortalPath && activePortalPath !== portal.path ? 0.7 : 1,
@@ -123,14 +127,14 @@ const PortalSelection: React.FC = () => {
                                     }}
                                 >
                                     <div className="flex items-center p-5">
-                                        <div className={`p-4 rounded-xl ${portal.color} transition-colors`}>
+                                        <div className={`p-4 rounded-xl ${portal.color} transition-colors ring-1 ring-slate-200/60`}>
                                             <portal.icon className="size-6" />
                                         </div>
                                         <div className="ml-5 flex-1 text-left">
-                                            <h4 className="text-lg font-semibold text-foreground group-hover:text-primary transition-colors">
+                                            <h4 className="text-lg font-semibold text-slate-900 group-hover:text-primary transition-colors">
                                                 {portal.title}
                                             </h4>
-                                            <p className="text-sm text-muted-foreground mt-0.5">
+                                            <p className="text-sm text-slate-600 mt-0.5">
                                                 {portal.description}
                                             </p>
                                         </div>
@@ -140,11 +144,11 @@ const PortalSelection: React.FC = () => {
                         ))}
                     </div>
 
-                    <div className="pt-10 flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-muted-foreground">
+                    <div className="pt-10 flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-slate-500">
                         <div className="text-center md:text-left">
                             &copy; {new Date().getFullYear()} DMO. {t('portalSelection.footerText', 'All rights reserved.')}
                         </div>
-                        <div className="flex items-center gap-3 text-muted-foreground/30">
+                        <div className="flex items-center gap-3 text-slate-400">
                             <Database className="size-3" />
                             <Cpu className="size-3" />
                             <Activity className="size-3" />
