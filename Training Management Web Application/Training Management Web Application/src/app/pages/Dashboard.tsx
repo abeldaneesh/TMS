@@ -41,6 +41,16 @@ const normalizePhoneNumber = (value: string) => value.replace(/\D/g, '').slice(0
 
 const toDisplayText = (value: unknown) => String(value ?? '').trim();
 
+const EMPTY_DASHBOARD_STATS: DashboardStats = {
+  totalTrainings: 0,
+  upcomingTrainings: 0,
+  completedTrainings: 0,
+  totalParticipants: 0,
+  attendanceRate: 0,
+  trainedStaff: 0,
+  untrainedStaff: 0,
+};
+
 const Dashboard: React.FC = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -91,7 +101,7 @@ const Dashboard: React.FC = () => {
       const participantPromise = user.role === 'medical_officer' ? usersApi.getAll({ role: 'participant' }) : Promise.resolve([]);
       const institutionPromise = user.role === 'medical_officer' ? institutionsApi.getAll() : Promise.resolve([]);
 
-      const [statsData, trainingsData, visibleCalendarTrainings, nominationData, participantData, institutionData] = await Promise.all([
+      const [statsData, trainingsData, visibleCalendarTrainings, nominationData, participantData, institutionData] = await Promise.allSettled([
         analyticsApi.getDashboardStats(user.id, user.role),
         dashboardTrainingsPromise,
         calendarTrainingsPromise,
@@ -100,14 +110,55 @@ const Dashboard: React.FC = () => {
         institutionPromise,
       ]);
 
-      setStats(statsData);
-      setDashboardTrainings(Array.isArray(trainingsData) ? trainingsData : []);
-      setCalendarTrainings(Array.isArray(visibleCalendarTrainings) ? visibleCalendarTrainings : []);
-      setNominations(Array.isArray(nominationData) ? nominationData : []);
-      setParticipants(Array.isArray(participantData) ? participantData : []);
-      setInstitutions(Array.isArray(institutionData) ? institutionData : []);
+      if (statsData.status === 'fulfilled') {
+        setStats(statsData.value);
+      } else {
+        console.error('Error fetching dashboard stats:', statsData.reason);
+        setStats(EMPTY_DASHBOARD_STATS);
+      }
+
+      if (trainingsData.status === 'fulfilled') {
+        setDashboardTrainings(Array.isArray(trainingsData.value) ? trainingsData.value : []);
+      } else {
+        console.error('Error fetching dashboard trainings:', trainingsData.reason);
+        setDashboardTrainings([]);
+      }
+
+      if (visibleCalendarTrainings.status === 'fulfilled') {
+        setCalendarTrainings(Array.isArray(visibleCalendarTrainings.value) ? visibleCalendarTrainings.value : []);
+      } else {
+        console.error('Error fetching calendar trainings:', visibleCalendarTrainings.reason);
+        setCalendarTrainings([]);
+      }
+
+      if (nominationData.status === 'fulfilled') {
+        setNominations(Array.isArray(nominationData.value) ? nominationData.value : []);
+      } else {
+        console.error('Error fetching nominations:', nominationData.reason);
+        setNominations([]);
+      }
+
+      if (participantData.status === 'fulfilled') {
+        setParticipants(Array.isArray(participantData.value) ? participantData.value : []);
+      } else {
+        console.error('Error fetching participants:', participantData.reason);
+        setParticipants([]);
+      }
+
+      if (institutionData.status === 'fulfilled') {
+        setInstitutions(Array.isArray(institutionData.value) ? institutionData.value : []);
+      } else {
+        console.error('Error fetching institutions:', institutionData.reason);
+        setInstitutions([]);
+      }
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
+      setStats((previous) => previous || EMPTY_DASHBOARD_STATS);
+      setDashboardTrainings([]);
+      setCalendarTrainings([]);
+      setNominations([]);
+      setParticipants([]);
+      setInstitutions([]);
     } finally {
       setLoading(false);
     }
