@@ -5,6 +5,41 @@ import HallBlock from '../models/HallBlock';
 import { v4 as uuidv4 } from 'uuid';
 import { HALL_TURNOVER_BUFFER_MINUTES, getHallTurnoverEndTime, hasBufferedTrainingConflict } from '../utils/hallScheduling';
 
+const toIsoDateString = (value: Date | string) => new Date(value).toISOString().split('T')[0];
+
+const hasMatchingAvailabilitySlot = (
+    availability: any[] = [],
+    requestDate: string,
+    dayOfWeek: number,
+    startTime: string,
+    endTime: string
+) => {
+    const recurringSlots = availability.filter((slot) => !slot.specificDate);
+    const dateSpecificSlots = availability.filter((slot) => slot.specificDate);
+
+    const matchesRecurringSlot = recurringSlots.some((slot) =>
+        slot.dayOfWeek === dayOfWeek &&
+        slot.startTime <= startTime &&
+        slot.endTime >= endTime
+    );
+
+    const matchesDateSpecificSlot = dateSpecificSlots.some((slot) =>
+        toIsoDateString(slot.specificDate) === requestDate &&
+        slot.startTime <= startTime &&
+        slot.endTime >= endTime
+    );
+
+    if (recurringSlots.length === 0 && dateSpecificSlots.length === 0) {
+        return true;
+    }
+
+    if (recurringSlots.length > 0) {
+        return matchesRecurringSlot || matchesDateSpecificSlot;
+    }
+
+    return matchesDateSpecificSlot || dateSpecificSlots.every((slot) => toIsoDateString(slot.specificDate) !== requestDate);
+};
+
 export const getHalls = async (req: Request, res: Response): Promise<void> => {
     try {
         const halls = await Hall.find()
@@ -54,6 +89,7 @@ export const getAvailableHalls = async (req: Request, res: Response): Promise<vo
 
         const checkDate = new Date(date as string);
         const dayOfWeek = checkDate.getDay();
+        const requestDate = date as string;
 
         // Define start and end of day in UTC to be robust against local timezone shifts
         const dateStr = date as string;
@@ -101,36 +137,13 @@ export const getAvailableHalls = async (req: Request, res: Response): Promise<vo
             // Check if occupied
             if (occupiedHallIds.has(hall._id.toString())) return false;
 
-            // Check if hall has ANY availability defined
-            if (hall.availability && hall.availability.length > 0) {
-                // If availability is defined, the requested time MUST fall within at least one slot
-                const hasMatchingSlot = hall.availability.some(slot => {
-                    // Check specific date slot
-                    if (slot.specificDate) {
-                        const slotDate = new Date(slot.specificDate).toISOString().split('T')[0];
-                        const reqDate = new Date(date as string).toISOString().split('T')[0];
-
-                        if (slotDate === reqDate) {
-                            return slot.startTime <= (startTime as string) &&
-                                slot.endTime >= (endTime as string);
-                        }
-                        return false;
-                    }
-
-                    // Check recurring weekly slot
-                    if (slot.dayOfWeek !== undefined && slot.dayOfWeek !== null) {
-                        return slot.dayOfWeek === dayOfWeek &&
-                            slot.startTime <= (startTime as string) &&
-                            slot.endTime >= (endTime as string);
-                    }
-
-                    return false;
-                });
-                return hasMatchingSlot;
-            }
-
-            // If NO availability defined, assume OPEN (Default behavior)
-            return true;
+            return hasMatchingAvailabilitySlot(
+                hall.availability || [],
+                requestDate,
+                dayOfWeek,
+                startTime as string,
+                endTime as string
+            );
         });
 
         // Sort by name
@@ -298,39 +311,19 @@ export const getHallAvailabilityDetails = async (req: Request, res: Response): P
             return;
         }
 
-        // If availability is defined, check if request matches any slot
-        if (hall.availability && hall.availability.length > 0) {
-            const hasMatchingSlot = hall.availability.some(slot => {
-                if (slot.specificDate) {
-                    const slotDate = new Date(slot.specificDate).toISOString().split('T')[0];
-                    const reqDate = new Date(date as string).toISOString().split('T')[0];
-
-                    if (slotDate === reqDate) {
-                        return slot.startTime <= (startTime as string) &&
-                            slot.endTime >= (endTime as string);
-                    }
-                    return false;
-                }
-
-                if (slot.dayOfWeek !== undefined && slot.dayOfWeek !== null) {
-                    return slot.dayOfWeek === dayOfWeek &&
-                        slot.startTime <= (startTime as string) &&
-                        slot.endTime >= (endTime as string);
-                }
-                return false;
+        if (!hasMatchingAvailabilitySlot(
+            hall.availability || [],
+            dateStr,
+            dayOfWeek,
+            startTime as string,
+            endTime as string
+        )) {
+            res.json({
+                isAvailable: false,
+                reason: 'Hall is closed at this time',
+                type: 'closed'
             });
-
-            if (!hasMatchingSlot) {
-                res.json({
-                    isAvailable: false,
-                    reason: 'Hall is closed at this time',
-                    type: 'closed'
-                });
-                return;
-            }
-        } else {
-            // If no availability defined, assume OPEN
-            // Do nothing, proceed to send isAvailable: true
+            return;
         }
 
         res.json({ isAvailable: true });
