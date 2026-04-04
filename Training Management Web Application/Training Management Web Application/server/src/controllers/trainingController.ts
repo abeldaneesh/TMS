@@ -113,6 +113,28 @@ const findTrainerConflict = async ({
     return Training.findOne(query);
 };
 
+const resolveMutationError = (error: unknown, fallbackMessage: string) => {
+    if (error && typeof error === 'object') {
+        if ('name' in error && error.name === 'ValidationError' && 'message' in error && typeof error.message === 'string') {
+            return { status: 400, message: error.message };
+        }
+
+        if ('name' in error && error.name === 'CastError' && 'message' in error && typeof error.message === 'string') {
+            return { status: 400, message: error.message };
+        }
+
+        if ('code' in error && error.code === 11000) {
+            return { status: 409, message: 'A duplicate training record was detected.' };
+        }
+
+        if ('message' in error && typeof error.message === 'string' && error.message.trim()) {
+            return { status: 500, message: error.message };
+        }
+    }
+
+    return { status: 500, message: fallbackMessage };
+};
+
 // Get all trainings
 export const getTrainings = async (req: Request, res: Response): Promise<void> => {
     try {
@@ -358,7 +380,8 @@ export const createTraining = async (req: AuthRequest, res: Response): Promise<v
         }));
     } catch (error: any) {
         console.error('Create training error:', error);
-        res.status(500).json({ message: 'Error creating training' });
+        const resolvedError = resolveMutationError(error, 'Error creating training');
+        res.status(resolvedError.status).json({ message: resolvedError.message });
     }
 };
 
@@ -544,7 +567,8 @@ export const updateTraining = async (req: AuthRequest, res: Response): Promise<v
         }));
     } catch (error: any) {
         console.error('Update training error:', error);
-        res.status(500).json({ message: 'Error updating training' });
+        const resolvedError = resolveMutationError(error, 'Error updating training');
+        res.status(resolvedError.status).json({ message: resolvedError.message });
     }
 };
 

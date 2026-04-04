@@ -1,9 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useAuth } from '../../contexts/AuthContext';
 import { analyticsApi, trainingsApi, institutionsApi } from '../../services/api';
 import { Training, Institution, TrainingAnalytics } from '../../types';
-import { BarChart3, TrendingUp, Users, Calendar, Search, X, CalendarDays } from 'lucide-react';
+import { BarChart3, TrendingUp, Users, Calendar, Search, X } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../components/ui/card';
 import { Input } from '../components/ui/input';
 import { Button } from '../components/ui/button';
@@ -26,14 +25,32 @@ import LoadingScreen from '../components/LoadingScreen';
 const formatTimeWindow = (startTime?: string, endTime?: string) =>
   startTime && endTime ? `${startTime} - ${endTime}` : '';
 
+const uniqueStrings = (values: Array<string | undefined | null>) =>
+  Array.from(
+    new Set(
+      values
+        .map((value) => (value || '').trim())
+        .filter(Boolean)
+    )
+  );
+
+const isTrainingWithinDateRange = (training: Training, startDate: string, endDate: string) => {
+  if (!startDate || !endDate) return false;
+
+  const trainingDate = getTrainingDateInputValue(training.date);
+  if (!trainingDate) return false;
+
+  return trainingDate >= startDate && trainingDate <= endDate;
+};
+
 const Analytics: React.FC = () => {
   const { t } = useTranslation();
-  const { user } = useAuth();
   const [trainings, setTrainings] = useState<Training[]>([]);
   const [institutions, setInstitutions] = useState<Institution[]>([]);
   const [selectedTraining, setSelectedTraining] = useState('');
   const [trainingSearchTerm, setTrainingSearchTerm] = useState('');
-  const [trainingDateFilter, setTrainingDateFilter] = useState('');
+  const [trainingStartDateFilter, setTrainingStartDateFilter] = useState('');
+  const [trainingEndDateFilter, setTrainingEndDateFilter] = useState('');
   const [trainingAnalytics, setTrainingAnalytics] = useState<TrainingAnalytics | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -49,10 +66,6 @@ const Analytics: React.FC = () => {
 
         setTrainings(cleanTrainings);
         setInstitutions(cleanInstitutions);
-
-        if (cleanTrainings.length > 0) {
-          setSelectedTraining(cleanTrainings[0].id);
-        }
       } catch (error) {
         console.error('Error fetching data:', error);
       } finally {
@@ -64,7 +77,10 @@ const Analytics: React.FC = () => {
 
   useEffect(() => {
     const fetchAnalytics = async () => {
-      if (!selectedTraining) return;
+      if (!selectedTraining) {
+        setTrainingAnalytics(null);
+        return;
+      }
 
       try {
         const analytics = await analyticsApi.getTrainingAnalytics(selectedTraining);
@@ -76,10 +92,6 @@ const Analytics: React.FC = () => {
     };
     fetchAnalytics();
   }, [selectedTraining]);
-
-  if (loading) {
-    return <LoadingScreen />;
-  }
 
   const safeTrainings = Array.isArray(trainings) ? trainings.filter(Boolean) : [];
   const safeInstitutions = Array.isArray(institutions) ? institutions.filter(Boolean) : [];
@@ -106,9 +118,12 @@ const Analytics: React.FC = () => {
   const leadingPercentage = totalStatusCount > 0 && leadingStatus ? Math.round((leadingStatus.count / totalStatusCount) * 100) : 0;
   const searchableTrainings = [...safeTrainings].sort((a, b) => getTrainingSortTimestamp(b) - getTrainingSortTimestamp(a));
   const normalizedTrainingSearch = normalizeTrainingMatchValue(trainingSearchTerm);
+  const hasCompleteTrainingDateRange = Boolean(trainingStartDateFilter && trainingEndDateFilter);
+  const hasInvalidTrainingDateRange =
+    hasCompleteTrainingDateRange && trainingStartDateFilter > trainingEndDateFilter;
   const filteredTrainings = searchableTrainings.filter((training) => {
-    const matchesDate = !trainingDateFilter || getTrainingDateInputValue(training.date) === trainingDateFilter;
-    if (!matchesDate) return false;
+    if (!hasCompleteTrainingDateRange || hasInvalidTrainingDateRange) return false;
+    if (!isTrainingWithinDateRange(training, trainingStartDateFilter, trainingEndDateFilter)) return false;
 
     if (!normalizedTrainingSearch) return true;
 
@@ -124,10 +139,48 @@ const Analytics: React.FC = () => {
     return normalizeTrainingMatchValue(searchText).includes(normalizedTrainingSearch);
   });
   const selectedTrainingRecord = safeTrainings.find((training) => training.id === selectedTraining);
-  const selectedTrainingPinned = Boolean(
-    selectedTrainingRecord && !filteredTrainings.some((training) => training.id === selectedTraining)
-  );
   const visibleTrainings = filteredTrainings;
+  const institutionNameById = safeInstitutions.reduce<Record<string, string>>((acc, institution) => {
+    acc[institution.id] = institution.name;
+    return acc;
+  }, {});
+  const selectedTrainingAudience = uniqueStrings(selectedTrainingRecord?.targetAudience || []);
+  const calledInstitutionIds = uniqueStrings(selectedTrainingRecord?.requiredInstitutions || []);
+  const calledInstitutionRows = calledInstitutionIds.map((institutionId) => {
+    const analyticsEntry = trainingAnalytics?.byInstitution.find((entry) => entry.institutionId === institutionId);
+
+    return {
+      institutionId,
+      institutionName:
+        analyticsEntry?.institutionName ||
+        institutionNameById[institutionId] ||
+        t('analyticsPage.unknownInstitution', { defaultValue: 'Unknown institution' }),
+      nominated: analyticsEntry?.nominated || 0,
+      approved: analyticsEntry?.approved || 0,
+      attended: analyticsEntry?.attended || 0,
+    };
+  });
+  const additionalInstitutionRows = (trainingAnalytics?.byInstitution || []).filter(
+    (entry) => !calledInstitutionIds.includes(entry.institutionId)
+  );
+  const participationChartData = calledInstitutionRows.length > 0
+    ? [...calledInstitutionRows, ...additionalInstitutionRows]
+    : (trainingAnalytics?.byInstitution || []);
+  const participatedInstitutionRows = calledInstitutionRows.filter((institution) => institution.attended > 0);
+  const notParticipatedInstitutionRows = calledInstitutionRows.filter((institution) => institution.attended === 0);
+
+  useEffect(() => {
+    if (!selectedTraining) return;
+
+    const selectionStillVisible = visibleTrainings.some((training) => training.id === selectedTraining);
+    if (!selectionStillVisible) {
+      setSelectedTraining('');
+    }
+  }, [selectedTraining, visibleTrainings]);
+
+  if (loading) {
+    return <LoadingScreen />;
+  }
 
   return (
     <div className="pb-12 space-y-10 text-foreground">
@@ -279,21 +332,42 @@ const Analytics: React.FC = () => {
                   />
                 </div>
 
-                <div className="flex flex-col gap-3 sm:flex-row">
-                  <DateInputWithPickerIcon
-                    wrapperClassName="flex-1"
-                    value={trainingDateFilter}
-                    onChange={(e) => setTrainingDateFilter(e.target.value)}
-                    className="h-11 rounded-xl border-white/10 bg-background"
-                  />
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
+                      {t('analyticsPage.fromDate', { defaultValue: 'From date' })}
+                    </Label>
+                    <DateInputWithPickerIcon
+                      wrapperClassName="w-full"
+                      value={trainingStartDateFilter}
+                      onChange={(e) => setTrainingStartDateFilter(e.target.value)}
+                      className="h-11 rounded-xl border-white/10 bg-background"
+                    />
+                  </div>
 
-                  {(trainingSearchTerm || trainingDateFilter) && (
+                  <div className="space-y-2">
+                    <Label className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
+                      {t('analyticsPage.toDate', { defaultValue: 'To date' })}
+                    </Label>
+                    <DateInputWithPickerIcon
+                      wrapperClassName="w-full"
+                      value={trainingEndDateFilter}
+                      onChange={(e) => setTrainingEndDateFilter(e.target.value)}
+                      className="h-11 rounded-xl border-white/10 bg-background"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex justify-end">
+                  {(trainingSearchTerm || trainingStartDateFilter || trainingEndDateFilter) && (
                     <Button
                       type="button"
                       variant="ghost"
                       onClick={() => {
                         setTrainingSearchTerm('');
-                        setTrainingDateFilter('');
+                        setTrainingStartDateFilter('');
+                        setTrainingEndDateFilter('');
+                        setSelectedTraining('');
                       }}
                       className="sm:self-stretch"
                     >
@@ -304,6 +378,22 @@ const Analytics: React.FC = () => {
                 </div>
               </div>
 
+              {!hasCompleteTrainingDateRange && (
+                <div className="mt-4 rounded-xl border border-dashed border-primary/20 bg-primary/5 px-4 py-3 text-sm text-muted-foreground">
+                  {t('analyticsPage.selectDateRangeFirst', {
+                    defaultValue: 'Select a from and to date range to load trainings in this section.',
+                  })}
+                </div>
+              )}
+
+              {hasInvalidTrainingDateRange && (
+                <div className="mt-4 rounded-xl border border-dashed border-red-500/20 bg-red-500/5 px-4 py-3 text-sm text-red-300">
+                  {t('analyticsPage.invalidDateRange', {
+                    defaultValue: 'The end date must be on or after the start date.',
+                  })}
+                </div>
+              )}
+
               <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
                 <p className="text-xs text-muted-foreground">
                   {t('analyticsPage.trainingShownCount', {
@@ -312,20 +402,19 @@ const Analytics: React.FC = () => {
                     defaultValue: `${filteredTrainings.length} of ${safeTrainings.length} trainings shown`,
                   })}
                 </p>
-                {selectedTrainingPinned && (
-                  <Badge variant="outline" className="border-primary/20 bg-primary/5 text-primary">
-                    {t('analyticsPage.selectedTrainingPinned', {
-                      defaultValue: 'Selected training shown outside current filters',
-                    })}
-                  </Badge>
-                )}
               </div>
 
               <div className="mt-4 max-h-[320px] space-y-3 overflow-y-auto pr-1 custom-scrollbar">
-                {visibleTrainings.length === 0 ? (
+                {!hasCompleteTrainingDateRange || hasInvalidTrainingDateRange ? (
+                  <div className="rounded-xl border border-dashed border-white/10 bg-white/5 px-4 py-6 text-sm text-muted-foreground">
+                    {t('analyticsPage.awaitingDateRange', {
+                      defaultValue: 'Choose a valid date range to browse trainings.',
+                    })}
+                  </div>
+                ) : visibleTrainings.length === 0 ? (
                   <div className="rounded-xl border border-dashed border-white/10 bg-white/5 px-4 py-6 text-sm text-muted-foreground">
                     {t('analyticsPage.noTrainingMatches', {
-                      defaultValue: 'No trainings matched your search or date filter.',
+                      defaultValue: 'No trainings matched your search or selected date range.',
                     })}
                   </div>
                 ) : (
@@ -383,8 +472,99 @@ const Analytics: React.FC = () => {
             </div>
           </div>
 
-          {trainingAnalytics && (
+          {selectedTrainingRecord && trainingAnalytics && (
             <>
+              <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
+                <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                  <div>
+                    <p className="text-xs uppercase tracking-[0.24em] text-muted-foreground">
+                      {t('analyticsPage.selectedTrainingDetails', { defaultValue: 'Selected training details' })}
+                    </p>
+                    <h3 className="mt-2 text-xl font-semibold text-foreground">{selectedTrainingRecord.title}</h3>
+                    <p className="mt-2 text-sm text-muted-foreground">
+                      {safeFormatDate(selectedTrainingRecord.date, 'MMM dd, yyyy')}
+                      {formatTimeWindow(selectedTrainingRecord.startTime, selectedTrainingRecord.endTime)
+                        ? ` • ${formatTimeWindow(selectedTrainingRecord.startTime, selectedTrainingRecord.endTime)}`
+                        : ''}
+                    </p>
+                  </div>
+
+                  <div className="flex flex-wrap gap-2">
+                    {selectedTrainingRecord.program && (
+                      <Badge variant="outline" className="border-white/10 bg-white/5 text-muted-foreground">
+                        {selectedTrainingRecord.program}
+                      </Badge>
+                    )}
+                    <Badge variant="outline" className="border-white/10 bg-white/5 text-muted-foreground capitalize">
+                      {selectedTrainingRecord.status}
+                    </Badge>
+                  </div>
+                </div>
+
+                <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+                  <div className="rounded-xl border border-white/10 bg-background/40 p-4">
+                    <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
+                      {t('analyticsPage.forWhom', { defaultValue: 'For whom' })}
+                    </p>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {selectedTrainingAudience.length > 0 ? (
+                        selectedTrainingAudience.map((audience) => (
+                          <Badge key={audience} variant="outline" className="border-primary/20 bg-primary/5 text-primary">
+                            {audience}
+                          </Badge>
+                        ))
+                      ) : (
+                        <span className="text-sm text-muted-foreground">
+                          {t('analyticsPage.notSpecified', { defaultValue: 'Not specified' })}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="rounded-xl border border-white/10 bg-background/40 p-4">
+                    <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
+                      {t('analyticsPage.calledInstitutions', { defaultValue: 'Institutions called for' })}
+                    </p>
+                    <p className="mt-3 text-3xl font-bold text-foreground">{calledInstitutionRows.length}</p>
+                  </div>
+
+                  <div className="rounded-xl border border-white/10 bg-background/40 p-4">
+                    <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
+                      {t('analyticsPage.totalParticipatedInstitutions', { defaultValue: 'Total participated' })}
+                    </p>
+                    <p className="mt-3 text-3xl font-bold text-foreground">{participatedInstitutionRows.length}</p>
+                  </div>
+
+                  <div className="rounded-xl border border-white/10 bg-background/40 p-4">
+                    <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
+                      {t('analyticsPage.notParticipatedCount', { defaultValue: 'Not participated' })}
+                    </p>
+                    <p className="mt-3 text-3xl font-bold text-foreground">{notParticipatedInstitutionRows.length}</p>
+                  </div>
+                </div>
+
+                <div className="mt-5 rounded-xl border border-white/10 bg-background/40 p-4">
+                  <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
+                    {t('analyticsPage.notParticipatedInstitutions', { defaultValue: 'Not participated institutions' })}
+                  </p>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {notParticipatedInstitutionRows.length > 0 ? (
+                      notParticipatedInstitutionRows.map((institution) => (
+                        <Badge key={institution.institutionId} variant="outline" className="border-red-500/20 bg-red-500/5 text-red-300">
+                          {institution.institutionName}
+                        </Badge>
+                      ))
+                    ) : (
+                      <span className="text-sm text-muted-foreground">
+                        {t('analyticsPage.allCalledInstitutionsParticipated', {
+                          defaultValue: 'All called institutions have at least one participant marked as attended.',
+                        })}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 {[
                   { label: t('analyticsPage.nominated'), value: trainingAnalytics.totalNominated },
@@ -404,7 +584,7 @@ const Analytics: React.FC = () => {
                   {t('analyticsPage.participationByInst')}
                 </h3>
                 <ResponsiveContainer width="100%" height={350}>
-                  <BarChart data={trainingAnalytics.byInstitution}>
+                  <BarChart data={participationChartData}>
                     <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" vertical={false} />
                     <XAxis dataKey="institutionName" stroke="var(--muted-foreground)" fontSize={10} angle={-30} textAnchor="end" height={100} axisLine={false} tickLine={false} />
                     <YAxis stroke="var(--muted-foreground)" fontSize={10} axisLine={false} tickLine={false} />
@@ -420,6 +600,14 @@ const Analytics: React.FC = () => {
                 </ResponsiveContainer>
               </div>
             </>
+          )}
+
+          {!selectedTrainingRecord && hasCompleteTrainingDateRange && !hasInvalidTrainingDateRange && (
+            <div className="rounded-2xl border border-dashed border-white/10 bg-white/5 px-5 py-8 text-center text-sm text-muted-foreground">
+              {t('analyticsPage.selectTrainingFromResults', {
+                defaultValue: 'Select a training from the filtered list to view training-specific intelligence.',
+              })}
+            </div>
           )}
         </CardContent>
       </Card>

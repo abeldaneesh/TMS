@@ -130,7 +130,7 @@ export const getTrainingAnalytics = async (req: AuthRequest, res: Response): Pro
                 };
             }
             institutionStats[instId].nominated++;
-            if (nom.status === 'approved') institutionStats[instId].approved++;
+            if (nom.status === 'approved' || nom.status === 'attended') institutionStats[instId].approved++;
         });
 
         // Add attendance counts
