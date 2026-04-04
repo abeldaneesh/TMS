@@ -2,13 +2,16 @@
 import { createRoot } from "react-dom/client";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import App from "./app/App.tsx";
+import AppErrorBoundary from "./app/components/AppErrorBoundary.tsx";
 import "./styles/index.css";
 import "./i18n";
 
 const rootElement = document.getElementById("root")!;
 createRoot(rootElement).render(
   <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
-    <App />
+    <AppErrorBoundary>
+      <App />
+    </AppErrorBoundary>
   </ThemeProvider>
 );
 

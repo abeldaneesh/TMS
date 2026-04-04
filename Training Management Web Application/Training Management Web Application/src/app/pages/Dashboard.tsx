@@ -168,10 +168,6 @@ const Dashboard: React.FC = () => {
     fetchDashboardData();
   }, [fetchDashboardData]);
 
-  if (loading || !stats) {
-    return <LoadingScreen />;
-  }
-
   // Derived data based on filter
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -400,6 +396,10 @@ const Dashboard: React.FC = () => {
       setSelectedNominationTraining(null);
     }
   }, [showNominateDialog]);
+
+  if (loading || !stats) {
+    return <LoadingScreen />;
+  }
 
   const openNominationModal = (training: Training) => {
     setSelectedNominationTraining(training);

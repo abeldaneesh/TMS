@@ -50,13 +50,11 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const [searchFocused, setSearchFocused] = useState(false);
   const [showLoginWelcome, setShowLoginWelcome] = useState(false);
 
-  if (!user) return null;
-
   const [notifications, setNotifications] = useState<any[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const prevUnreadCountRef = useRef(0);
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  const [notificationMode, setNotificationMode] = useState<NotificationMode>(getNotificationMode(user.id));
+  const [notificationMode, setNotificationMode] = useState<NotificationMode>(getNotificationMode(user?.id));
 
   const triggerVibration = () => {
     if (typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function') {
@@ -75,6 +73,8 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   };
 
   useEffect(() => {
+    if (!user) return;
+
     audioRef.current = new Audio('/notification.mp3');
     setNotificationMode(getNotificationMode(user.id));
 
@@ -219,7 +219,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         PushNotifications.removeAllListeners();
       }
     }
-  }, [user.id, notificationMode]);
+  }, [user?.id, notificationMode]);
 
   const getActionUrl = (notification: any) => {
     if (notification.actionUrl) return notification.actionUrl;
@@ -264,10 +264,12 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   };
 
   useEffect(() => {
+    if (!user) return;
+
     fetchNotifications();
     const interval = setInterval(fetchNotifications, 15000); // Poll every 15s instead of 60s
     return () => clearInterval(interval);
-  }, [notificationMode]);
+  }, [notificationMode, user]);
 
   useEffect(() => {
     if (!user) return;
@@ -301,6 +303,10 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   };
 
   const getNavigationItems = () => {
+    if (!user) {
+      return [];
+    }
+
     const commonItems = [
       { icon: LayoutDashboard, label: t('nav.home', 'Home'), path: '/dashboard' },
     ];
@@ -361,6 +367,8 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         return commonItems;
     }
   };
+
+  if (!user) return null;
 
   const navigationItems = getNavigationItems();
 
