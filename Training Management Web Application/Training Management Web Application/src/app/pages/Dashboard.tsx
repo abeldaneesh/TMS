@@ -6,6 +6,7 @@ import { DashboardStats, Institution, Nomination, Training, User } from '../../t
 import { safeFormatDate } from '../../utils/date';
 import { getTrainingStatusPresentation } from '../../utils/trainingStatus';
 import { useTranslation } from 'react-i18next';
+import { toast } from 'sonner';
 import LoadingScreen from '../components/LoadingScreen';
 
 import FilterChips from '../components/FilterChips';
@@ -37,6 +38,8 @@ const normalizeAudienceList = (value: string[] | string | undefined) =>
   );
 
 const normalizePhoneNumber = (value: string) => value.replace(/\D/g, '').slice(0, 10);
+
+const toDisplayText = (value: unknown) => String(value ?? '').trim();
 
 const Dashboard: React.FC = () => {
   const { user } = useAuth();
@@ -262,7 +265,7 @@ const Dashboard: React.FC = () => {
     selectedTrainingInstitutionIds.length > 0
       ? institutions.filter((institution) => selectedTrainingInstitutionIds.includes(institution.id))
       : institutions
-  ).sort((left, right) => left.name.localeCompare(right.name));
+  ).sort((left, right) => toDisplayText(left?.name).localeCompare(toDisplayText(right?.name)));
   const eligibleParticipants = participants.filter((participant) => {
     if (!selectedNominationTraining) return false;
 
@@ -302,7 +305,7 @@ const Dashboard: React.FC = () => {
       const secondRank = secondAssigned ? 2 : secondBusy ? 1 : 0;
 
       if (firstRank !== secondRank) return firstRank - secondRank;
-      return first.name.localeCompare(second.name);
+      return toDisplayText(first?.name).localeCompare(toDisplayText(second?.name));
     });
   const readyParticipantsCount = filteredEligibleParticipants.filter(
     (participant) => !busyParticipantIds.includes(participant.id) && !selectedTrainingExistingParticipantIds.has(participant.id)
