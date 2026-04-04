@@ -35,6 +35,11 @@ interface LayoutProps {
   children?: React.ReactNode;
 }
 
+const toSafeText = (value: unknown, fallback = '') => {
+  const normalized = String(value ?? '').trim();
+  return normalized || fallback;
+};
+
 const Layout: React.FC<LayoutProps> = ({ children }) => {
   const { user, logout } = useAuth();
   const location = useLocation();
@@ -364,8 +369,15 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     navigate('/login');
   };
 
-  const getInitials = (name: string) => {
-    return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+  const getInitials = (name?: string) => {
+    const normalizedName = toSafeText(name, 'User');
+    return normalizedName
+      .split(' ')
+      .filter(Boolean)
+      .map((part) => part[0] || '')
+      .join('')
+      .toUpperCase()
+      .slice(0, 2) || 'U';
   };
 
   const toggleLanguage = () => {
@@ -375,6 +387,11 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
   const [globalSearchTerm, setGlobalSearchTerm] = useState('');
   const pageContent = children ?? <Outlet />;
+  const profilePictureUrl = (() => {
+    const profilePicture = toSafeText(user?.profilePicture);
+    if (!profilePicture) return '';
+    return profilePicture.startsWith('http') ? profilePicture : `${BASE_URL}${profilePicture}`;
+  })();
 
   const handleGlobalSearch = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && globalSearchTerm.trim()) {
@@ -494,8 +511,8 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon" className="hover:bg-accent hover:text-accent-foreground rounded-full transition-all group shrink-0 size-9">
                 <Avatar className="size-8 transition-colors border border-border">
-                  {user.profilePicture ? (
-                    <AvatarImage src={user.profilePicture.startsWith('http') ? user.profilePicture : `${BASE_URL}${user.profilePicture}`} alt={user.name} />
+                  {profilePictureUrl ? (
+                    <AvatarImage src={profilePictureUrl} alt={toSafeText(user.name, 'User')} />
                   ) : null}
                   <AvatarFallback className="bg-primary text-primary-foreground text-sm font-medium">
                     {getInitials(user.name)}
@@ -507,10 +524,10 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
               <DropdownMenuLabel>
                 <div className="flex flex-col space-y-2">
                   <div className="flex items-center justify-between">
-                    <p className="text-sm font-medium text-foreground">{user.name}</p>
-                    <Badge className="bg-primary/20 text-primary shadow-none capitalize hover:bg-primary/30">{user.role.replace('_', ' ')}</Badge>
+                    <p className="text-sm font-medium text-foreground">{toSafeText(user.name, 'User')}</p>
+                    <Badge className="bg-primary/20 text-primary shadow-none capitalize hover:bg-primary/30">{toSafeText(user.role, 'user').replace('_', ' ')}</Badge>
                   </div>
-                  <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+                  <p className="text-xs text-muted-foreground truncate">{toSafeText(user.email, 'No email')}</p>
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator className="bg-border" />
