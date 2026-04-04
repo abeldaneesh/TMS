@@ -34,7 +34,7 @@ const Trainings: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState('all');
   const [ownershipFilter, setOwnershipFilter] = useState<'all' | 'mine'>('all');
   const [sortField, setSortField] = useState<'title' | 'hall' | 'date' | 'status'>('date');
-  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
 
   const [cancelledTraining, setCancelledTraining] = useState<Training | null>(null);
 
@@ -149,6 +149,30 @@ const Trainings: React.FC = () => {
     return matchesSearch && matchesStatus && matchesOwnership && matchesDate;
   });
 
+  const getTrainingDateSortValue = (training: Training) =>
+    new Date(`${training.date}T${training.startTime || '00:00'}`).getTime();
+
+  const getTrainingDisplayPriority = (training: Training) => {
+    const presentation = getTrainingStatusPresentation(training);
+
+    switch (presentation) {
+      case 'ongoing':
+        return 0;
+      case 'scheduled':
+        return 1;
+      case 'draft':
+        return 2;
+      case 'overdue':
+        return 3;
+      case 'completed':
+        return 4;
+      case 'cancelled':
+        return 5;
+      default:
+        return 99;
+    }
+  };
+
   const sortedTrainings = [...filteredTrainings].sort((a, b) => {
     let comparison = 0;
     switch (sortField) {
@@ -159,10 +183,20 @@ const Trainings: React.FC = () => {
         comparison = getHallName(a.hallId).localeCompare(getHallName(b.hallId));
         break;
       case 'date':
-        // sort by date then time
-        const dateA = new Date(`${a.date}T${a.startTime || '00:00'}`);
-        const dateB = new Date(`${b.date}T${b.startTime || '00:00'}`);
-        comparison = dateA.getTime() - dateB.getTime();
+        const priorityComparison = getTrainingDisplayPriority(a) - getTrainingDisplayPriority(b);
+
+        if (priorityComparison !== 0) {
+          comparison = priorityComparison;
+          break;
+        }
+
+        const dateA = getTrainingDateSortValue(a);
+        const dateB = getTrainingDateSortValue(b);
+        const isUpcomingBucket = getTrainingDisplayPriority(a) <= 2;
+
+        comparison = isUpcomingBucket
+          ? dateA - dateB
+          : dateB - dateA;
         break;
       case 'status':
         comparison = a.status.localeCompare(b.status);
