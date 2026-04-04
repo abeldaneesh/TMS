@@ -177,7 +177,7 @@ export const getTrainings = async (req: Request, res: Response): Promise<void> =
 
         let query = Training.find(whereClause)
             .populate('hallId')
-            .populate('createdById', 'name email')
+            .populate('createdById', 'name email phone')
             .sort({ date: 1 });
 
         const trainings = await query.lean() as any[];
@@ -226,7 +226,7 @@ export const getTrainingById = async (req: Request, res: Response): Promise<void
         const id = req.params.id as string;
         const training = await Training.findById(id)
             .populate('hallId')
-            .populate('createdById', 'name email')
+            .populate('createdById', 'name email phone')
             .lean();
 
         if (!training) {

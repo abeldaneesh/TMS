@@ -205,7 +205,16 @@ const CreateTraining: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const isEditMode = !!id;
   const { t } = useTranslation();
-  const prefilledDateFromRoute = (location.state as { selectedDate?: string } | null)?.selectedDate || queryParams.get('date') || '';
+  const routeState = (location.state as {
+    selectedDate?: string;
+    prefilledHallId?: string;
+    prefilledStartTime?: string;
+    prefilledEndTime?: string;
+  } | null) || null;
+  const prefilledDateFromRoute = routeState?.selectedDate || queryParams.get('date') || '';
+  const prefilledHallIdFromRoute = routeState?.prefilledHallId || '';
+  const prefilledStartTimeFromRoute = routeState?.prefilledStartTime || '';
+  const prefilledEndTimeFromRoute = routeState?.prefilledEndTime || '';
 
   const [halls, setHalls] = useState<Hall[]>([]);
   const [institutions, setInstitutions] = useState<Institution[]>([]);
@@ -345,6 +354,9 @@ const CreateTraining: React.FC = () => {
           setFormData(prev => ({
             ...prev,
             date: /^\d{4}-\d{2}-\d{2}$/.test(prefilledDateFromRoute) ? prefilledDateFromRoute : prev.date,
+            hallId: prefilledHallIdFromRoute || prev.hallId,
+            startTime: prefilledStartTimeFromRoute || prev.startTime,
+            endTime: prefilledEndTimeFromRoute || prev.endTime,
           }));
         }
 
@@ -355,7 +367,7 @@ const CreateTraining: React.FC = () => {
       }
     };
     fetchData();
-  }, [id, isEditMode, navigate, location.state, prefilledDateFromRoute]);
+  }, [id, isEditMode, navigate, location.state, prefilledDateFromRoute, prefilledHallIdFromRoute, prefilledStartTimeFromRoute, prefilledEndTimeFromRoute]);
 
   const checkHallAvailability = async () => {
     if (!formData.date || !formData.startTime || !formData.endTime) {

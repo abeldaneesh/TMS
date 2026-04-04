@@ -51,6 +51,27 @@ const normalizeAudienceList = (value: string[] | string | undefined) =>
   normalizeStringList(value).flatMap((item) =>
     item.split(',').map((part) => part.trim()).filter(Boolean)
   );
+const RELATED_AUDIENCE_MAP: Record<string, string[]> = {
+  hi: ['jhi', 'phn', 'jphn'],
+  jhi: ['hi', 'phn', 'jphn'],
+  phn: ['jphn', 'hi', 'jhi'],
+  jphn: ['phn', 'hi', 'jhi'],
+};
+const getExpandedAudienceTokens = (tokens: string[]) => {
+  const expanded = new Set(tokens.filter(Boolean).map((token) => normalizeTrainingMatchValue(token)));
+
+  tokens.forEach((token) => {
+    const normalizedToken = normalizeTrainingMatchValue(token);
+    expanded.add(normalizedToken);
+    (RELATED_AUDIENCE_MAP[normalizedToken] || []).forEach((relatedToken) => expanded.add(relatedToken));
+  });
+
+  return Array.from(expanded);
+};
+const shouldAutoIncludeRelatedAudience = (
+  selectedAudienceTokens: string[],
+  exactEligibleCount: number,
+) => selectedAudienceTokens.length > 0 && exactEligibleCount === 0;
 const formatSessionWindow = (startTime?: string, endTime?: string, fallbackLabel: string = 'Time not set') =>
   startTime && endTime ? `${startTime} - ${endTime}` : fallbackLabel;
 
@@ -102,6 +123,7 @@ const Nominations: React.FC = () => {
   const [participantSearchTerm, setParticipantSearchTerm] = useState('');
   const [trainingSearchTerm, setTrainingSearchTerm] = useState('');
   const [trainingDateFilter, setTrainingDateFilter] = useState('');
+  const [includeSimilarFieldStaff, setIncludeSimilarFieldStaff] = useState(false);
   const [barebonesMode, setBarebonesMode] = useState(false);
 
   // Manual Add State
@@ -234,6 +256,7 @@ const Nominations: React.FC = () => {
       setParticipantSearchTerm('');
       setTrainingSearchTerm('');
       setTrainingDateFilter('');
+      setIncludeSimilarFieldStaff(false);
     }
   }, [showNominateDialog]);
 
@@ -333,11 +356,40 @@ const Nominations: React.FC = () => {
     setSelectedTrainingId(trainingId);
     setSelectedParticipantIds([]);
     setParticipantSearchTerm('');
+    setIncludeSimilarFieldStaff(false);
   };
 
   const handleNominate = async () => {
     if (!user || !selectedTrainingId || selectedParticipantIds.length === 0) return;
+    const currentUserInstitutionId = getEntityId(user.institutionId);
     const selectedTrainingRecord = trainings.find((training) => training.id === selectedTrainingId);
+    const selectedTrainingAudienceTokens = normalizeAudienceList(selectedTrainingRecord?.targetAudience)
+      .map((audience) => normalizeTrainingMatchValue(audience))
+      .filter(Boolean);
+    const selectedTrainingInstitutionIds = normalizeStringList(selectedTrainingRecord?.requiredInstitutions);
+    const exactEligibleCount = users.filter((participant) => {
+      if (!selectedTrainingRecord) return false;
+
+      const participantInstitutionId = getEntityId(participant.institutionId);
+      const participantDesignation = normalizeTrainingMatchValue(participant.designation);
+
+      if (user.role === 'institutional_admin' && participantInstitutionId !== currentUserInstitutionId) {
+        return false;
+      }
+
+      const matchesInstitution =
+        selectedTrainingInstitutionIds.length === 0 ||
+        selectedTrainingInstitutionIds.includes(participantInstitutionId);
+      const matchesAudience =
+        selectedTrainingAudienceTokens.length === 0 ||
+        (participantDesignation && selectedTrainingAudienceTokens.includes(participantDesignation));
+
+      return matchesInstitution && matchesAudience;
+    }).length;
+    const shouldIncludeRelatedAudienceMatches =
+      includeSimilarFieldStaff ||
+      shouldAutoIncludeRelatedAudience(selectedTrainingAudienceTokens, exactEligibleCount);
+
     if (selectedTrainingRecord && new Date() >= getTrainingStartDateTime(selectedTrainingRecord)) {
       toast.error(t('nominationsProps.nominationClosed', { defaultValue: 'Nominations close once the training start time is reached' }));
       return;
@@ -356,7 +408,8 @@ const Nominations: React.FC = () => {
               participantId: pId,
               institutionId: participant.institutionId || '',
               status: 'nominated',
-              nominatedBy: user.id
+              nominatedBy: user.id,
+              includeSimilarFieldStaff: shouldIncludeRelatedAudienceMatches,
             });
             successCount++;
           } catch (error: any) {
@@ -560,13 +613,14 @@ const Nominations: React.FC = () => {
     const selectedAudienceTokens = selectedTrainingAudience
       .map((audience) => normalizeTrainingMatchValue(audience))
       .filter(Boolean);
+    const relatedAudienceTokens = getExpandedAudienceTokens(selectedAudienceTokens)
+      .filter((token) => !selectedAudienceTokens.includes(token));
     const selectedTrainingExistingParticipantIds = new Set(
       selectedTrainingNominations
         .filter((nomination) => nomination.status !== 'rejected')
         .map((nomination) => getEntityId(nomination.participantId))
     );
-
-    const eligibleParticipants = users.filter((participant) => {
+    const exactEligibleParticipants = users.filter((participant) => {
       if (!selectedTraining) return false;
 
       const participantInstitutionId = getEntityId(participant.institutionId);
@@ -586,6 +640,46 @@ const Nominations: React.FC = () => {
 
       return matchesInstitution && matchesAudience;
     });
+    const autoIncludeRelatedAudienceMatches =
+      Boolean(selectedTraining) &&
+      shouldAutoIncludeRelatedAudience(selectedAudienceTokens, exactEligibleParticipants.length);
+    const shouldIncludeRelatedAudienceMatches =
+      autoIncludeRelatedAudienceMatches || includeSimilarFieldStaff;
+    const allowedAudienceTokens = shouldIncludeRelatedAudienceMatches
+      ? getExpandedAudienceTokens(selectedAudienceTokens)
+      : selectedAudienceTokens;
+    const eligibleParticipants = users.filter((participant) => {
+      if (!selectedTraining) return false;
+
+      const participantInstitutionId = getEntityId(participant.institutionId);
+      const participantDesignation = normalizeTrainingMatchValue(participant.designation);
+
+      if (user.role === 'institutional_admin' && participantInstitutionId !== currentUserInstitutionId) {
+        return false;
+      }
+
+      const matchesInstitution =
+        selectedTrainingInstitutionIds.length === 0 ||
+        selectedTrainingInstitutionIds.includes(participantInstitutionId);
+
+      const matchesAudience =
+        allowedAudienceTokens.length === 0 ||
+        (participantDesignation && allowedAudienceTokens.includes(participantDesignation));
+
+      return matchesInstitution && matchesAudience;
+    });
+    const relatedEligibleParticipantIds = new Set(
+      eligibleParticipants
+        .filter((participant) => {
+          const participantDesignation = normalizeTrainingMatchValue(participant.designation);
+          return Boolean(
+            participantDesignation &&
+            !selectedAudienceTokens.includes(participantDesignation) &&
+            allowedAudienceTokens.includes(participantDesignation)
+          );
+        })
+        .map((participant) => participant.id)
+    );
 
     const participantSearchLower = participantSearchTerm.trim().toLowerCase();
     const filteredEligibleParticipants = [...eligibleParticipants]
@@ -594,11 +688,14 @@ const Nominations: React.FC = () => {
         const secondAssigned = selectedTrainingExistingParticipantIds.has(second.id);
         const firstBusy = busyParticipantIds.includes(first.id);
         const secondBusy = busyParticipantIds.includes(second.id);
+        const firstRelated = relatedEligibleParticipantIds.has(first.id);
+        const secondRelated = relatedEligibleParticipantIds.has(second.id);
 
         const firstRank = firstAssigned ? 2 : firstBusy ? 1 : 0;
         const secondRank = secondAssigned ? 2 : secondBusy ? 1 : 0;
 
         if (firstRank !== secondRank) return firstRank - secondRank;
+        if (firstRelated !== secondRelated) return firstRelated ? 1 : -1;
         return first.name.localeCompare(second.name);
       })
       .filter((participant) => {
@@ -1239,14 +1336,50 @@ const Nominations: React.FC = () => {
                 </div>
 
                 {selectedTraining && (
-                  <div className="relative mb-3">
-                    <Search className="absolute left-3 top-3.5 size-4 text-primary/60" />
-                    <Input
-                      value={participantSearchTerm}
-                      onChange={(e) => setParticipantSearchTerm(e.target.value)}
-                      placeholder={t('nominationsProps.participantSearchPlaceholder', { defaultValue: 'Search personnel by name, designation, or institution' })}
-                      className="h-11 rounded-xl bg-background pl-10"
-                    />
+                  <div className="mb-3 space-y-3">
+                    {selectedAudienceTokens.length > 0 && (
+                      <div className="rounded-xl border border-border bg-background/70 p-3">
+                        <div className="flex items-start gap-3">
+                          <Checkbox
+                            checked={shouldIncludeRelatedAudienceMatches}
+                            disabled={autoIncludeRelatedAudienceMatches}
+                            onCheckedChange={(checked) => setIncludeSimilarFieldStaff(Boolean(checked))}
+                            className="mt-0.5"
+                          />
+                          <div className="min-w-0">
+                            <p className="text-sm font-medium text-foreground">
+                              {t('nominationsProps.includeSimilarFieldStaff', { defaultValue: 'Include Similar Field Staff' })}
+                            </p>
+                            <p className="mt-1 text-xs leading-5 text-muted-foreground">
+                              {autoIncludeRelatedAudienceMatches
+                                ? t('nominationsProps.includeSimilarFieldStaffAuto', {
+                                    defaultValue: 'Enabled automatically because no exact target audience participants are currently available.',
+                                  })
+                                : t('nominationsProps.includeSimilarFieldStaffDesc', {
+                                    defaultValue: 'Allow closely related fallback categories when selecting participants.',
+                                  })}
+                            </p>
+                            {relatedAudienceTokens.length > 0 && (
+                              <p className="mt-2 text-xs text-muted-foreground">
+                                {t('nominationsProps.similarFieldStaffCategories', {
+                                  defaultValue: `Related categories: ${relatedAudienceTokens.map((token) => token.toUpperCase()).join(', ')}`,
+                                })}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="relative">
+                      <Search className="absolute left-3 top-3.5 size-4 text-primary/60" />
+                      <Input
+                        value={participantSearchTerm}
+                        onChange={(e) => setParticipantSearchTerm(e.target.value)}
+                        placeholder={t('nominationsProps.participantSearchPlaceholder', { defaultValue: 'Search personnel by name, designation, or institution' })}
+                        className="h-11 rounded-xl bg-background pl-10"
+                      />
+                    </div>
                   </div>
                 )}
 
@@ -1292,6 +1425,11 @@ const Nominations: React.FC = () => {
                             <p className="text-xs text-muted-foreground">
                               {participant.designation || t('nominationsProps.participantLabel', { defaultValue: 'Participant' })} • {getInstitutionName(participant.institutionId)}
                             </p>
+                            {relatedEligibleParticipantIds.has(participant.id) && (
+                              <p className="mt-1 text-[11px] text-amber-400">
+                                {t('nominationsProps.similarCategoryMatch', { defaultValue: 'Eligible through a related category match' })}
+                              </p>
+                            )}
                           </div>
                         </div>
 
@@ -1302,6 +1440,10 @@ const Nominations: React.FC = () => {
                         ) : isBusy ? (
                           <Badge variant="secondary" className="text-xs">
                             {t('nominationsProps.busy')}
+                          </Badge>
+                        ) : relatedEligibleParticipantIds.has(participant.id) ? (
+                          <Badge variant="outline" className="text-xs border-amber-500/20 bg-amber-500/10 text-amber-400">
+                            {t('nominationsProps.relatedMatch', { defaultValue: 'Related match' })}
                           </Badge>
                         ) : (
                           <Badge variant="outline" className="text-xs border-emerald-500/20 bg-emerald-500/10 text-emerald-400">

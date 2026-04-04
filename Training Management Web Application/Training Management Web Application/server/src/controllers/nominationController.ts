@@ -12,10 +12,78 @@ import {
 } from '../models/shared/participantSnapshot';
 import { getTrainingStartDateTime } from '../utils/trainingStatus';
 
+const normalizeAudienceToken = (value?: string) =>
+    String(value || '').trim().replace(/\s+/g, ' ').toLowerCase();
+
+const RELATED_AUDIENCE_MAP: Record<string, string[]> = {
+    hi: ['jhi', 'phn', 'jphn'],
+    jhi: ['hi', 'phn', 'jphn'],
+    phn: ['jphn', 'hi', 'jhi'],
+    jphn: ['phn', 'hi', 'jhi'],
+};
+
+const expandAudienceTokens = (tokens: string[]) => {
+    const expanded = new Set(tokens.filter(Boolean).map((token) => normalizeAudienceToken(token)));
+
+    tokens.forEach((token) => {
+        const normalizedToken = normalizeAudienceToken(token);
+        expanded.add(normalizedToken);
+        (RELATED_AUDIENCE_MAP[normalizedToken] || []).forEach((relatedToken) => expanded.add(relatedToken));
+    });
+
+    return Array.from(expanded);
+};
+
+const getNormalizedTrainingAudience = (targetAudience: unknown) =>
+    Array.isArray(targetAudience)
+        ? targetAudience.flatMap((designation: any) =>
+            String(designation)
+                .split(',')
+                .map((part) => normalizeAudienceToken(part))
+                .filter(Boolean)
+        )
+        : [];
+
+const hasPrimaryAudienceCandidates = async (
+    training: any,
+    requester: AuthRequest['user']
+) => {
+    const targetAudience = getNormalizedTrainingAudience(training.targetAudience);
+    if (targetAudience.length === 0) {
+        return false;
+    }
+
+    const requiredInstitutions = Array.isArray(training.requiredInstitutions)
+        ? training.requiredInstitutions.map((id: any) => String(id))
+        : [];
+
+    const candidateQuery: any = {
+        role: 'participant',
+        isDeleted: { $ne: true },
+    };
+
+    if (requiredInstitutions.length > 0) {
+        candidateQuery.institutionId = { $in: requiredInstitutions };
+    }
+
+    if (requester?.role === 'institutional_admin' && requester.institutionId) {
+        candidateQuery.institutionId = requester.institutionId;
+    }
+
+    const candidates = await User.find(candidateQuery)
+        .select('designation')
+        .lean();
+
+    return candidates.some((candidate: any) => {
+        const designation = normalizeAudienceToken(candidate?.designation);
+        return designation && targetAudience.includes(designation);
+    });
+};
+
 // Nominate participant
 export const nominateParticipant = async (req: AuthRequest, res: Response): Promise<void> => {
     try {
-        const { trainingId, participantId, institutionId: bodyInstitutionId } = req.body;
+        const { trainingId, participantId, institutionId: bodyInstitutionId, includeSimilarFieldStaff } = req.body;
 
         if (!trainingId || !participantId) {
             res.status(400).json({ message: 'Training ID and Participant ID are required' });
@@ -60,7 +128,7 @@ export const nominateParticipant = async (req: AuthRequest, res: Response): Prom
         const participantInstitutionId = typeof participant.institutionId === 'string'
             ? participant.institutionId
             : ((participant as any).institutionId?._id?.toString() || '');
-        const participantDesignation = participant.designation?.trim() || '';
+        const participantDesignation = normalizeAudienceToken(participant.designation || '');
 
         if (req.user?.role === 'institutional_admin' &&
             req.user.institutionId &&
@@ -77,7 +145,8 @@ export const nominateParticipant = async (req: AuthRequest, res: Response): Prom
             return;
         }
 
-        if (new Date() >= getTrainingStartDateTime(training)) {
+        const canNominateDuringOngoingTraining = req.user?.role === 'medical_officer' || req.user?.role === 'master_admin';
+        if (!canNominateDuringOngoingTraining && new Date() >= getTrainingStartDateTime(training)) {
             res.status(400).json({ message: 'Nominations close once the training start time is reached' });
             return;
         }
@@ -85,21 +154,18 @@ export const nominateParticipant = async (req: AuthRequest, res: Response): Prom
         const requiredInstitutions = Array.isArray(training.requiredInstitutions)
             ? training.requiredInstitutions.map((id: any) => String(id))
             : [];
-        const targetAudience = Array.isArray(training.targetAudience)
-            ? training.targetAudience.flatMap((designation: any) =>
-                String(designation)
-                    .split(',')
-                    .map((part) => part.trim())
-                    .filter(Boolean)
-            )
-            : [];
+        const targetAudience = getNormalizedTrainingAudience(training.targetAudience);
+        const allowRelatedAudience =
+            Boolean(includeSimilarFieldStaff) ||
+            !(await hasPrimaryAudienceCandidates(training, req.user));
+        const allowedAudience = allowRelatedAudience ? expandAudienceTokens(targetAudience) : targetAudience;
 
         if (requiredInstitutions.length > 0 && (!participantInstitutionId || !requiredInstitutions.includes(participantInstitutionId))) {
             res.status(400).json({ message: `${participantName} does not belong to a required institution for this training` });
             return;
         }
 
-        if (targetAudience.length > 0 && (!participantDesignation || !targetAudience.includes(participantDesignation))) {
+        if (targetAudience.length > 0 && (!participantDesignation || !allowedAudience.includes(participantDesignation))) {
             res.status(400).json({ message: `${participantName} does not match the target audience for this training` });
             return;
         }

@@ -6,9 +6,30 @@ import Training from '../models/Training';
 import Nomination from '../models/Nomination';
 import Attendance from '../models/Attendance';
 import { markSnapshotAsDeleted } from '../models/shared/participantSnapshot';
+import Institution from '../models/Institution';
 
 const normalizePhoneNumber = (value?: string) => value ? value.replace(/\D/g, '') : '';
 const isValidPhoneNumber = (value?: string) => !value || normalizePhoneNumber(value).length === 10;
+const normalizeOptionalText = (value: unknown) => typeof value === 'string' ? value.trim() : value;
+const generateManualParticipantEmail = (name?: string, phone?: string) => {
+    const normalizedName = (name || 'participant')
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '.')
+        .replace(/(^\.|\.$)/g, '') || 'participant';
+    const phoneFragment = normalizePhoneNumber(phone).slice(-4) || Math.random().toString(36).slice(-4);
+    return `${normalizedName}.${phoneFragment}.${Date.now()}@manual.training.local`;
+};
+const transformUserForResponse = (user: any) => ({
+    ...user,
+    id: user._id,
+    institutionId: typeof user.institutionId === 'string' ? user.institutionId : user.institutionId?._id,
+    institution: user.institutionId
+        ? {
+            id: typeof user.institutionId === 'string' ? user.institutionId : user.institutionId._id,
+            name: typeof user.institutionId === 'string' ? undefined : user.institutionId.name
+        }
+        : null
+});
 
 export const getUsers = async (req: Request, res: Response): Promise<void> => {
     try {
@@ -29,11 +50,7 @@ export const getUsers = async (req: Request, res: Response): Promise<void> => {
             .lean();
 
         // Transform data to match previous structure (institutionId -> institution)
-        const transformedUsers = users.map((user: any) => ({
-            ...user,
-            id: user._id,
-            institution: user.institutionId ? { name: user.institutionId.name } : null
-        }));
+        const transformedUsers = users.map((user: any) => transformUserForResponse(user));
 
         res.status(200).json(transformedUsers);
     } catch (error) {
@@ -54,13 +71,7 @@ export const getUserById = async (req: Request, res: Response): Promise<void> =>
             return;
         }
 
-        const transformedUser = {
-            ...user,
-            // @ts-ignore
-            id: user._id,
-            // @ts-ignore
-            institution: user.institutionId ? { name: user.institutionId.name } : null
-        };
+        const transformedUser = transformUserForResponse(user);
 
         res.status(200).json(transformedUser);
     } catch (error) {
@@ -76,11 +87,7 @@ export const getPendingUsers = async (req: Request, res: Response): Promise<void
             .sort({ createdAt: -1 })
             .lean();
 
-        const transformedUsers = users.map((user: any) => ({
-            ...user,
-            id: user._id,
-            institution: user.institutionId ? { name: user.institutionId.name } : null
-        }));
+        const transformedUsers = users.map((user: any) => transformUserForResponse(user));
 
         res.status(200).json(transformedUsers);
     } catch (error) {
@@ -115,13 +122,119 @@ export const rejectUser = async (req: Request, res: Response): Promise<void> => 
     }
 };
 
-export const updateProfile = async (req: Request, res: Response): Promise<void> => {
+export const updateUser = async (req: AuthRequest, res: Response): Promise<void> => {
     try {
         const userId = req.params.userId;
-        const { name, phone, designation, department, profilePicture, institutionId } = req.body;
-        const updateData: any = { name, phone, designation, department, institutionId };
-        if (profilePicture) {
-            updateData.profilePicture = profilePicture;
+        const requester = req.user;
+
+        if (!requester) {
+            res.sendStatus(401);
+            return;
+        }
+
+        const existingUser = await User.findOne({ _id: userId, isDeleted: { $ne: true } });
+        if (!existingUser) {
+            res.status(404).json({ message: 'User not found' });
+            return;
+        }
+
+        const isSelfUpdate = requester.userId === userId;
+        const isPrivilegedManager = requester.role === 'master_admin' || requester.role === 'medical_officer';
+        const isInstitutionAdminForParticipant =
+            requester.role === 'institutional_admin' &&
+            existingUser.role === 'participant' &&
+            Boolean(requester.institutionId) &&
+            requester.institutionId === String(existingUser.institutionId || '');
+
+        if (!isSelfUpdate && !isPrivilegedManager && !isInstitutionAdminForParticipant) {
+            res.status(403).json({ message: 'You do not have permission to update this user' });
+            return;
+        }
+
+        const {
+            name,
+            email,
+            phone,
+            designation,
+            department,
+            profilePicture,
+            institutionId,
+        } = req.body;
+
+        const updateData: any = {};
+
+        if (name !== undefined) {
+            const trimmedName = normalizeOptionalText(name);
+            if (!trimmedName) {
+                res.status(400).json({ message: 'Name is required' });
+                return;
+            }
+            updateData.name = trimmedName;
+        }
+
+        if (email !== undefined) {
+            const normalizedEmail = String(normalizeOptionalText(email) || '').toLowerCase();
+            if (!normalizedEmail) {
+                res.status(400).json({ message: 'Email is required' });
+                return;
+            }
+
+            const emailOwner = await User.findOne({
+                email: normalizedEmail,
+                _id: { $ne: userId }
+            }).select('_id');
+
+            if (emailOwner) {
+                res.status(400).json({ message: 'A user with this email already exists' });
+                return;
+            }
+
+            updateData.email = normalizedEmail;
+        }
+
+        if (phone !== undefined) {
+            const normalizedPhone = normalizePhoneNumber(phone);
+            if (!isValidPhoneNumber(normalizedPhone)) {
+                res.status(400).json({ message: 'Phone number must be exactly 10 digits' });
+                return;
+            }
+            updateData.phone = normalizedPhone;
+        }
+
+        if (designation !== undefined) {
+            updateData.designation = normalizeOptionalText(designation) || '';
+        }
+
+        if (department !== undefined) {
+            updateData.department = normalizeOptionalText(department) || '';
+        }
+
+        if (profilePicture !== undefined) {
+            updateData.profilePicture = normalizeOptionalText(profilePicture) || undefined;
+        }
+
+        if (institutionId !== undefined) {
+            const resolvedInstitutionId = normalizeOptionalText(institutionId);
+
+            if (resolvedInstitutionId) {
+                const canChangeInstitution =
+                    isPrivilegedManager ||
+                    (requester.role === 'institutional_admin' && requester.institutionId === resolvedInstitutionId) ||
+                    (isSelfUpdate && String(existingUser.institutionId || '') === String(resolvedInstitutionId));
+
+                if (!canChangeInstitution) {
+                    res.status(403).json({ message: 'You do not have permission to change this institution' });
+                    return;
+                }
+
+                const institution = await Institution.findById(resolvedInstitutionId).select('_id');
+                if (!institution) {
+                    res.status(404).json({ message: 'Institution not found' });
+                    return;
+                }
+            }
+
+            updateData.institutionId = resolvedInstitutionId || undefined;
         }
 
         const updatedUser = await User.findByIdAndUpdate(
@@ -135,19 +248,17 @@ export const updateProfile = async (req: Request, res: Response): Promise<void> 
             return;
         }
 
-        const transformedUser = {
-            ...updatedUser,
-            // @ts-ignore
-            id: updatedUser._id,
-            // @ts-ignore
-            institution: updatedUser.institutionId ? { name: updatedUser.institutionId.name } : null
-        };
+        const transformedUser = transformUserForResponse(updatedUser);
 
         res.status(200).json({ message: 'Profile updated successfully', user: transformedUser });
     } catch (error) {
-        console.error('Error updating profile:', error);
-        res.status(500).json({ message: 'Error updating profile' });
+        console.error('Error updating user:', error);
+        res.status(500).json({ message: 'Error updating user' });
     }
+};
+
+export const updateProfile = async (req: AuthRequest, res: Response): Promise<void> => {
+    await updateUser(req, res);
 };
 
 export const changePassword = async (req: Request, res: Response): Promise<void> => {
@@ -248,11 +359,11 @@ export const deleteUser = async (req: Request, res: Response): Promise<void> => 
 
 export const addManualParticipant = async (req: AuthRequest, res: Response): Promise<void> => {
     try {
-        const { name, email, phone, designation, department } = req.body;
+        const { name, email, phone, designation, department, institutionId: bodyInstitutionId } = req.body;
         const normalizedPhone = normalizePhoneNumber(phone);
 
-        if (!name || !email) {
-            res.status(400).json({ message: 'Name and email are required' });
+        if (!name) {
+            res.status(400).json({ message: 'Name is required' });
             return;
         }
 
@@ -261,13 +372,30 @@ export const addManualParticipant = async (req: AuthRequest, res: Response): Pro
             return;
         }
 
-        const institutionId = req.user?.institutionId;
-        if (!institutionId) {
-            res.status(403).json({ message: 'Not authorized: No institution associated with your account' });
+        const resolvedInstitutionId =
+            req.user?.role === 'institutional_admin'
+                ? req.user.institutionId
+                : (bodyInstitutionId || req.user?.institutionId);
+
+        if (!resolvedInstitutionId) {
+            res.status(400).json({ message: 'Institution is required' });
             return;
         }
 
-        const existingUser = await User.findOne({ email: email.toLowerCase() });
+        if (req.user?.role === 'institutional_admin' && req.user.institutionId && bodyInstitutionId && bodyInstitutionId !== req.user.institutionId) {
+            res.status(403).json({ message: 'You can only add participants to your institution' });
+            return;
+        }
+
+        const institution = await Institution.findById(resolvedInstitutionId).select('_id name');
+        if (!institution) {
+            res.status(404).json({ message: 'Institution not found' });
+            return;
+        }
+
+        const resolvedEmail = (email?.trim() || generateManualParticipantEmail(name, phone)).toLowerCase();
+
+        const existingUser = await User.findOne({ email: resolvedEmail });
         if (existingUser) {
             res.status(400).json({ message: 'A user with this email already exists' });
             return;
@@ -280,13 +408,13 @@ export const addManualParticipant = async (req: AuthRequest, res: Response): Pro
 
         const newUser = await User.create({
             name,
-            email: email.toLowerCase(),
+            email: resolvedEmail,
             password: hashedPassword,
             phone: normalizedPhone,
             designation,
             department,
             role: 'participant',
-            institutionId,
+            institutionId: resolvedInstitutionId,
             isApproved: true, // Auto-approve manual creations by MO/Admin
         });
 
@@ -298,7 +426,11 @@ export const addManualParticipant = async (req: AuthRequest, res: Response): Pro
             message: 'Participant added successfully',
             user: {
                 ...userObj,
-                id: (userObj as any)._id
+                id: (userObj as any)._id,
+                institution: {
+                    id: institution._id,
+                    name: institution.name,
+                }
             }
         });
     } catch (error) {

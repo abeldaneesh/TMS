@@ -7,7 +7,7 @@ import { useTranslation } from 'react-i18next';
 import {
   Calendar, Clock, Users, MapPin, Plus, Search,
   Edit, Eye, AppWindowMac, PlayCircle, ClipboardList, CheckCircle2, XCircle,
-  ArrowUpDown, ArrowUp, ArrowDown, CalendarPlus
+  CalendarPlus
 } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
@@ -30,11 +30,10 @@ const Trainings: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const { t } = useTranslation();
   const [searchTerm, setSearchTerm] = useState('');
-  const [dateFilter, setDateFilter] = useState('');
+  const [startDateFilter, setStartDateFilter] = useState('');
+  const [endDateFilter, setEndDateFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [ownershipFilter, setOwnershipFilter] = useState<'all' | 'mine'>('all');
-  const [sortField, setSortField] = useState<'title' | 'hall' | 'date' | 'status'>('date');
-  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
 
   const [cancelledTraining, setCancelledTraining] = useState<Training | null>(null);
 
@@ -129,6 +128,26 @@ const Trainings: React.FC = () => {
     );
   };
 
+  const getTrainingFilterDate = (training: Training) => {
+    if (typeof training.date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(training.date)) {
+      return training.date;
+    }
+
+    if (typeof training.date === 'string' && training.date.includes('T')) {
+      return training.date.split('T')[0];
+    }
+
+    const parsed = new Date(training.date);
+    if (Number.isNaN(parsed.getTime())) {
+      return '';
+    }
+
+    const year = parsed.getFullYear();
+    const month = `${parsed.getMonth() + 1}`.padStart(2, '0');
+    const day = `${parsed.getDate()}`.padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
   const filteredTrainings = trainings.filter(training => {
     const matchesSearch = training.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       training.program.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -136,14 +155,17 @@ const Trainings: React.FC = () => {
 
     const matchesStatus = statusFilter === 'all' || training.status === statusFilter;
     const matchesOwnership = ownershipFilter === 'all' || training.createdById === user?.id;
+    const hasDateRange = Boolean(startDateFilter && endDateFilter);
+    const trainingDateStr = getTrainingFilterDate(training);
+    const statusPresentation = getTrainingStatusPresentation(training);
 
-    // Convert both to YYYY-MM-DD for accurate comparison if a date is selected
     let matchesDate = true;
-    if (dateFilter) {
-      const trainingDateObj = new Date(training.date);
-      // Ensure we don't have timezone offset issues by comparing the date string parts
-      const trainingDateStr = trainingDateObj.toISOString().split('T')[0];
-      matchesDate = trainingDateStr === dateFilter;
+    if (hasDateRange) {
+      matchesDate = Boolean(trainingDateStr) &&
+        trainingDateStr > startDateFilter &&
+        trainingDateStr < endDateFilter;
+    } else if (statusFilter === 'all') {
+      matchesDate = statusPresentation === 'scheduled' || statusPresentation === 'ongoing';
     }
 
     return matchesSearch && matchesStatus && matchesOwnership && matchesDate;
@@ -152,67 +174,9 @@ const Trainings: React.FC = () => {
   const getTrainingDateSortValue = (training: Training) =>
     new Date(`${training.date}T${training.startTime || '00:00'}`).getTime();
 
-  const getTrainingDisplayPriority = (training: Training) => {
-    const presentation = getTrainingStatusPresentation(training);
-
-    switch (presentation) {
-      case 'ongoing':
-        return 0;
-      case 'scheduled':
-        return 1;
-      case 'draft':
-        return 2;
-      case 'overdue':
-        return 3;
-      case 'completed':
-        return 4;
-      case 'cancelled':
-        return 5;
-      default:
-        return 99;
-    }
-  };
-
-  const sortedTrainings = [...filteredTrainings].sort((a, b) => {
-    let comparison = 0;
-    switch (sortField) {
-      case 'title':
-        comparison = a.title.localeCompare(b.title);
-        break;
-      case 'hall':
-        comparison = getHallName(a.hallId).localeCompare(getHallName(b.hallId));
-        break;
-      case 'date':
-        const priorityComparison = getTrainingDisplayPriority(a) - getTrainingDisplayPriority(b);
-
-        if (priorityComparison !== 0) {
-          comparison = priorityComparison;
-          break;
-        }
-
-        const dateA = getTrainingDateSortValue(a);
-        const dateB = getTrainingDateSortValue(b);
-        const isUpcomingBucket = getTrainingDisplayPriority(a) <= 2;
-
-        comparison = isUpcomingBucket
-          ? dateA - dateB
-          : dateB - dateA;
-        break;
-      case 'status':
-        comparison = a.status.localeCompare(b.status);
-        break;
-    }
-    return sortDirection === 'asc' ? comparison : -comparison;
-  });
-
-  const handleSort = (field: 'title' | 'hall' | 'date' | 'status') => {
-    if (field === sortField) {
-      setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc');
-    } else {
-      setSortField(field);
-      setSortDirection('asc');
-    }
-  };
+  const sortedTrainings = [...filteredTrainings].sort(
+    (a, b) => getTrainingDateSortValue(b) - getTrainingDateSortValue(a)
+  );
 
   const handleViewAttendance = (training: Training) => {
     navigate(`/trainings/${training.id}/attendance`);
@@ -221,6 +185,8 @@ const Trainings: React.FC = () => {
   const handleViewParticipants = (training: Training) => {
     navigate(`/trainings/${training.id}/participants`);
   };
+
+  const hasDateRangeSelection = Boolean(startDateFilter || endDateFilter);
 
   const formatDateParam = (date: Date | string) => {
     const parsed = new Date(date);
@@ -270,8 +236,8 @@ const Trainings: React.FC = () => {
         )}
       </div>
 
-      <div className="flex flex-col sm:flex-row gap-4 mb-4">
-        <div className="relative max-w-md w-full sm:w-2/3">
+      <div className="flex flex-col lg:flex-row gap-4 mb-4">
+        <div className="relative w-full lg:max-w-xl lg:flex-1">
           <Search className="absolute left-4 top-3.5 size-5 text-muted-foreground" />
           <Input
             placeholder={t('trainings.searchPlaceholder', 'Search trainings, sectors, or programs...')}
@@ -281,25 +247,46 @@ const Trainings: React.FC = () => {
           />
         </div>
 
-        <div className="relative max-w-md w-full sm:w-1/3">
-          <Input
-            type="date"
-            value={dateFilter}
-            onChange={(e) => setDateFilter(e.target.value)}
-            className="bg-secondary/30 border-transparent focus:border-[#3d3d3d] rounded-full h-12 text-foreground px-4 w-full cursor-pointer"
-            title={t('trainings.filterByDate', 'Filter by date')}
-          />
-          {dateFilter && (
-            <Button
-              variant="ghost"
-              size="icon"
-              className="absolute right-2 top-1.5 size-9 text-muted-foreground hover:bg-transparent hover:text-foreground"
-              onClick={() => setDateFilter('')}
-              title={t('trainings.clearDate', 'Clear date')}
-            >
-              <XCircle className="size-4" />
-            </Button>
-          )}
+        <div className="flex w-full flex-col gap-2 rounded-3xl border border-border/60 bg-secondary/20 p-3 lg:max-w-xl">
+          <div className="flex items-center justify-between gap-3 px-1">
+            <span className="text-sm font-medium text-foreground">
+              {t('trainings.dateRange', 'Date Range')}
+            </span>
+            {hasDateRangeSelection && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-auto px-2 py-1 text-xs text-muted-foreground hover:text-foreground"
+                onClick={() => {
+                  setStartDateFilter('');
+                  setEndDateFilter('');
+                }}
+                title={t('trainings.clearDateRange', 'Clear date range')}
+              >
+                {t('trainings.clearDateRange', 'Clear range')}
+              </Button>
+            )}
+          </div>
+
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] sm:items-center">
+            <Input
+              type="date"
+              value={startDateFilter}
+              onChange={(e) => setStartDateFilter(e.target.value)}
+              className="bg-secondary/30 border-transparent focus:border-[#3d3d3d] rounded-full h-12 text-foreground px-4 w-full cursor-pointer"
+              title={t('trainings.startDate', 'Start date')}
+            />
+            <span className="hidden sm:block text-center text-xs uppercase tracking-[0.2em] text-muted-foreground">
+              {t('trainings.to', 'to')}
+            </span>
+            <Input
+              type="date"
+              value={endDateFilter}
+              onChange={(e) => setEndDateFilter(e.target.value)}
+              className="bg-secondary/30 border-transparent focus:border-[#3d3d3d] rounded-full h-12 text-foreground px-4 w-full cursor-pointer"
+              title={t('trainings.endDate', 'End date')}
+            />
+          </div>
         </div>
       </div>
 
@@ -336,7 +323,7 @@ const Trainings: React.FC = () => {
           </div>
           <h3 className="text-2xl font-bold mb-2">{t('trainings.noResults', 'No matching results')}</h3>
           <p className="text-muted-foreground max-w-md mb-8">
-            {searchTerm || statusFilter !== 'all' || ownershipFilter !== 'all' || dateFilter
+            {searchTerm || statusFilter !== 'all' || ownershipFilter !== 'all' || hasDateRangeSelection
               ? t('trainings.adjustSearch', 'Try adjusting your search terms or filters to find what you are looking for.')
               : t('trainings.emptyLibrary', 'There are no items in this library yet.')}
           </p>
@@ -345,21 +332,17 @@ const Trainings: React.FC = () => {
         <div className="flex flex-col">
           <div className="hidden md:flex items-center px-4 py-2 text-sm text-muted-foreground border-b border-border/50 uppercase tracking-wider font-medium">
             <div className="w-8 mr-4 text-center">#</div>
-            <div className="flex-1 min-w-0 pr-4 cursor-pointer hover:text-foreground flex items-center gap-1 group/header" onClick={() => handleSort('title')}>
+            <div className="flex-1 min-w-0 pr-4 flex items-center gap-1">
               {t('trainings.table.title', 'Title')}
-              {sortField === 'title' ? (sortDirection === 'asc' ? <ArrowUp className="size-3" /> : <ArrowDown className="size-3" />) : <ArrowUpDown className="size-3 opacity-0 group-hover/header:opacity-50 transition-opacity" />}
             </div>
-            <div className="w-48 shrink-0 px-4 cursor-pointer hover:text-foreground flex items-center gap-1 group/header" onClick={() => handleSort('hall')}>
+            <div className="w-48 shrink-0 px-4 flex items-center gap-1">
               <span>Hall / Venue</span>
-              {sortField === 'hall' ? (sortDirection === 'asc' ? <ArrowUp className="size-3" /> : <ArrowDown className="size-3" />) : <ArrowUpDown className="size-3 opacity-0 group-hover/header:opacity-50 transition-opacity" />}
             </div>
-            <div className="w-48 shrink-0 px-4 text-right flex justify-end cursor-pointer hover:text-foreground gap-1 group/header" onClick={() => handleSort('date')}>
-              {sortField === 'date' ? (sortDirection === 'asc' ? <ArrowUp className="size-3" /> : <ArrowDown className="size-3" />) : <ArrowUpDown className="size-3 opacity-0 group-hover/header:opacity-50 transition-opacity" />}
+            <div className="w-48 shrink-0 px-4 text-right flex justify-end gap-1">
               <span>{t('trainings.table.dateTime', 'Date & Time')}</span>
             </div>
-            <div className="w-32 shrink-0 px-4 cursor-pointer hover:text-foreground flex items-center gap-1 group/header" onClick={() => handleSort('status')}>
+            <div className="w-32 shrink-0 px-4 flex items-center gap-1">
               {t('trainings.table.status', 'Status')}
-              {sortField === 'status' ? (sortDirection === 'asc' ? <ArrowUp className="size-3" /> : <ArrowDown className="size-3" />) : <ArrowUpDown className="size-3 opacity-0 group-hover/header:opacity-50 transition-opacity" />}
             </div>
             <div className="w-48 shrink-0"></div>
           </div>

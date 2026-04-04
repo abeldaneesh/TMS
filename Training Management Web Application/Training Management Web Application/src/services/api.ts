@@ -108,7 +108,7 @@ export const usersApi = {
     },
 
     update: async (id: string, userData: Partial<User>): Promise<User> => {
-        const response = await api.put(`/users/${id}/profile`, userData);
+        const response = await api.put(`/users/${id}`, userData);
         return response.data.user; // updateProfile controller returns { message, user }
     },
 
@@ -357,7 +357,7 @@ export const nominationsApi = {
         return response.data;
     },
 
-    create: async (data: Omit<Nomination, 'id' | 'nominatedAt'>): Promise<Nomination> => {
+    create: async (data: Omit<Nomination, 'id' | 'nominatedAt'> & { includeSimilarFieldStaff?: boolean }): Promise<Nomination> => {
         const response = await api.post('/nominations', data);
         return response.data;
     },
