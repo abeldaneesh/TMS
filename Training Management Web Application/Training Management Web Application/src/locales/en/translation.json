@@ -173,7 +173,7 @@
     "fields": {
       "title": "Training Title *",
       "titlePlaceholder": "e.g., Emergency Response & First Aid",
-      "desc": "Description *",
+      "desc": "Description",
       "descPlaceholder": "Detailed description of the training program",
       "program": "Program *",
       "programPlaceholder": "Select program",

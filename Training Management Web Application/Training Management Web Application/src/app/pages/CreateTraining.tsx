@@ -28,7 +28,7 @@ import { ClockTimePicker } from '../components/ui/clock-time-picker';
 import DateInputWithPickerIcon from '../components/DateInputWithPickerIcon';
 import { motion } from 'framer-motion';
 
-const programs = [
+const defaultPrograms = [
   'Emergency Medicine',
   'Infection Control',
   'MCH Program',
@@ -39,6 +39,8 @@ const programs = [
   'AYUSH',
   'Other',
 ];
+
+const CUSTOM_PROGRAMS_STORAGE_KEY = 'training-management.custom-programs';
 
 const targetAudienceOptions = [
   'Program Officer',
@@ -121,6 +123,26 @@ const normalizeTargetAudienceForForm = (value: string[] | string | undefined) =>
   };
 };
 
+const normalizeProgramName = (value: string) => value.trim().replace(/\s+/g, ' ');
+
+const mergeProgramOptions = (...programCollections: string[][]) => {
+  const mergedPrograms: string[] = [];
+
+  programCollections.flat().forEach((program) => {
+    const normalizedProgram = normalizeProgramName(program);
+
+    if (!normalizedProgram) return;
+    if (mergedPrograms.some((existingProgram) => existingProgram.toLowerCase() === normalizedProgram.toLowerCase())) {
+      return;
+    }
+
+    mergedPrograms.push(normalizedProgram);
+  });
+
+  const withoutOther = mergedPrograms.filter((program) => program.toLowerCase() !== 'other');
+  return [...withoutOther, 'Other'];
+};
+
 const toTitleCase = (value: string) =>
   value
     .split(/[\s-]+/)
@@ -188,6 +210,7 @@ const CreateTraining: React.FC = () => {
   const [halls, setHalls] = useState<Hall[]>([]);
   const [institutions, setInstitutions] = useState<Institution[]>([]);
   const [availableHalls, setAvailableHalls] = useState<Hall[]>([]);
+  const [customPrograms, setCustomPrograms] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [saveMode, setSaveMode] = useState<'draft' | 'scheduled' | null>(null);
   const [checkingAvailability, setCheckingAvailability] = useState(false);
@@ -216,6 +239,50 @@ const CreateTraining: React.FC = () => {
 
   const [errors, setErrors] = useState<Record<string, string>>({});
 
+  const availablePrograms = useMemo(() => {
+    const currentCustomProgram = formData.program === 'Other' ? [formData.customProgram] : [];
+    return mergeProgramOptions(defaultPrograms, customPrograms, currentCustomProgram);
+  }, [customPrograms, formData.customProgram, formData.program]);
+
+  const persistCustomProgram = (programName: string) => {
+    const normalizedProgram = normalizeProgramName(programName);
+    if (!normalizedProgram || defaultPrograms.some((program) => program.toLowerCase() === normalizedProgram.toLowerCase())) {
+      return;
+    }
+
+    setCustomPrograms((previousPrograms) => {
+      const nextPrograms = mergeProgramOptions(previousPrograms, [normalizedProgram]).filter(
+        (program) => program.toLowerCase() !== 'other'
+      );
+
+      if (typeof window !== 'undefined') {
+        window.localStorage.setItem(CUSTOM_PROGRAMS_STORAGE_KEY, JSON.stringify(nextPrograms));
+      }
+
+      return nextPrograms;
+    });
+  };
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    try {
+      const savedPrograms = window.localStorage.getItem(CUSTOM_PROGRAMS_STORAGE_KEY);
+      if (!savedPrograms) return;
+
+      const parsedPrograms = JSON.parse(savedPrograms);
+      if (!Array.isArray(parsedPrograms)) return;
+
+      setCustomPrograms(
+        mergeProgramOptions(parsedPrograms.filter((program): program is string => typeof program === 'string')).filter(
+          (program) => program.toLowerCase() !== 'other'
+        )
+      );
+    } catch (error) {
+      console.error('Failed to load saved custom programs:', error);
+    }
+  }, []);
+
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -231,7 +298,7 @@ const CreateTraining: React.FC = () => {
             const response = await api.get(`/trainings/${id}`);
             const training = response.data;
 
-            const isCustomProgram = !programs.includes(training.program);
+            const isCustomProgram = !defaultPrograms.includes(training.program);
             const normalizedTargetAudience = normalizeTargetAudienceForForm(training.targetAudience);
 
             setFormData({
@@ -255,7 +322,7 @@ const CreateTraining: React.FC = () => {
           }
         } else if (location.state?.prefilledTraining) {
           const training = location.state.prefilledTraining;
-          const isCustomProgram = !programs.includes(training.program);
+          const isCustomProgram = !defaultPrograms.includes(training.program);
           const normalizedTargetAudience = normalizeTargetAudienceForForm(training.targetAudience);
           setFormData(prev => ({
             ...prev,
@@ -515,7 +582,6 @@ const CreateTraining: React.FC = () => {
     const newErrors: Record<string, string> = {};
 
     if (!formData.title.trim()) newErrors.title = 'Title is required';
-    if (!formData.description.trim()) newErrors.description = 'Description is required';
     if (!formData.program.trim()) newErrors.program = 'Program is required';
     if (formData.program === 'Other' && (!formData.customProgram || !formData.customProgram.trim())) {
       newErrors.customProgram = 'Custom program name is required';
@@ -557,10 +623,13 @@ const CreateTraining: React.FC = () => {
     setLoading(true);
     setSaveMode(status);
     try {
+      const selectedProgram = normalizeProgramName(
+        formData.program === 'Other' ? formData.customProgram : formData.program
+      );
       const payload = {
         title: formData.title,
         description: formData.description,
-        program: formData.program === 'Other' ? formData.customProgram : formData.program,
+        program: selectedProgram,
         targetAudience: formData.targetAudience.map((audience) =>
           audience === 'Other' ? formData.customTargetAudience.trim() : audience
         ),
@@ -584,6 +653,7 @@ const CreateTraining: React.FC = () => {
         });
         toast.success(status === 'draft' ? 'Draft saved successfully!' : 'Training created successfully!');
       }
+      persistCustomProgram(selectedProgram);
       navigate('/trainings');
     } catch (error: any) {
       console.error(error);
@@ -614,12 +684,15 @@ const CreateTraining: React.FC = () => {
     setRequestLoading(true);
     try {
       let trainingId = id;
+      const selectedProgram = normalizeProgramName(
+        formData.program === 'Other' ? formData.customProgram : formData.program
+      );
 
       if (!trainingId) {
         const payload = {
           title: formData.title,
           description: formData.description,
-          program: formData.program === 'Other' ? formData.customProgram : formData.program,
+          program: selectedProgram,
           targetAudience: formData.targetAudience.map((audience) =>
             audience === 'Other' ? formData.customTargetAudience.trim() : audience
           ),
@@ -644,6 +717,7 @@ const CreateTraining: React.FC = () => {
           createdById: user.id
         });
         trainingId = newTraining.id;
+        persistCustomProgram(selectedProgram);
       }
 
       await hallRequestsApi.create({
@@ -653,6 +727,7 @@ const CreateTraining: React.FC = () => {
         remarks: requestRemarks
       });
 
+      persistCustomProgram(selectedProgram);
       toast.success('Hall request submitted successfully!');
       setShowRequestDialog(false);
       navigate('/trainings');
@@ -758,7 +833,7 @@ const CreateTraining: React.FC = () => {
             </div>
 
             <div>
-              <Label htmlFor="description">{t('createTraining.fields.desc', 'Description *')}</Label>
+              <Label htmlFor="description">{t('createTraining.fields.desc', 'Description')}</Label>
               <Textarea
                 id="description"
                 value={formData.description}
@@ -777,7 +852,7 @@ const CreateTraining: React.FC = () => {
                     <SelectValue placeholder={t('createTraining.fields.programPlaceholder', 'Select program')} />
                   </SelectTrigger>
                   <SelectContent>
-                    {programs.map((program) => (
+                    {availablePrograms.map((program) => (
                       <SelectItem key={program} value={program}>
                         {program}
                       </SelectItem>

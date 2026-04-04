@@ -14,7 +14,7 @@ export enum TrainingStatus {
 export interface ITraining extends Omit<Document, '_id'> {
     _id: string;
     title: string;
-    description: string;
+    description?: string;
     program: string;
     date: Date;
     startTime: string;
@@ -41,7 +41,7 @@ export interface ITraining extends Omit<Document, '_id'> {
 const TrainingSchema: Schema = new Schema({
     _id: { type: String, default: uuidv4 },
     title: { type: String, required: true },
-    description: { type: String, required: true },
+    description: { type: String, default: '' },
     program: { type: String, required: true },
     date: { type: Date, required: true },
     startTime: { type: String, required: true },
