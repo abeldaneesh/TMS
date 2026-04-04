@@ -121,6 +121,60 @@ const normalizeTargetAudienceForForm = (value: string[] | string | undefined) =>
   };
 };
 
+const toTitleCase = (value: string) =>
+  value
+    .split(/[\s-]+/)
+    .filter(Boolean)
+    .map((segment) => segment.charAt(0).toUpperCase() + segment.slice(1).toLowerCase())
+    .join(' ');
+
+const getInstitutionGroupMeta = (institution: Institution) => {
+  const searchableValue = `${institution.name} ${institution.type}`.toLowerCase();
+  const normalizedType = institution.type.trim();
+
+  if (/\bblock\s*fhc\b|block family health center/.test(searchableValue)) {
+    return { key: 'block-fhc', label: 'Block FHC Institutions', priority: 0 };
+  }
+
+  if (/\bfhc\b|family health center/.test(searchableValue)) {
+    return { key: 'fhc', label: 'FHC Institutions', priority: 1 };
+  }
+
+  if (/e-?health/.test(searchableValue)) {
+    return { key: 'ehealth', label: 'eHealth Institutions', priority: 2 };
+  }
+
+  if (/\bchc\b|community health center/.test(searchableValue)) {
+    return { key: 'chc', label: 'CHC Institutions', priority: 3 };
+  }
+
+  if (/\bphc\b|primary health center/.test(searchableValue)) {
+    return { key: 'phc', label: 'PHC Institutions', priority: 4 };
+  }
+
+  if (/\buhc\b|urban health center/.test(searchableValue)) {
+    return { key: 'uhc', label: 'UHC Institutions', priority: 5 };
+  }
+
+  if (/hospital/.test(searchableValue)) {
+    return { key: 'hospital', label: 'Hospitals', priority: 6 };
+  }
+
+  if (normalizedType) {
+    const formattedType = /^[A-Z]{2,5}$/.test(normalizedType)
+      ? normalizedType.toUpperCase()
+      : toTitleCase(normalizedType);
+
+    return {
+      key: `type-${formattedType.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`,
+      label: `${formattedType} Institutions`,
+      priority: 100,
+    };
+  }
+
+  return { key: 'other', label: 'Other Institutions', priority: 999 };
+};
+
 const CreateTraining: React.FC = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -318,6 +372,53 @@ const CreateTraining: React.FC = () => {
       };
     });
   }, [availableHalls, canCheckAvailability, formData.hallId, halls]);
+  const selectedInstitutionIds = useMemo(
+    () => new Set(formData.requiredInstitutions),
+    [formData.requiredInstitutions]
+  );
+  const allInstitutionIds = useMemo(
+    () => institutions.map((institution) => institution.id),
+    [institutions]
+  );
+  const allInstitutionsSelected = useMemo(
+    () =>
+      allInstitutionIds.length > 0 &&
+      allInstitutionIds.every((institutionId) => selectedInstitutionIds.has(institutionId)),
+    [allInstitutionIds, selectedInstitutionIds]
+  );
+  const selectedInstitutionCount = useMemo(
+    () => allInstitutionIds.filter((institutionId) => selectedInstitutionIds.has(institutionId)).length,
+    [allInstitutionIds, selectedInstitutionIds]
+  );
+  const institutionGroups = useMemo(() => {
+    const groupedInstitutions = new Map<
+      string,
+      { key: string; label: string; priority: number; institutions: Institution[] }
+    >();
+
+    institutions.forEach((institution) => {
+      const groupMeta = getInstitutionGroupMeta(institution);
+      const group = groupedInstitutions.get(groupMeta.key);
+
+      if (group) {
+        group.institutions.push(institution);
+        return;
+      }
+
+      groupedInstitutions.set(groupMeta.key, {
+        ...groupMeta,
+        institutions: [institution],
+      });
+    });
+
+    return Array.from(groupedInstitutions.values()).sort((left, right) => {
+      if (left.priority !== right.priority) {
+        return left.priority - right.priority;
+      }
+
+      return left.label.localeCompare(right.label);
+    });
+  }, [institutions]);
 
   useEffect(() => {
     const checkDetails = async () => {
@@ -387,6 +488,27 @@ const CreateTraining: React.FC = () => {
     } else {
       handleChange('requiredInstitutions', [...current, institutionId]);
     }
+  };
+
+  const toggleAllInstitutions = () => {
+    handleChange('requiredInstitutions', allInstitutionsSelected ? [] : allInstitutionIds);
+  };
+
+  const toggleInstitutionGroup = (institutionIds: string[]) => {
+    const groupIsFullySelected = institutionIds.every((institutionId) => selectedInstitutionIds.has(institutionId));
+
+    if (groupIsFullySelected) {
+      handleChange(
+        'requiredInstitutions',
+        formData.requiredInstitutions.filter((institutionId) => !institutionIds.includes(institutionId))
+      );
+      return;
+    }
+
+    handleChange(
+      'requiredInstitutions',
+      Array.from(new Set([...formData.requiredInstitutions, ...institutionIds]))
+    );
   };
 
   const validateForm = () => {
@@ -983,22 +1105,88 @@ const CreateTraining: React.FC = () => {
             <CardDescription>{t('createTraining.sections.institutions.desc', 'Select institutions to nominate participants from')}</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-3">
-              {institutions.map((institution) => (
-                <div key={institution.id} className="flex items-center space-x-2">
+            <div className="space-y-4">
+              <div className="flex flex-col gap-3 rounded-xl border border-border/60 bg-muted/20 p-4 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex items-center gap-3">
                   <Checkbox
-                    id={institution.id}
-                    checked={formData.requiredInstitutions.includes(institution.id)}
-                    onCheckedChange={() => toggleInstitution(institution.id)}
+                    id="select-all-institutions"
+                    checked={allInstitutionsSelected}
+                    onCheckedChange={toggleAllInstitutions}
                   />
                   <label
-                    htmlFor={institution.id}
-                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                    htmlFor="select-all-institutions"
+                    className="cursor-pointer text-sm font-semibold text-foreground"
                   >
-                    {institution.name} ({institution.type})
+                    {t('createTraining.institutions.selectAll', 'Select all institutions')}
                   </label>
                 </div>
-              ))}
+                <p className="text-sm text-muted-foreground">
+                  {t('createTraining.institutions.selectedCount', {
+                    defaultValue: '{{selected}} of {{total}} selected',
+                    selected: selectedInstitutionCount,
+                    total: institutions.length,
+                  })}
+                </p>
+              </div>
+
+              {institutionGroups.map((group) => {
+                const groupInstitutionIds = group.institutions.map((institution) => institution.id);
+                const selectedCount = groupInstitutionIds.filter((institutionId) => selectedInstitutionIds.has(institutionId)).length;
+                const groupIsFullySelected = groupInstitutionIds.length > 0 && selectedCount === groupInstitutionIds.length;
+
+                return (
+                  <div key={group.key} className="overflow-hidden rounded-xl border border-border/60">
+                    <div className="flex flex-col gap-3 border-b border-border/60 bg-muted/10 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+                      <div>
+                        <h3 className="text-sm font-semibold text-foreground">{group.label}</h3>
+                        <p className="text-xs text-muted-foreground">
+                          {t('createTraining.institutions.groupSelectedCount', {
+                            defaultValue: '{{selected}} of {{total}} selected',
+                            selected: selectedCount,
+                            total: group.institutions.length,
+                          })}
+                        </p>
+                      </div>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => toggleInstitutionGroup(groupInstitutionIds)}
+                      >
+                        {groupIsFullySelected
+                          ? t('createTraining.institutions.clearGroup', 'Clear group')
+                          : t('createTraining.institutions.selectGroup', 'Select group')}
+                      </Button>
+                    </div>
+
+                    <div className="grid gap-3 p-4 md:grid-cols-2">
+                      {group.institutions.map((institution) => (
+                        <div
+                          key={institution.id}
+                          className="flex items-start gap-3 rounded-lg border border-border/60 p-3 transition-colors hover:bg-muted/20"
+                        >
+                          <Checkbox
+                            id={`institution-${institution.id}`}
+                            checked={selectedInstitutionIds.has(institution.id)}
+                            onCheckedChange={() => toggleInstitution(institution.id)}
+                            className="mt-0.5"
+                          />
+                          <label
+                            htmlFor={`institution-${institution.id}`}
+                            className="cursor-pointer space-y-1"
+                          >
+                            <p className="text-sm font-medium text-foreground">{institution.name}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {institution.type}
+                              {institution.location ? ` • ${institution.location}` : ''}
+                            </p>
+                          </label>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
             {errors.requiredInstitutions && (
               <p className="text-sm text-red-600 mt-2">{errors.requiredInstitutions}</p>
