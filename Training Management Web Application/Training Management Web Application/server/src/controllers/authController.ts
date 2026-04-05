@@ -5,6 +5,7 @@ import PendingUser from '../models/PendingUser';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { sendOTP } from '../utils/emailService';
+import { normalizeEmail, validateEmailAddress } from '../utils/emailValidation';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
 const normalizePhoneNumber = (value?: string) => value ? value.replace(/\D/g, '') : '';
@@ -13,11 +14,13 @@ const isValidPhoneNumber = (value?: string) => !value || normalizePhoneNumber(va
 export const register = async (req: Request, res: Response): Promise<void> => {
     try {
         const { email, password, name, role, institutionId, designation, department, phone } = req.body;
+        const emailValidation = await validateEmailAddress(email);
+        const normalizedEmail = emailValidation.email;
         const normalizedPhone = normalizePhoneNumber(phone);
 
         // Validation
-        if (!email) {
-            res.status(400).json({ message: 'Email address is required.' });
+        if (!emailValidation.isValid) {
+            res.status(400).json({ message: emailValidation.message });
             return;
         }
 
@@ -34,7 +37,7 @@ export const register = async (req: Request, res: Response): Promise<void> => {
         // Duplicate check removed (redundant)
 
         // Check if user exists
-        const existingUser = await User.findOne({ email });
+        const existingUser = await User.findOne({ email: normalizedEmail });
 
         if (existingUser) {
             res.status(400).json({ message: 'User already exists' });
@@ -42,7 +45,7 @@ export const register = async (req: Request, res: Response): Promise<void> => {
         }
 
         // Check if user has already verified their email in the separate inline step
-        const verifiedPendingUser = await PendingUser.findOne({ email, isVerified: true });
+        const verifiedPendingUser = await PendingUser.findOne({ email: normalizedEmail, isVerified: true });
 
         if (!verifiedPendingUser) {
             res.status(400).json({ message: 'You must verify your email before registering.' });
@@ -54,7 +57,7 @@ export const register = async (req: Request, res: Response): Promise<void> => {
 
         // Create the actual user
         const user = await User.create({
-            email,
+            email: normalizedEmail,
             password: hashedPassword,
             name,
             role: role || 'participant',
@@ -66,7 +69,7 @@ export const register = async (req: Request, res: Response): Promise<void> => {
         });
 
         // Delete the pending record
-        await PendingUser.deleteMany({ email });
+        await PendingUser.deleteMany({ email: normalizedEmail });
 
         res.status(201).json({
             message: 'Registration complete! Your account is pending admin approval.',
@@ -80,14 +83,16 @@ export const register = async (req: Request, res: Response): Promise<void> => {
 export const sendEmailOtp = async (req: Request, res: Response): Promise<void> => {
     try {
         const { email } = req.body;
+        const emailValidation = await validateEmailAddress(email);
+        const normalizedEmail = emailValidation.email;
 
-        if (!email) {
-            res.status(400).json({ message: 'Email address is required.' });
+        if (!emailValidation.isValid) {
+            res.status(400).json({ message: emailValidation.message });
             return;
         }
 
         // Check if user exists
-        const existingUser = await User.findOne({ email });
+        const existingUser = await User.findOne({ email: normalizedEmail });
 
         if (existingUser) {
             res.status(400).json({ message: 'User already exists' });
@@ -98,17 +103,17 @@ export const sendEmailOtp = async (req: Request, res: Response): Promise<void> =
         const otp = Math.floor(100000 + Math.random() * 900000).toString();
 
         // Remove old pending user if exists
-        await PendingUser.deleteMany({ email });
+        await PendingUser.deleteMany({ email: normalizedEmail });
 
         // Save to Pending storage (only email and OTP)
         await PendingUser.create({
-            email,
+            email: normalizedEmail,
             otp,
             isVerified: false
         });
 
         // Send OTP via Email
-        const emailSent = await sendOTP(email, otp, 'User');
+        const emailSent = await sendOTP(normalizedEmail, otp, 'User');
 
         if (!emailSent) {
             res.status(500).json({ message: 'Failed to send verification email. Please check server email configs.' });
@@ -125,8 +130,14 @@ export const sendEmailOtp = async (req: Request, res: Response): Promise<void> =
 export const verifyEmailOtp = async (req: Request, res: Response): Promise<void> => {
     try {
         const { email, otp } = req.body;
+        const normalizedEmail = normalizeEmail(email);
 
-        const pendingUser = await PendingUser.findOne({ email });
+        if (!normalizedEmail) {
+            res.status(400).json({ message: 'Email address is required.' });
+            return;
+        }
+
+        const pendingUser = await PendingUser.findOne({ email: normalizedEmail });
 
         if (!pendingUser) {
             res.status(400).json({ message: 'Verification session expired. Please send code again.' });

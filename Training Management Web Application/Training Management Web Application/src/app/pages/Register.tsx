@@ -44,6 +44,32 @@ const operationalRankOptions = [
 ] as const;
 
 const normalizePhoneNumber = (value: string) => value.replace(/\D/g, '').slice(0, 10);
+const EMAIL_FORMAT_REGEX = /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i;
+
+const getEmailFormatMessage = (value: string) => {
+    const email = value.trim().toLowerCase();
+
+    if (!email) {
+        return 'Email address is required.';
+    }
+
+    const [localPart = '', domain = ''] = email.split('@');
+    const domainParts = domain.split('.');
+    const hasInvalidDomainPart = domainParts.some((part) => !part || part.startsWith('-') || part.endsWith('-'));
+
+    if (
+        !EMAIL_FORMAT_REGEX.test(email)
+        || localPart.startsWith('.')
+        || localPart.endsWith('.')
+        || localPart.includes('..')
+        || domainParts.length < 2
+        || hasInvalidDomainPart
+    ) {
+        return 'Enter a valid email address like name@example.com.';
+    }
+
+    return '';
+};
 
 const Register: React.FC = () => {
     const [searchParams] = useSearchParams();
@@ -96,8 +122,12 @@ const Register: React.FC = () => {
     const [emailVerified, setEmailVerified] = useState(false);
     const [sendingOtp, setSendingOtp] = useState(false);
     const [showOtpInput, setShowOtpInput] = useState(false);
+    const [emailServerError, setEmailServerError] = useState('');
     const [institutions, setInstitutions] = useState<Institution[]>([]);
     const navigate = useNavigate();
+    const normalizedEmail = formData.email.trim().toLowerCase();
+    const emailFormatMessage = formData.email ? getEmailFormatMessage(formData.email) : '';
+    const emailValidationMessage = emailFormatMessage || emailServerError;
 
     useEffect(() => {
         const fetchInstitutions = async () => {
@@ -120,6 +150,20 @@ const Register: React.FC = () => {
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { id, value } = e.target;
+
+        if (id === 'email') {
+            const normalizedValue = value.trim().toLowerCase();
+            setEmailVerified(false);
+            setShowOtpInput(false);
+            setOtp('');
+            setEmailServerError('');
+            setFormData({
+                ...formData,
+                email: normalizedValue,
+            });
+            return;
+        }
+
         setFormData({
             ...formData,
             [id]: id === 'phone' ? normalizePhoneNumber(value) : value,
@@ -137,8 +181,10 @@ const Register: React.FC = () => {
             return;
         }
 
-        if (!formData.email) {
-            toast.error('Email address is required.');
+        const emailMessage = getEmailFormatMessage(formData.email);
+        if (emailMessage) {
+            setEmailServerError(emailMessage);
+            toast.error(emailMessage);
             return;
         }
 
@@ -171,17 +217,23 @@ const Register: React.FC = () => {
     };
 
     const handleSendOtp = async () => {
-        if (!formData.email) {
-            toast.error('Email address is required.');
+        const emailMessage = getEmailFormatMessage(formData.email);
+        if (emailMessage) {
+            setEmailServerError(emailMessage);
+            toast.error(emailMessage);
             return;
         }
+
         setSendingOtp(true);
+        setEmailServerError('');
         try {
-            await authApi.sendOtp({ email: formData.email });
+            await authApi.sendOtp({ email: normalizedEmail });
             setShowOtpInput(true);
             toast.success('Verification code sent to your email.');
         } catch (err: any) {
-            toast.error(err.response?.data?.message || 'Failed to send verification code');
+            const message = err.response?.data?.message || 'Failed to send verification code';
+            setEmailServerError(message);
+            toast.error(message);
         } finally {
             setSendingOtp(false);
         }
@@ -191,8 +243,9 @@ const Register: React.FC = () => {
         if (otp.length < 6) return;
         setLoading(true);
         try {
-            await authApi.verifyOtp({ email: formData.email, otp });
+            await authApi.verifyOtp({ email: normalizedEmail, otp });
             setEmailVerified(true);
+            setEmailServerError('');
             toast.success('Email verified successfully!');
         } catch (err: any) {
             toast.error(err.response?.data?.message || 'Invalid OTP');
@@ -296,6 +349,7 @@ const Register: React.FC = () => {
                                                 value={formData.email}
                                                 onChange={handleChange}
                                                 disabled={emailVerified || sendingOtp}
+                                                aria-invalid={!!emailValidationMessage}
                                                 className={`${inputClass} ${emailVerified ? 'border-green-500 bg-green-50/50' : ''}`}
                                                 required
                                             />
@@ -308,13 +362,17 @@ const Register: React.FC = () => {
                                             <Button
                                                 type="button"
                                                 onClick={handleSendOtp}
-                                                disabled={sendingOtp || !formData.email || emailVerified}
+                                                disabled={sendingOtp || !normalizedEmail || !!emailFormatMessage || emailVerified}
                                                 className="h-11 w-[120px]"
                                             >
                                                 {sendingOtp ? 'Sending...' : 'Send Code'}
                                             </Button>
                                         )}
                                     </div>
+
+                                    {!emailVerified && emailValidationMessage && (
+                                        <p className="text-sm text-destructive">{emailValidationMessage}</p>
+                                    )}
 
                                     {!emailVerified && showOtpInput && (
                                         <motion.div
