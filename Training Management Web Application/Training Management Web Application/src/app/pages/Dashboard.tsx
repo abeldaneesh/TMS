@@ -402,16 +402,7 @@ const Dashboard: React.FC = () => {
   }
 
   const openNominationModal = (training: Training) => {
-    setSelectedNominationTraining(training);
-    setSelectedParticipantIds([]);
-    setParticipantSearchTerm('');
-    setNewParticipant({
-      name: '',
-      phone: '',
-      designation: '',
-      institutionId: normalizeStringList(training.requiredInstitutions)[0] || '',
-    });
-    setShowNominateDialog(true);
+    navigate(`/nominations/new?trainingId=${encodeURIComponent(training.id)}&from=dashboard`);
   };
 
   const toggleParticipantSelection = (participantId: string) => {

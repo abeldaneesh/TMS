@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { X } from 'lucide-react';
 import { User } from '../../types';
@@ -10,6 +10,11 @@ interface LoginWelcomeOverlayProps {
   onClose: () => void;
 }
 
+const WELCOME_VIDEO_PATH = '/welcome-animation.mp4';
+const LEGACY_WELCOME_VIDEO_PATH = '/welcome-animation.mp4.mp4';
+const MIN_CLOSE_MS = 3200;
+const MAX_CLOSE_MS = 15000;
+
 const getGreeting = () => {
   const hour = new Date().getHours();
   if (hour < 12) return 'Good morning';
@@ -18,14 +23,37 @@ const getGreeting = () => {
 };
 
 const LoginWelcomeOverlay: React.FC<LoginWelcomeOverlayProps> = ({ user, visible, onClose }) => {
-  useEffect(() => {
-    if (!visible) return;
+  const closeTimerRef = useRef<number | null>(null);
+  const [videoFailed, setVideoFailed] = useState(false);
+  const [progressDurationMs, setProgressDurationMs] = useState(MAX_CLOSE_MS);
 
-    const timeoutId = window.setTimeout(() => {
+  const clearCloseTimer = () => {
+    if (closeTimerRef.current !== null) {
+      window.clearTimeout(closeTimerRef.current);
+      closeTimerRef.current = null;
+    }
+  };
+
+  const scheduleClose = (durationMs: number) => {
+    clearCloseTimer();
+    setProgressDurationMs(durationMs);
+    closeTimerRef.current = window.setTimeout(() => {
       onClose();
-    }, 3200);
+    }, durationMs);
+  };
 
-    return () => window.clearTimeout(timeoutId);
+  useEffect(() => {
+    if (!visible) {
+      clearCloseTimer();
+      setVideoFailed(false);
+      setProgressDurationMs(MAX_CLOSE_MS);
+      return;
+    }
+
+    // Keep a hard timeout so the overlay never gets stuck open if the media stalls.
+    scheduleClose(MAX_CLOSE_MS);
+
+    return clearCloseTimer;
   }, [visible, onClose]);
 
   if (!user) return null;
@@ -68,53 +96,110 @@ const LoginWelcomeOverlay: React.FC<LoginWelcomeOverlayProps> = ({ user, visible
               transition={{ duration: 2.4, repeat: Infinity, ease: 'easeInOut' }}
             />
 
-            <div className="relative px-6 py-6 text-foreground sm:px-8 sm:py-8">
-              <div className="flex justify-end">
+            <div className="relative text-foreground">
+              <div className="absolute right-4 top-4 z-20 sm:right-5 sm:top-5">
                 <Button
                   type="button"
                   variant="ghost"
                   size="icon"
                   onClick={onClose}
-                  className="size-9 rounded-full text-muted-foreground hover:bg-secondary/60 hover:text-foreground"
+                  className="size-9 rounded-full border border-white/15 bg-black/35 text-white hover:bg-black/55 hover:text-white"
                 >
                   <X className="size-4" />
                 </Button>
               </div>
 
-              <div className="pb-3 pt-2 text-center">
-                <motion.p
-                  className="text-sm font-medium text-muted-foreground"
-                  initial={{ opacity: 0, y: 12 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.1 }}
-                >
-                  {getGreeting()}
-                </motion.p>
-                <motion.h2
-                  className="mt-3 text-3xl font-semibold tracking-tight text-foreground sm:text-5xl"
-                  initial={{ opacity: 0, y: 16 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.16 }}
-                >
-                  Welcome back, {user.name}.
-                </motion.h2>
-                <motion.p
-                  className="mx-auto mt-4 max-w-xl text-sm leading-7 text-muted-foreground sm:text-base"
-                  initial={{ opacity: 0, y: 16 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.22 }}
-                >
-                  Your workspace is ready.
-                </motion.p>
+              <div className="relative aspect-[16/9] w-full overflow-hidden bg-slate-950">
+                {!videoFailed ? (
+                  <>
+                    <video
+                      className="h-full w-full object-cover"
+                      autoPlay
+                      muted
+                      playsInline
+                      preload="auto"
+                      onEnded={onClose}
+                      onError={() => {
+                        setVideoFailed(true);
+                        scheduleClose(MIN_CLOSE_MS);
+                      }}
+                      onLoadedMetadata={(event) => {
+                        const seconds = event.currentTarget.duration;
+                        if (!Number.isFinite(seconds) || seconds <= 0) {
+                          return;
+                        }
+
+                        const durationMs = Math.min(
+                          Math.max(Math.round(seconds * 1000), MIN_CLOSE_MS),
+                          MAX_CLOSE_MS,
+                        );
+                        scheduleClose(durationMs);
+                      }}
+                    >
+                      <source src={WELCOME_VIDEO_PATH} type="video/mp4" />
+                      <source src={LEGACY_WELCOME_VIDEO_PATH} type="video/mp4" />
+                    </video>
+
+                    <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(2,6,23,0.18)_0%,rgba(2,6,23,0.08)_38%,rgba(2,6,23,0.72)_100%)]" />
+                  </>
+                ) : (
+                  <div className="flex h-full items-center justify-center bg-[radial-gradient(circle_at_top,rgba(59,130,246,0.28),transparent_45%),linear-gradient(180deg,#020617_0%,#0f172a_100%)] px-6 text-center sm:px-10">
+                    <div className="max-w-xl">
+                      <motion.p
+                        className="text-sm font-medium uppercase tracking-[0.28em] text-sky-200/80"
+                        initial={{ opacity: 0, y: 12 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.1 }}
+                      >
+                        {getGreeting()}
+                      </motion.p>
+                      <motion.h2
+                        className="mt-4 text-3xl font-semibold tracking-tight text-white sm:text-5xl"
+                        initial={{ opacity: 0, y: 16 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.16 }}
+                      >
+                        Welcome back, {user.name}.
+                      </motion.h2>
+                      <motion.p
+                        className="mx-auto mt-4 max-w-lg text-sm leading-7 text-slate-200/85 sm:text-base"
+                        initial={{ opacity: 0, y: 16 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.22 }}
+                      >
+                        Add your custom intro video at <span className="font-semibold text-white">{WELCOME_VIDEO_PATH}</span> to replace this fallback welcome screen.
+                      </motion.p>
+                    </div>
+                  </div>
+                )}
+
+                {!videoFailed && (
+                  <div className="absolute inset-x-0 bottom-0 p-5 sm:p-7">
+                    <motion.div
+                      className="max-w-xl"
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.18 }}
+                    >
+                      <p className="text-xs font-medium uppercase tracking-[0.28em] text-sky-200/85">
+                        {getGreeting()}
+                      </p>
+                      <h2 className="mt-2 text-2xl font-semibold tracking-tight text-white sm:text-4xl">
+                        Welcome back, {user.name}.
+                      </h2>
+                    </motion.div>
+                  </div>
+                )}
               </div>
 
-              <div className="mt-5">
+              <div className="px-6 py-5 sm:px-8">
                 <div className="overflow-hidden rounded-full bg-secondary/35">
                   <motion.div
+                    key={progressDurationMs}
                     className="h-1.5 rounded-full bg-[linear-gradient(90deg,rgba(37,99,235,0.95),rgba(96,165,250,0.9))]"
                     initial={{ width: '100%' }}
                     animate={{ width: '0%' }}
-                    transition={{ duration: 3, ease: 'linear' }}
+                    transition={{ duration: progressDurationMs / 1000, ease: 'linear' }}
                   />
                 </div>
               </div>

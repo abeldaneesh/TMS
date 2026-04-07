@@ -7,6 +7,7 @@ import PageTransition from './components/PageTransition';
 import { AnimatePresence } from 'framer-motion';
 import PortalSelection from './pages/PortalSelection';
 import Login from './pages/Login';
+import LoggedOut from './pages/LoggedOut';
 import Dashboard from './pages/Dashboard';
 import Trainings from './pages/Trainings';
 import TrainingDetails from './pages/TrainingDetails';
@@ -78,6 +79,7 @@ const AppRoutes: React.FC = () => {
   return (
     <Routes>
       <Route path="/" element={<RootRedirect />} />
+      <Route path="/logged-out" element={<LoggedOut />} />
 
       <Route element={<PublicShell />}>
         <Route path="/login" element={<PortalSelection />} />
@@ -102,6 +104,14 @@ const AppRoutes: React.FC = () => {
         <Route path="/scan-qr" element={<ScanQR />} />
         <Route
           path="/nominations"
+          element={
+            <ProtectedRoute allowedRoles={['medical_officer']}>
+              <Nominations />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/nominations/new"
           element={
             <ProtectedRoute allowedRoles={['medical_officer']}>
               <Nominations />

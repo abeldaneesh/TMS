@@ -372,9 +372,9 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
   const navigationItems = getNavigationItems();
 
-  const handleLogout = () => {
-    logout();
-    navigate('/login');
+  const handleLogout = async () => {
+    navigate('/logged-out', { replace: true });
+    await logout();
   };
 
   const getInitials = (name?: string) => {

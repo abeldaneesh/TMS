@@ -1,9 +1,10 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../contexts/AuthContext';
 import { nominationsApi, trainingsApi, usersApi, institutionsApi } from '../../services/api';
 import { Nomination, Training, User, Institution } from '../../types';
-import { CheckCircle, XCircle, Clock, Users, Search, CalendarDays, Building2, Briefcase, Sparkles, UserPlus } from 'lucide-react';
+import { CheckCircle, ChevronLeft, XCircle, Clock, Users, Search, CalendarDays, Building2, Briefcase, Sparkles, UserPlus } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Badge } from '../components/ui/badge';
@@ -105,6 +106,9 @@ const getNominationStatusClass = (status: Nomination['status']) => {
 const Nominations: React.FC = () => {
   const { t } = useTranslation();
   const { user } = useAuth();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [nominations, setNominations] = useState<Nomination[]>([]);
   const [trainings, setTrainings] = useState<Training[]>([]);
   const [users, setUsers] = useState<User[]>([]);
@@ -136,6 +140,10 @@ const Nominations: React.FC = () => {
     department: '',
   });
   const sessionWindowFallback = t('nominationsProps.timeNotSet', { defaultValue: 'Time not set' });
+  const isCreateRoute = location.pathname.startsWith('/nominations/new');
+  const returnPath = searchParams.get('from') === 'dashboard' ? '/dashboard' : '/nominations';
+  const preselectedTrainingId = searchParams.get('trainingId') || '';
+  const lastHydratedTrainingRef = useRef('');
 
   // Helper functions with extra safety, memoized with useCallback
   const getTrainingName = useCallback((trainingId: any) => {
@@ -252,13 +260,47 @@ const Nominations: React.FC = () => {
   }, [selectedTrainingId, trainings]);
 
   useEffect(() => {
-    if (!showNominateDialog) {
+    if (!isCreateRoute) {
+      setSelectedTrainingId('');
+      setSelectedParticipantIds([]);
       setParticipantSearchTerm('');
       setTrainingSearchTerm('');
       setTrainingDateFilter('');
       setIncludeSimilarFieldStaff(false);
+      setBusyParticipantIds([]);
+      lastHydratedTrainingRef.current = '';
     }
-  }, [showNominateDialog]);
+  }, [isCreateRoute]);
+
+  useEffect(() => {
+    if (!isCreateRoute || !preselectedTrainingId || lastHydratedTrainingRef.current === preselectedTrainingId) {
+      return;
+    }
+
+    const hasTraining = trainings.some((training) => training.id === preselectedTrainingId);
+    if (!hasTraining) {
+      return;
+    }
+
+    setSelectedTrainingId(preselectedTrainingId);
+    setSelectedParticipantIds([]);
+    setParticipantSearchTerm('');
+    setIncludeSimilarFieldStaff(false);
+    lastHydratedTrainingRef.current = preselectedTrainingId;
+  }, [isCreateRoute, preselectedTrainingId, trainings]);
+
+  const openNominationWorkspace = (trainingId?: string) => {
+    const nextParams = new URLSearchParams();
+    if (trainingId) {
+      nextParams.set('trainingId', trainingId);
+    }
+
+    navigate(`/nominations/new${nextParams.toString() ? `?${nextParams.toString()}` : ''}`);
+  };
+
+  const closeNominationWorkspace = () => {
+    navigate(returnPath);
+  };
 
   const handleApprove = async (nomination: Nomination) => {
     if (!user) return;
@@ -425,7 +467,7 @@ const Nominations: React.FC = () => {
 
       if (successCount > 0) {
         toast.success(t('nominationsProps.nomSuccess', { count: successCount }));
-        setShowNominateDialog(false);
+        closeNominationWorkspace();
         fetchData(); // Refresh UI smoothly
       } else if (failCount > 0) {
         // All failed
@@ -724,6 +766,575 @@ const Nominations: React.FC = () => {
       { value: 'rejected', label: `${t('nominationsProps.rejected', { defaultValue: 'Rejected' })} (${nominationSummary.rejected})` },
     ];
 
+    if (isCreateRoute) {
+      return (
+        <div className="space-y-8 pb-20">
+          <section className="rounded-[28px] border border-border bg-card/70 p-6 shadow-sm backdrop-blur-sm sm:p-8">
+            <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+              <div className="max-w-3xl">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={closeNominationWorkspace}
+                  className="-ml-2 mb-4 w-fit px-2 text-muted-foreground hover:text-foreground"
+                >
+                  <ChevronLeft className="mr-2 size-4" />
+                  {t('nominationsProps.backToNominations', { defaultValue: 'Back to nominations' })}
+                </Button>
+                <p className="text-xs uppercase tracking-[0.24em] text-muted-foreground">
+                  {t('nominationsProps.workspaceLabel', { defaultValue: 'Nomination Workspace' })}
+                </p>
+                <h1 className="mt-3 flex items-center gap-3 text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
+                  <Sparkles className="size-8 text-primary" />
+                  {t('nominationsProps.nominatePersonnel')}
+                </h1>
+                <p className="mt-3 text-sm leading-6 text-muted-foreground sm:text-base">
+                  {t('nominationsProps.nominateDialogDesc', { defaultValue: 'Choose a training session, review who has already been nominated, then select the next eligible personnel.' })}
+                </p>
+              </div>
+
+              <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+                {(user.role === 'medical_officer' || user.role === 'institutional_admin') && (
+                  <Button
+                    onClick={() => setShowAddParticipantDialog(true)}
+                    variant="outline"
+                    className="w-full gap-2 font-medium border-primary/20 hover:bg-primary/5 text-primary sm:w-auto"
+                  >
+                    <UserPlus className="size-4" />
+                    {t('nominationsProps.addParticipantManually', { defaultValue: '+ Add Participant' })}
+                  </Button>
+                )}
+              </div>
+            </div>
+          </section>
+
+          <section className="space-y-6">
+            <div>
+              <Label className="mb-2 block text-sm font-medium text-foreground">{t('nominationsProps.selectTraining')}</Label>
+              <div className="rounded-2xl border border-border bg-card/70 p-4 shadow-sm">
+                <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
+                  <div className="relative flex-1">
+                    <Search className="pointer-events-none absolute left-3 top-3.5 size-4 text-primary/60" />
+                    <Input
+                      value={trainingSearchTerm}
+                      onChange={(e) => setTrainingSearchTerm(e.target.value)}
+                      placeholder={t('nominationsProps.trainingSearchPlaceholder', {
+                        defaultValue: 'Search title, program, institution, or audience',
+                      })}
+                      className="h-11 rounded-xl bg-background pl-10"
+                    />
+                  </div>
+                  <DateInputWithPickerIcon
+                    wrapperClassName="w-full lg:w-[210px]"
+                    value={trainingDateFilter}
+                    onChange={(e) => setTrainingDateFilter(e.target.value)}
+                    className="h-11 rounded-xl bg-background"
+                  />
+                  {(trainingSearchTerm || trainingDateFilter) && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      className="lg:self-stretch"
+                      onClick={() => {
+                        setTrainingSearchTerm('');
+                        setTrainingDateFilter('');
+                      }}
+                    >
+                      {t('nominationsProps.clearTrainingFilters', { defaultValue: 'Clear filters' })}
+                    </Button>
+                  )}
+                </div>
+
+                <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
+                  <p className="text-xs text-muted-foreground">
+                    {t('nominationsProps.sessionsShown', {
+                      shown: filteredSelectableTrainings.length,
+                      total: selectableTrainings.length,
+                      defaultValue: `${filteredSelectableTrainings.length} of ${selectableTrainings.length} session(s) shown`,
+                    })}
+                  </p>
+                  {selectedTrainingPinned && (
+                    <Badge variant="outline" className="border-primary/20 bg-primary/5 text-primary">
+                      {t('nominationsProps.selectedTrainingPinned', {
+                        defaultValue: 'Selected session pinned outside current filters',
+                      })}
+                    </Badge>
+                  )}
+                </div>
+
+                <div className="mt-4 grid max-h-[280px] gap-3 overflow-y-auto pr-1 custom-scrollbar">
+                  {filteredSelectableTrainings.length === 0 ? (
+                    <div className="rounded-xl border border-dashed border-border bg-background/60 px-4 py-6 text-sm text-muted-foreground">
+                      {selectableTrainings.length === 0
+                        ? t('nominationsProps.noTrainingsAvailable', {
+                          defaultValue: 'No upcoming training sessions are currently available for nomination.',
+                        })
+                        : t('nominationsProps.noTrainingMatches', {
+                          defaultValue: 'No training sessions matched your search or date filter.',
+                        })}
+                    </div>
+                  ) : (
+                    filteredSelectableTrainings.map((training) => {
+                      const trainingId = training.id;
+                      const trainingAssignedCount = trainingAssignmentCounts[trainingId] || 0;
+                      const trainingRemainingSeats = Math.max(0, training.capacity - trainingAssignedCount);
+                      const isSelected = trainingId === selectedTrainingId;
+                      const trainingInstitutions = normalizeStringList(training.requiredInstitutions)
+                        .map((institutionId) => getInstitutionName(institutionId))
+                        .filter(Boolean);
+                      const trainingAudience = normalizeAudienceList(training.targetAudience);
+
+                      return (
+                        <button
+                          key={trainingId}
+                          type="button"
+                          onClick={() => handleTrainingSelection(trainingId)}
+                          className={`rounded-xl border p-4 text-left transition-all ${
+                            isSelected
+                              ? 'border-primary bg-primary/5 shadow-sm'
+                              : 'border-border bg-background hover:border-primary/30'
+                          }`}
+                        >
+                          <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                            <div className="min-w-0">
+                              <div className="flex flex-wrap items-center gap-2">
+                                <p className="text-sm font-semibold text-foreground">{training.title}</p>
+                                {isSelected && (
+                                  <Badge variant="outline" className="border-primary/20 bg-primary/10 text-primary">
+                                    {t('nominationsProps.selectedTrainingTag', { defaultValue: 'Selected' })}
+                                  </Badge>
+                                )}
+                              </div>
+                              <p className="mt-1 text-xs text-muted-foreground">
+                                {safeFormatDate(training.date, 'MMM dd, yyyy')} • {formatSessionWindow(training.startTime, training.endTime, sessionWindowFallback)}
+                              </p>
+                            </div>
+
+                            <div className="flex flex-wrap gap-2">
+                              <Badge variant="outline" className="border-emerald-500/20 bg-emerald-500/10 text-emerald-400">
+                                {t('nominationsProps.seatsLeft', { count: trainingRemainingSeats, defaultValue: `${trainingRemainingSeats} seats left` })}
+                              </Badge>
+                              <Badge variant="outline" className="border-border bg-background text-muted-foreground">
+                                {t('nominationsProps.assignedCount', { count: trainingAssignedCount, defaultValue: `${trainingAssignedCount} assigned` })}
+                              </Badge>
+                            </div>
+                          </div>
+
+                          <div className="mt-3 flex flex-wrap gap-2">
+                            {trainingAudience.slice(0, 2).map((audience) => (
+                              <Badge
+                                key={`${trainingId}-audience-${audience}`}
+                                variant="outline"
+                                className="max-w-full whitespace-normal break-words border-primary/20 bg-primary/5 text-primary"
+                              >
+                                {audience}
+                              </Badge>
+                            ))}
+                            {trainingInstitutions.slice(0, 2).map((institutionName) => (
+                              <Badge
+                                key={`${trainingId}-institution-${institutionName}`}
+                                variant="outline"
+                                className="max-w-full whitespace-normal break-words border-border bg-background text-foreground"
+                              >
+                                {institutionName}
+                              </Badge>
+                            ))}
+                          </div>
+                        </button>
+                      );
+                    })
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {selectedTraining && (
+              <div className="grid gap-5 xl:grid-cols-[minmax(0,1.5fr)_minmax(320px,0.9fr)]">
+                <Card className="border-border bg-card/70 shadow-sm">
+                  <CardContent className="p-5">
+                    <p className="text-xs uppercase tracking-[0.22em] text-muted-foreground">{t('nominationsProps.selectedTraining', { defaultValue: 'Selected training' })}</p>
+                    <div className="mt-3 flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                      <div>
+                        <h3 className="text-xl font-semibold text-foreground">{selectedTraining.title}</h3>
+                        <p className="mt-1 text-sm text-muted-foreground">
+                          {t('nominationsProps.selectedTrainingDesc', { defaultValue: 'Review session details before choosing personnel.' })}
+                        </p>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        <Badge variant="outline" className="border-emerald-500/20 bg-emerald-500/10 text-emerald-400">
+                          {t('nominationsProps.seatsLeft', { count: selectedTrainingRemainingSeats, defaultValue: `${selectedTrainingRemainingSeats} seats left` })}
+                        </Badge>
+                        <Badge variant="outline" className="border-border bg-background text-muted-foreground">
+                          {t('nominationsProps.alreadyAssignedCount', { count: selectedTrainingAssignedCount, defaultValue: `${selectedTrainingAssignedCount} already assigned` })}
+                        </Badge>
+                      </div>
+                    </div>
+
+                    <div className="mt-5 grid gap-3 md:grid-cols-2 2xl:grid-cols-4">
+                      <div className="rounded-xl border border-border bg-background/80 p-4">
+                        <p className="flex items-center gap-2 text-xs uppercase tracking-[0.22em] text-muted-foreground">
+                          <CalendarDays className="size-3.5" />
+                          {t('nominationsProps.schedule', { defaultValue: 'Schedule' })}
+                        </p>
+                        <p className="mt-3 text-sm font-medium text-foreground">{safeFormatDate(selectedTraining.date, 'MMM dd, yyyy')}</p>
+                        <p className="mt-1 text-xs text-muted-foreground">{formatSessionWindow(selectedTraining.startTime, selectedTraining.endTime, sessionWindowFallback)}</p>
+                      </div>
+                      <div className="rounded-xl border border-border bg-background/80 p-4">
+                        <p className="flex items-center gap-2 text-xs uppercase tracking-[0.22em] text-muted-foreground">
+                          <Users className="size-3.5" />
+                          {t('nominationsProps.capacity', { defaultValue: 'Capacity' })}
+                        </p>
+                        <p className="mt-3 text-sm font-medium text-foreground">
+                          {t('nominationsProps.capacitySummary', {
+                            assigned: selectedTrainingAssignedCount,
+                            total: selectedTraining.capacity,
+                            defaultValue: `${selectedTrainingAssignedCount} assigned / ${selectedTraining.capacity} total`,
+                          })}
+                        </p>
+                        <p className="mt-1 text-xs text-muted-foreground">{t('nominationsProps.remainingSeats', { count: selectedTrainingRemainingSeats, defaultValue: `${selectedTrainingRemainingSeats} seat(s) remaining` })}</p>
+                      </div>
+                      <div className="rounded-xl border border-border bg-background/80 p-4">
+                        <p className="flex items-center gap-2 text-xs uppercase tracking-[0.22em] text-muted-foreground">
+                          <Briefcase className="size-3.5" />
+                          {t('nominationsProps.targetAudience', { defaultValue: 'Target audience' })}
+                        </p>
+                        <div className="mt-3 flex flex-wrap gap-2">
+                          {selectedTrainingAudience.length > 0 ? (
+                            selectedTrainingAudience.slice(0, 4).map((audience) => (
+                              <Badge
+                                key={audience}
+                                variant="outline"
+                                className="max-w-full whitespace-normal break-words border-primary/20 bg-primary/5 py-1 text-left text-primary"
+                                title={audience}
+                              >
+                                {audience}
+                              </Badge>
+                            ))
+                          ) : (
+                            <span className="text-sm text-muted-foreground">{t('nominationsProps.openToAllDesignations', { defaultValue: 'Open to all designations' })}</span>
+                          )}
+                          {selectedTrainingAudience.length > 4 && (
+                            <Badge variant="outline" className="border-border bg-background text-muted-foreground">
+                              {t('nominationsProps.moreCount', { count: selectedTrainingAudience.length - 4, defaultValue: `+${selectedTrainingAudience.length - 4} more` })}
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                      <div className="rounded-xl border border-border bg-background/80 p-4">
+                        <p className="flex items-center gap-2 text-xs uppercase tracking-[0.22em] text-muted-foreground">
+                          <Building2 className="size-3.5" />
+                          {t('nominationsProps.institutions', { defaultValue: 'Institutions' })}
+                        </p>
+                        <div className="mt-3 flex flex-wrap gap-2">
+                          {selectedTrainingInstitutionNames.length > 0 ? (
+                            selectedTrainingInstitutionNames.slice(0, 3).map((institutionName) => (
+                              <Badge
+                                key={institutionName}
+                                variant="outline"
+                                className="max-w-full whitespace-normal break-words border-border bg-background py-1 text-left text-foreground"
+                                title={institutionName}
+                              >
+                                {institutionName}
+                              </Badge>
+                            ))
+                          ) : (
+                            <span className="text-sm text-muted-foreground">{t('nominationsProps.openToAllInstitutions', { defaultValue: 'Open to all institutions' })}</span>
+                          )}
+                          {selectedTrainingInstitutionNames.length > 3 && (
+                            <Badge variant="outline" className="border-border bg-background text-muted-foreground">
+                              {t('nominationsProps.moreCount', { count: selectedTrainingInstitutionNames.length - 3, defaultValue: `+${selectedTrainingInstitutionNames.length - 3} more` })}
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="border-border bg-card/70 shadow-sm">
+                  <CardContent className="flex h-full flex-col p-5">
+                    <div className="flex items-start justify-between gap-4">
+                      <div>
+                        <p className="text-xs uppercase tracking-[0.22em] text-muted-foreground">{t('nominationsProps.previousNominations', { defaultValue: 'Previous nominations' })}</p>
+                        <p className="mt-3 text-3xl font-semibold text-foreground">{selectedTrainingNominations.length}</p>
+                        <p className="mt-1 text-sm text-muted-foreground">{t('nominationsProps.sessionRecords', { defaultValue: 'Existing records for this session.' })}</p>
+                      </div>
+                      <Badge variant="outline" className="border-border bg-background text-muted-foreground">
+                        {t('nominationsProps.latestFirst', { defaultValue: 'Latest first' })}
+                      </Badge>
+                    </div>
+
+                    <div className="mt-4 flex-1 space-y-2 overflow-y-auto pr-1 custom-scrollbar max-h-[320px] xl:max-h-[420px]">
+                      {selectedTrainingNominations.length === 0 ? (
+                        <div className="rounded-xl border border-dashed border-border bg-background/60 px-4 py-6 text-sm text-muted-foreground">
+                          {t('nominationsProps.noPreviousNominations', { defaultValue: 'No previous nominations for this training yet.' })}
+                        </div>
+                      ) : (
+                        selectedTrainingNominations.map((nomination) => (
+                          <div key={nomination.id} className="flex items-center justify-between gap-3 rounded-xl border border-border bg-background/80 px-3 py-3">
+                            <div className="min-w-0">
+                              <p className="truncate text-sm font-medium text-foreground">{getParticipantName(nomination.participantId)}</p>
+                              <p className="mt-1 text-xs text-muted-foreground">
+                                {safeFormatDate(nomination.nominatedAt, 'MMM dd, yyyy')}
+                              </p>
+                            </div>
+                            <Badge className={`border text-xs capitalize ${getNominationStatusClass(nomination.status)}`}>
+                              {getNominationDisplayLabel(nomination.status, t)}
+                            </Badge>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
+
+            <Card className="border-border bg-card/70 shadow-sm">
+              <CardContent className="p-5">
+                <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                  <Label className="block text-sm font-medium text-foreground">
+                    {t('nominationsProps.selectParticipants')} ({selectedParticipantIds.length})
+                  </Label>
+                  {selectedTraining && (
+                    <div className="flex flex-wrap gap-2 text-xs">
+                      <Badge variant="outline" className="border-emerald-500/20 bg-emerald-500/10 text-emerald-400">
+                        {t('nominationsProps.readyCount', { count: readyParticipantsCount, defaultValue: `${readyParticipantsCount} ready` })}
+                      </Badge>
+                      <Badge variant="outline" className="border-border bg-background text-muted-foreground">
+                        {t('nominationsProps.busyCount', { count: busyParticipantIds.length, defaultValue: `${busyParticipantIds.length} busy` })}
+                      </Badge>
+                      <Badge variant="outline" className="border-border bg-background text-muted-foreground">
+                        {t('nominationsProps.alreadyAssignedCount', { count: selectedTrainingAssignedCount, defaultValue: `${selectedTrainingAssignedCount} already assigned` })}
+                      </Badge>
+                    </div>
+                  )}
+                </div>
+
+                {selectedTraining && (
+                  <div className="mb-3 space-y-3">
+                    {selectedAudienceTokens.length > 0 && (
+                      <div className="rounded-xl border border-border bg-background/70 p-3">
+                        <div className="flex items-start gap-3">
+                          <Checkbox
+                            checked={shouldIncludeRelatedAudienceMatches}
+                            disabled={autoIncludeRelatedAudienceMatches}
+                            onCheckedChange={(checked) => setIncludeSimilarFieldStaff(Boolean(checked))}
+                            className="mt-0.5"
+                          />
+                          <div className="min-w-0">
+                            <p className="text-sm font-medium text-foreground">
+                              {t('nominationsProps.includeSimilarFieldStaff', { defaultValue: 'Include Similar Field Staff' })}
+                            </p>
+                            <p className="mt-1 text-xs leading-5 text-muted-foreground">
+                              {autoIncludeRelatedAudienceMatches
+                                ? t('nominationsProps.includeSimilarFieldStaffAuto', {
+                                  defaultValue: 'Enabled automatically because no exact target audience participants are currently available.',
+                                })
+                                : t('nominationsProps.includeSimilarFieldStaffDesc', {
+                                  defaultValue: 'Allow closely related fallback categories when selecting participants.',
+                                })}
+                            </p>
+                            {relatedAudienceTokens.length > 0 && (
+                              <p className="mt-2 text-xs text-muted-foreground">
+                                {t('nominationsProps.similarFieldStaffCategories', {
+                                  defaultValue: `Related categories: ${relatedAudienceTokens.map((token) => token.toUpperCase()).join(', ')}`,
+                                })}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="relative">
+                      <Search className="absolute left-3 top-3.5 size-4 text-primary/60" />
+                      <Input
+                        value={participantSearchTerm}
+                        onChange={(e) => setParticipantSearchTerm(e.target.value)}
+                        placeholder={t('nominationsProps.participantSearchPlaceholder', { defaultValue: 'Search personnel by name, designation, or institution' })}
+                        className="h-11 rounded-xl bg-background pl-10"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                <div className="space-y-2 max-h-[340px] overflow-y-auto pr-1 custom-scrollbar xl:max-h-[420px]">
+                  {!selectedTraining && (
+                    <p className="text-sm text-muted-foreground">
+                      {t('nominationsProps.selectTrainingFirst', { defaultValue: 'Select a training session to view eligible participants.' })}
+                    </p>
+                  )}
+                  {selectedTraining && eligibleParticipants.length === 0 && (
+                    <p className="text-sm text-muted-foreground">
+                      {t('nominationsProps.noEligibleParticipants', { defaultValue: 'No participants match the selected institutions and target audience for this training.' })}
+                    </p>
+                  )}
+                  {selectedTraining && eligibleParticipants.length > 0 && filteredEligibleParticipants.length === 0 && (
+                    <p className="text-sm text-muted-foreground">{t('nominationsProps.noPersonnelSearchMatches', { defaultValue: 'No personnel matched your search.' })}</p>
+                  )}
+                  {filteredEligibleParticipants.map((participant) => {
+                    const isBusy = busyParticipantIds.includes(participant.id);
+                    const isAlreadyAssigned = selectedTrainingExistingParticipantIds.has(participant.id);
+                    const isDisabled = isBusy || isAlreadyAssigned;
+                    const isSelected = selectedParticipantIds.includes(participant.id);
+
+                    return (
+                      <div
+                        key={participant.id}
+                        onClick={() => !isDisabled && toggleParticipantSelection(participant.id)}
+                        className={`rounded-xl border p-3 transition-all flex items-center justify-between gap-3 ${isDisabled
+                          ? 'bg-muted/40 border-border opacity-60 cursor-not-allowed'
+                          : isSelected
+                            ? 'bg-primary/5 border-primary shadow-sm cursor-pointer'
+                            : 'bg-background border-border cursor-pointer hover:border-primary/30'
+                          }`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <Checkbox
+                            checked={isSelected}
+                            disabled={isDisabled}
+                            className={isDisabled ? 'opacity-50' : ''}
+                          />
+                          <div>
+                            <p className={`text-sm font-medium ${isDisabled ? 'text-muted-foreground' : 'text-foreground'}`}>{participant.name}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {participant.designation || t('nominationsProps.participantLabel', { defaultValue: 'Participant' })} • {getInstitutionName(participant.institutionId)}
+                            </p>
+                            {relatedEligibleParticipantIds.has(participant.id) && (
+                              <p className="mt-1 text-[11px] text-amber-400">
+                                {t('nominationsProps.similarCategoryMatch', { defaultValue: 'Eligible through a related category match' })}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+
+                        {isAlreadyAssigned ? (
+                          <Badge variant="secondary" className="text-xs bg-primary/20 text-primary hover:bg-primary/20">
+                            {t('nominationsProps.alreadyAssigned')}
+                          </Badge>
+                        ) : isBusy ? (
+                          <Badge variant="secondary" className="text-xs">
+                            {t('nominationsProps.busy')}
+                          </Badge>
+                        ) : relatedEligibleParticipantIds.has(participant.id) ? (
+                          <Badge variant="outline" className="text-xs border-amber-500/20 bg-amber-500/10 text-amber-400">
+                            {t('nominationsProps.relatedMatch', { defaultValue: 'Related match' })}
+                          </Badge>
+                        ) : (
+                          <Badge variant="outline" className="text-xs border-emerald-500/20 bg-emerald-500/10 text-emerald-400">
+                            {t('nominationsProps.ready', { defaultValue: 'Ready' })}
+                          </Badge>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </CardContent>
+            </Card>
+          </section>
+
+          <div className="sticky bottom-4 z-10">
+            <Card className="border-border bg-background/95 shadow-lg backdrop-blur">
+              <CardContent className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
+                <p className="text-sm text-muted-foreground">
+                  {selectedTrainingId
+                    ? t('nominationsProps.submitReady', {
+                      count: selectedParticipantIds.length,
+                      defaultValue: `${selectedParticipantIds.length} personnel selected for nomination.`,
+                    })
+                    : t('nominationsProps.selectTrainingFirst', { defaultValue: 'Select a training session to view eligible participants.' })}
+                </p>
+                <div className="flex flex-col gap-2 sm:flex-row">
+                  <Button onClick={closeNominationWorkspace} variant="outline">
+                    {t('nominationsProps.cancel')}
+                  </Button>
+                  <Button
+                    onClick={handleNominate}
+                    disabled={!selectedTrainingId || selectedParticipantIds.length === 0 || loading}
+                  >
+                    {loading
+                      ? t('nominationsProps.submitting')
+                      : `${t('nominationsProps.submitNominations')} (${selectedParticipantIds.length})`}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          <Dialog open={showAddParticipantDialog} onOpenChange={setShowAddParticipantDialog}>
+            <DialogContent className="flex max-h-[90vh] flex-col overflow-hidden border-border bg-background text-foreground sm:max-w-md">
+              <DialogHeader>
+                <DialogTitle>{t('nominationsProps.addNewPersonnel', { defaultValue: 'Add New Personnel' })}</DialogTitle>
+                <DialogDescription>
+                  {t('nominationsProps.addNewPersonnelDesc', { defaultValue: 'Add a participant manually when they are not yet available in the personnel list.' })}
+                </DialogDescription>
+              </DialogHeader>
+
+              <div className="flex-1 overflow-y-auto space-y-4 pr-2 custom-scrollbar">
+                <div>
+                  <Label className="text-sm font-medium text-foreground mb-1 block">{t('nominationsProps.fullName', { defaultValue: 'Full Name *' })}</Label>
+                  <Input
+                    placeholder={t('nominationsProps.fullNamePlaceholder', { defaultValue: 'e.g. Dr. John Doe' })}
+                    value={newParticipant.name}
+                    onChange={(e) => setNewParticipant({ ...newParticipant, name: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-foreground mb-1 block">{t('nominationsProps.emailAddress', { defaultValue: 'Email Address *' })}</Label>
+                  <Input
+                    type="email"
+                    placeholder={t('nominationsProps.emailPlaceholder', { defaultValue: 'john@example.com' })}
+                    value={newParticipant.email}
+                    onChange={(e) => setNewParticipant({ ...newParticipant, email: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-foreground mb-1 block">{t('nominationsProps.phoneNumber', { defaultValue: 'Phone Number' })}</Label>
+                  <Input
+                    placeholder="9876543210"
+                    value={newParticipant.phone}
+                    onChange={(e) => setNewParticipant({ ...newParticipant, phone: normalizePhoneNumber(e.target.value) })}
+                    inputMode="numeric"
+                    maxLength={10}
+                    pattern="\\d{10}"
+                  />
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-foreground mb-1 block">{t('nominationsProps.designation', { defaultValue: 'Designation' })}</Label>
+                  <Input
+                    placeholder={t('nominationsProps.designationPlaceholder', { defaultValue: 'e.g. Senior Medical Officer' })}
+                    value={newParticipant.designation}
+                    onChange={(e) => setNewParticipant({ ...newParticipant, designation: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-foreground mb-1 block">{t('nominationsProps.department', { defaultValue: 'Department' })}</Label>
+                  <Input
+                    placeholder={t('nominationsProps.departmentPlaceholder', { defaultValue: 'e.g. Cardiology' })}
+                    value={newParticipant.department}
+                    onChange={(e) => setNewParticipant({ ...newParticipant, department: e.target.value })}
+                  />
+                </div>
+              </div>
+
+              <DialogFooter className="border-t border-border pt-6">
+                <Button onClick={() => setShowAddParticipantDialog(false)} variant="outline">
+                  {t('nominationsProps.cancel')}
+                </Button>
+                <Button
+                  onClick={handleManualAddSubmit}
+                  disabled={!newParticipant.name || !newParticipant.email || loading}
+                >
+                  {loading ? t('nominationsProps.saving', { defaultValue: 'Saving...' }) : t('nominationsProps.saveParticipant', { defaultValue: 'Save Participant' })}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </div>
+      );
+    }
+
     return (
       <div className="space-y-8 pb-20">
         <section className="rounded-[28px] border border-border bg-card/70 p-6 shadow-sm backdrop-blur-sm sm:p-8">
@@ -752,7 +1363,7 @@ const Nominations: React.FC = () => {
               {(user.role === 'program_officer' || user.role === 'master_admin' || user.role === 'medical_officer' || user.role === 'institutional_admin') && (
                 <>
                   <Button
-                    onClick={() => setShowNominateDialog(true)}
+                    onClick={() => openNominationWorkspace()}
                     className="w-full gap-2 font-medium sm:w-auto"
                   >
                     <Sparkles className="size-4" />
@@ -862,7 +1473,7 @@ const Nominations: React.FC = () => {
                   {t('nominationsProps.noNominationsYetDesc', { defaultValue: 'Start by choosing a training session and assigning eligible personnel. Once nominations are created, this page will keep the full history in one place.' })}
                 </p>
                 {(user.role === 'program_officer' || user.role === 'master_admin' || user.role === 'medical_officer' || user.role === 'institutional_admin') && (
-                  <Button onClick={() => setShowNominateDialog(true)} className="mt-6 gap-2">
+                  <Button onClick={() => openNominationWorkspace()} className="mt-6 gap-2">
                     <Sparkles className="size-4" />
                     {t('nominationsProps.nominatePersonnel')}
                   </Button>

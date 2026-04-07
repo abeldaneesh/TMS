@@ -22,7 +22,7 @@ const Login: React.FC<LoginProps> = ({ roleTitle = 'Sign In', allowedRoles }) =>
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const { login, logout } = useAuth();
+  const { login } = useAuth();
   const navigate = useNavigate();
   const { t, i18n } = useTranslation();
   const { theme, toggleTheme } = useTheme();
