@@ -260,10 +260,6 @@ const LoginWelcomeOverlay: React.FC<LoginWelcomeOverlayProps> = ({ user, visible
                 transition={{ duration: MAX_CLOSE_MS / 1000, ease: 'linear' }}
               />
             </div>
-            <div className="mt-3 flex items-center justify-between text-[11px] font-medium uppercase tracking-[0.24em] text-white/72">
-              <span>{canDismiss ? 'Skip available' : 'Minimum 5 seconds'}</span>
-              <span>Auto close by 10 seconds</span>
-            </div>
           </div>
         </motion.div>
       )}
