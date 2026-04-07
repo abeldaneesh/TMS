@@ -250,17 +250,6 @@ const LoginWelcomeOverlay: React.FC<LoginWelcomeOverlayProps> = ({ user, visible
             </motion.div>
           )}
 
-          <div className="absolute inset-x-0 bottom-0 z-20 p-4 sm:p-6">
-            <div className="overflow-hidden rounded-full bg-white/18">
-              <motion.div
-                key="welcome-progress"
-                className="h-1.5 rounded-full bg-[linear-gradient(90deg,rgba(37,99,235,0.95),rgba(56,189,248,0.92))]"
-                initial={{ width: '100%' }}
-                animate={{ width: '0%' }}
-                transition={{ duration: MAX_CLOSE_MS / 1000, ease: 'linear' }}
-              />
-            </div>
-          </div>
         </motion.div>
       )}
     </AnimatePresence>
