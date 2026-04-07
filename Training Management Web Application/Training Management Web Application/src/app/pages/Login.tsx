@@ -12,6 +12,8 @@ import { Label } from '../components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Alert, AlertDescription } from '../components/ui/alert';
 
+const PAGE_BACKGROUND = '/healthcare-office-blur-new.png';
+
 interface LoginProps {
   roleTitle?: string;
   allowedRoles?: string[];
@@ -31,10 +33,6 @@ const Login: React.FC<LoginProps> = ({ roleTitle = 'Sign In', allowedRoles }) =>
   const floatingButtonClass = isDarkMode
     ? 'bg-background/80 backdrop-blur-md rounded-full shadow-md'
     : 'bg-white/90 border-slate-200 text-slate-700 backdrop-blur-md rounded-full shadow-sm shadow-slate-200/80';
-
-  const formPanelClass = isDarkMode
-    ? 'bg-background text-foreground'
-    : 'bg-[radial-gradient(circle_at_top,rgba(79,70,229,0.08),transparent_30%),linear-gradient(180deg,#f8fafc_0%,#f3f6fb_100%)] text-slate-900';
 
   const authCardClass = isDarkMode
     ? 'border shadow-lg bg-card'
@@ -71,7 +69,7 @@ const Login: React.FC<LoginProps> = ({ roleTitle = 'Sign In', allowedRoles }) =>
   };
 
   return (
-    <div className="min-h-screen flex flex-col md:flex-row bg-background">
+    <div className="relative min-h-screen overflow-hidden bg-slate-50 dark:bg-slate-950 transition-colors duration-300">
       {/* Floating Action Buttons */}
       <div className="absolute top-4 right-4 z-50 flex gap-2">
         <Button variant="outline" size="icon" className={floatingButtonClass} onClick={() => i18n.changeLanguage(i18n.language.startsWith('ml') ? 'en' : 'ml')}>
@@ -82,12 +80,23 @@ const Login: React.FC<LoginProps> = ({ roleTitle = 'Sign In', allowedRoles }) =>
         </Button>
       </div>
 
-      {/* Left Column */}
-      <AuthHeroPanel />
+      {/* Continuous blurred medical background spanning full width */}
+      <img
+          src={PAGE_BACKGROUND}
+          alt=""
+          aria-hidden="true"
+          className="absolute inset-0 h-full w-full object-cover scale-[1.02] opacity-80 dark:opacity-40"
+      />
+      {/* Soft, elegant healthcare-inspired overlay to create harmonic light UI */}
+      <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(255,255,255,0.80)_0%,rgba(242,248,255,0.55)_45%,rgba(226,236,248,0.70)_100%)] dark:bg-[linear-gradient(135deg,rgba(15,23,42,0.85)_0%,rgba(22,32,50,0.65)_45%,rgba(15,23,42,0.80)_100%)] backdrop-blur-[2px]" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_25%,rgba(255,255,255,0.40),transparent_40%),radial-gradient(circle_at_75%_65%,rgba(147,197,253,0.10),transparent_40%)] dark:bg-[radial-gradient(circle_at_20%_25%,rgba(15,23,42,0.40),transparent_40%),radial-gradient(circle_at_75%_65%,rgba(59,130,246,0.05),transparent_40%)]" />
 
-      {/* Right Column: Login Form */}
-      <div className={`flex-1 flex flex-col items-center justify-center p-8 md:p-12 overflow-y-auto relative ${formPanelClass}`}>
-        {!isDarkMode && <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(255,255,255,0.72),rgba(255,255,255,0.94))]" />}
+      <div className="relative z-10 min-h-screen flex flex-col md:flex-row w-full">
+        {/* Left Column */}
+        <AuthHeroPanel />
+
+        {/* Right Column: Login Form */}
+        <div className="flex-1 flex flex-col items-center justify-center p-8 md:p-12 overflow-y-auto relative bg-transparent">
         <div className="w-full max-w-md relative z-10">
           <Button
             variant="ghost"
@@ -169,6 +178,7 @@ const Login: React.FC<LoginProps> = ({ roleTitle = 'Sign In', allowedRoles }) =>
         </div>
       </div>
     </div>
+  </div>
   );
 };
 

@@ -3,55 +3,40 @@ import TmsLogo from './TmsLogo';
 
 interface AuthHeroPanelProps {
   subtitle?: string;
+  blendWithPage?: boolean;
 }
-
-const HERO_IMAGE = '/login-training-hero.svg';
-const HOSPITAL_OVERLAY = '/hospital-overlay.svg';
 
 const AuthHeroPanel: React.FC<AuthHeroPanelProps> = ({ subtitle }) => {
   return (
-    <div className="hidden md:flex md:w-1/2 relative overflow-hidden isolate">
-      <img
-        src={HERO_IMAGE}
-        alt="Blurred illustration of medical training operations and attendance management"
-        className="absolute inset-0 h-full w-full object-cover scale-[1.03]"
-      />
-      <img
-        src={HOSPITAL_OVERLAY}
-        alt=""
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-x-0 bottom-0 mx-auto h-[82%] w-[88%] object-contain opacity-28"
-      />
-      <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(2,6,23,0.28),rgba(2,6,23,0.72))]" />
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(79,70,229,0.22),transparent_34%),linear-gradient(120deg,rgba(3,3,3,0.08),rgba(3,3,3,0.28))]" />
-      <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(3,3,3,0.14),rgba(3,3,3,0.08),rgba(3,3,3,0.24))]" />
+    <div className="hidden md:flex relative z-10 w-1/2 flex-col items-center justify-center p-12">
+      {/* Soft translucent surface to anchor the text while feeling perfectly blended */}
+      <div className="relative flex w-full max-w-sm flex-col items-center justify-center rounded-3xl pb-8">
+        <div 
+          className="absolute inset-0 bg-white/40 dark:bg-slate-950/50 blur-2xl rounded-full" 
+          aria-hidden="true"
+        />
+        
+        <div className="relative z-10 flex flex-col items-center">
+          <div className="mb-6 rounded-full border border-slate-200/50 dark:border-slate-700/50 bg-white/50 dark:bg-slate-800/60 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.28em] text-slate-600 dark:text-slate-300 shadow-sm backdrop-blur-md">
+            District Medical Office
+          </div>
 
-      <div className="relative z-10 flex w-full flex-col items-center justify-center p-12 text-white">
-        <div className="mb-6 rounded-full border border-white/12 bg-white/6 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.28em] text-white/80 backdrop-blur-md">
-          District Medical Office
+          <div className="mb-8">
+            <TmsLogo className="size-28 xl:size-32 shadow-xl ring-1 ring-black/5 dark:ring-white/10" />
+          </div>
+
+          <h1 className="text-center text-4xl xl:text-5xl font-bold tracking-tight text-slate-800 dark:text-slate-100">
+            DMO TMS
+          </h1>
+
+          {subtitle && (
+            <p className="mt-4 max-w-xs text-center text-lg font-medium text-slate-500 dark:text-slate-400">
+              {subtitle}
+            </p>
+          )}
+
+          <div className="mt-10 h-1.5 w-20 rounded-full bg-primary/40 dark:bg-primary/60" />
         </div>
-
-        <div className="mb-8">
-          <TmsLogo className="size-28 text-white" />
-        </div>
-
-        <h1
-          className="text-center text-4xl font-semibold tracking-tight text-white drop-shadow-[0_6px_24px_rgba(0,0,0,0.55)]"
-          style={{ color: '#ffffff' }}
-        >
-          DMO TMS
-        </h1>
-
-        {subtitle && (
-          <p
-            className="mt-4 max-w-md text-center text-xl font-medium text-white/90 drop-shadow-[0_4px_18px_rgba(0,0,0,0.45)]"
-            style={{ color: 'rgba(255,255,255,0.92)' }}
-          >
-            {subtitle}
-          </p>
-        )}
-
-        <div className="mt-8 h-1 w-32 rounded-full bg-primary/55" />
       </div>
     </div>
   );
