@@ -3,6 +3,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { Play, X } from 'lucide-react';
 import { User } from '../../types';
 import { Button } from './ui/button';
+import { useIsMobile } from './ui/use-mobile';
 
 interface LoginWelcomeOverlayProps {
   user: User | null;
@@ -23,6 +24,7 @@ const getGreeting = () => {
 };
 
 const LoginWelcomeOverlay: React.FC<LoginWelcomeOverlayProps> = ({ user, visible, onClose }) => {
+  const isMobile = useIsMobile();
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const closeTimerRef = useRef<number | null>(null);
   const minTimerRef = useRef<number | null>(null);
@@ -146,7 +148,7 @@ const LoginWelcomeOverlay: React.FC<LoginWelcomeOverlayProps> = ({ user, visible
           {!videoFailed ? (
             <video
               ref={videoRef}
-              className="h-full w-full object-cover"
+              className={isMobile ? 'h-full w-full bg-slate-950 object-contain object-center' : 'h-full w-full object-cover'}
               autoPlay
               playsInline
               preload="auto"
@@ -158,10 +160,10 @@ const LoginWelcomeOverlay: React.FC<LoginWelcomeOverlayProps> = ({ user, visible
               <source src={LEGACY_WELCOME_VIDEO_PATH} type="video/mp4" />
             </video>
           ) : (
-            <div className="flex h-full items-center justify-center bg-[radial-gradient(circle_at_top,rgba(59,130,246,0.32),transparent_42%),linear-gradient(180deg,#020617_0%,#0f172a_100%)] px-6 text-center sm:px-10">
+            <div className="flex h-full items-center justify-center bg-[radial-gradient(circle_at_top,rgba(59,130,246,0.32),transparent_42%),linear-gradient(180deg,#020617_0%,#0f172a_100%)] px-5 text-center sm:px-10">
               <div className="max-w-2xl">
                 <motion.p
-                  className="text-sm font-medium uppercase tracking-[0.32em] text-sky-200/80"
+                  className="text-[11px] font-medium uppercase tracking-[0.24em] text-sky-200/80 sm:text-sm sm:tracking-[0.32em]"
                   initial={{ opacity: 0, y: 12 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.1 }}
@@ -169,7 +171,7 @@ const LoginWelcomeOverlay: React.FC<LoginWelcomeOverlayProps> = ({ user, visible
                   {getGreeting()}
                 </motion.p>
                 <motion.h2
-                  className="mt-4 text-4xl font-semibold tracking-tight text-white sm:text-6xl"
+                  className="mt-4 text-3xl font-semibold tracking-tight text-white sm:text-6xl"
                   initial={{ opacity: 0, y: 16 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.16 }}
@@ -188,38 +190,63 @@ const LoginWelcomeOverlay: React.FC<LoginWelcomeOverlayProps> = ({ user, visible
             </div>
           )}
 
-          <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(2,6,23,0.32)_0%,rgba(2,6,23,0.04)_34%,rgba(2,6,23,0.62)_100%)]" />
-          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(59,130,246,0.2),transparent_28%),radial-gradient(circle_at_bottom_right,rgba(14,165,233,0.18),transparent_26%)]" />
+          <div className={isMobile
+            ? 'pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(2,6,23,0.48)_0%,rgba(2,6,23,0.12)_28%,rgba(2,6,23,0.22)_56%,rgba(2,6,23,0.88)_100%)]'
+            : 'pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(2,6,23,0.32)_0%,rgba(2,6,23,0.04)_34%,rgba(2,6,23,0.62)_100%)]'} />
+          <div className={isMobile
+            ? 'pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(59,130,246,0.14),transparent_24%),radial-gradient(circle_at_bottom_right,rgba(14,165,233,0.16),transparent_22%)]'
+            : 'pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(59,130,246,0.2),transparent_28%),radial-gradient(circle_at_bottom_right,rgba(14,165,233,0.18),transparent_26%)]'} />
 
-          <div className="absolute inset-x-0 top-0 z-20 flex items-start justify-between p-4 sm:p-6">
-            <motion.div
-              className="max-w-xl text-white"
-              initial={{ opacity: 0, y: 14 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
-            >
-              <p className="text-xs font-medium uppercase tracking-[0.28em] text-sky-200/85">
-                {getGreeting()}
-              </p>
-              <h2 className="mt-2 text-2xl font-semibold tracking-tight sm:text-4xl">
-                Welcome back, {user.name}.
-              </h2>
-            </motion.div>
-
-            <div className="flex items-center gap-2">
-              {canDismiss && (
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  onClick={onClose}
-                  className="size-9 rounded-full border border-white/15 bg-black/35 text-white hover:bg-black/55 hover:text-white"
-                >
-                  <X className="size-4" />
-                </Button>
-              )}
-            </div>
+          <div className={`absolute inset-x-0 top-0 z-20 flex items-start justify-end px-4 pb-4 pt-[calc(1rem+env(safe-area-inset-top))] sm:px-6 sm:pt-[calc(1.5rem+env(safe-area-inset-top))]`}>
+            {canDismiss && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                onClick={onClose}
+                className="size-10 rounded-full border border-white/15 bg-black/35 text-white shadow-lg hover:bg-black/55 hover:text-white"
+              >
+                <X className="size-4" />
+              </Button>
+            )}
           </div>
+
+          {isMobile ? (
+            <div className="absolute inset-x-0 bottom-0 z-20 px-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
+              <motion.div
+                className="rounded-[24px] border border-white/12 bg-slate-950/72 px-4 py-4 text-white shadow-[0_22px_60px_-24px_rgba(0,0,0,0.75)] backdrop-blur-md"
+                initial={{ opacity: 0, y: 18 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+              >
+                <p className="text-[11px] font-medium uppercase tracking-[0.22em] text-sky-200/80">
+                  {getGreeting()}
+                </p>
+                <h2 className="mt-2 text-[clamp(1.55rem,6vw,2.2rem)] font-semibold leading-tight tracking-tight">
+                  Welcome back, {user.name}.
+                </h2>
+                <p className="mt-2 text-sm leading-6 text-slate-300">
+                  Your dashboard is ready.
+                </p>
+              </motion.div>
+            </div>
+          ) : (
+            <div className="absolute inset-x-0 top-0 z-20 flex items-start justify-between p-4 sm:p-6">
+              <motion.div
+                className="max-w-xl text-white"
+                initial={{ opacity: 0, y: 14 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+              >
+                <p className="text-xs font-medium uppercase tracking-[0.28em] text-sky-200/85">
+                  {getGreeting()}
+                </p>
+                <h2 className="mt-2 text-2xl font-semibold tracking-tight sm:text-4xl">
+                  Welcome back, {user.name}.
+                </h2>
+              </motion.div>
+            </div>
+          )}
 
           {playbackBlocked && !videoFailed && (
             <motion.div
@@ -228,11 +255,11 @@ const LoginWelcomeOverlay: React.FC<LoginWelcomeOverlayProps> = ({ user, visible
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
             >
-              <div className="max-w-md rounded-[28px] border border-white/10 bg-slate-950/85 p-6 text-center text-white shadow-[0_24px_80px_-30px_rgba(0,0,0,0.8)]">
+              <div className="max-w-md rounded-[28px] border border-white/10 bg-slate-950/85 p-5 text-center text-white shadow-[0_24px_80px_-30px_rgba(0,0,0,0.8)] sm:p-6">
                 <p className="text-xs font-medium uppercase tracking-[0.32em] text-sky-200/75">
                   Sound ready
                 </p>
-                <h3 className="mt-3 text-2xl font-semibold tracking-tight">
+                <h3 className="mt-3 text-xl font-semibold tracking-tight sm:text-2xl">
                   Tap once to start the welcome video with audio
                 </h3>
                 <p className="mt-3 text-sm leading-6 text-slate-300">
