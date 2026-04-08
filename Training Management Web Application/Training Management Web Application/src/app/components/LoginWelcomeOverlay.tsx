@@ -12,24 +12,29 @@ interface LoginWelcomeOverlayProps {
 }
 
 const DESKTOP_VIDEO_SOURCES = ['/welcome-animation.mp4', '/welcome-animation.mp4.mp4'];
-const MOBILE_VIDEO_SOURCES = ['/welcome-animation_mob.mp4', '/welcome-animation.mp4', '/welcome-animation.mp4.mp4'];
 const MIN_CLOSE_MS = 5000;
 const MAX_CLOSE_MS = 10000;
+const MOBILE_WELCOME_CLOSE_MS = 2600;
 
 const getGreeting = () => {
   const hour = new Date().getHours();
   if (hour < 12) return 'Good morning';
   if (hour < 18) return 'Good afternoon';
-  return 'Good evening';
+  return 'Good night';
+};
+
+const getWelcomeMessage = (name?: string | null) => {
+  const normalizedName = String(name ?? '').trim();
+  return normalizedName ? `Welcome, ${normalizedName}.` : 'Welcome.';
 };
 
 const LoginWelcomeOverlay: React.FC<LoginWelcomeOverlayProps> = ({ user, visible, onClose }) => {
   const isMobile = useIsMobile();
-  const activeVideoSources = isMobile ? MOBILE_VIDEO_SOURCES : DESKTOP_VIDEO_SOURCES;
+  const activeVideoSources = DESKTOP_VIDEO_SOURCES;
   const primaryVideoPath = activeVideoSources[0];
-  const videoClassName = isMobile
-    ? 'absolute inset-0 h-full w-full scale-[1.08] object-cover object-center'
-    : 'h-full w-full object-cover object-center';
+  const videoClassName = 'h-full w-full object-cover object-center';
+  const greeting = getGreeting();
+  const welcomeMessage = getWelcomeMessage(user?.name);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const closeTimerRef = useRef<number | null>(null);
   const minTimerRef = useRef<number | null>(null);
@@ -97,6 +102,16 @@ const LoginWelcomeOverlay: React.FC<LoginWelcomeOverlayProps> = ({ user, visible
     setPlaybackBlocked(false);
     setCanDismiss(false);
 
+    if (isMobile) {
+      closeTimerRef.current = window.setTimeout(() => {
+        onClose();
+      }, MOBILE_WELCOME_CLOSE_MS);
+
+      return () => {
+        clearTimers();
+      };
+    }
+
     minTimerRef.current = window.setTimeout(() => {
       minElapsedRef.current = true;
       setCanDismiss(true);
@@ -118,7 +133,7 @@ const LoginWelcomeOverlay: React.FC<LoginWelcomeOverlayProps> = ({ user, visible
       window.clearTimeout(playbackStartTimer);
       clearTimers();
     };
-  }, [visible, onClose]);
+  }, [visible, onClose, isMobile]);
 
   const handleVideoEnded = () => {
     if (minElapsedRef.current) {
@@ -150,7 +165,28 @@ const LoginWelcomeOverlay: React.FC<LoginWelcomeOverlayProps> = ({ user, visible
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
         >
-          {!videoFailed ? (
+          {isMobile ? (
+            <div className="flex h-full items-center justify-center bg-[radial-gradient(circle_at_top,rgba(14,165,233,0.22),transparent_40%),radial-gradient(circle_at_bottom,rgba(59,130,246,0.18),transparent_48%),linear-gradient(180deg,#020617_0%,#0f172a_100%)] px-6 text-center sm:px-10">
+              <div className="max-w-sm">
+                <motion.p
+                  className="text-[12px] font-medium uppercase tracking-[0.28em] text-sky-200/80"
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.08 }}
+                >
+                  {greeting}
+                </motion.p>
+                <motion.h2
+                  className="mt-4 text-3xl font-semibold tracking-tight text-white"
+                  initial={{ opacity: 0, y: 16 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.16 }}
+                >
+                  {welcomeMessage}
+                </motion.h2>
+              </div>
+            </div>
+          ) : !videoFailed ? (
             <video
               key={primaryVideoPath}
               ref={videoRef}
@@ -175,7 +211,7 @@ const LoginWelcomeOverlay: React.FC<LoginWelcomeOverlayProps> = ({ user, visible
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.1 }}
                 >
-                  {getGreeting()}
+                  {greeting}
                 </motion.p>
                 <motion.h2
                   className="mt-4 text-3xl font-semibold tracking-tight text-white sm:text-6xl"
@@ -183,7 +219,7 @@ const LoginWelcomeOverlay: React.FC<LoginWelcomeOverlayProps> = ({ user, visible
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.16 }}
                 >
-                  Welcome back, {user.name}.
+                  {welcomeMessage}
                 </motion.h2>
                 <motion.p
                   className="mx-auto mt-4 max-w-2xl text-sm leading-7 text-slate-200/85 sm:text-lg"
@@ -205,7 +241,7 @@ const LoginWelcomeOverlay: React.FC<LoginWelcomeOverlayProps> = ({ user, visible
             : 'pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(59,130,246,0.2),transparent_28%),radial-gradient(circle_at_bottom_right,rgba(14,165,233,0.18),transparent_26%)]'} />
 
           <div className={`absolute inset-x-0 top-0 z-20 flex items-start justify-end px-4 pb-4 pt-[calc(1rem+env(safe-area-inset-top))] sm:px-6 sm:pt-[calc(1.5rem+env(safe-area-inset-top))]`}>
-            {canDismiss && (
+            {!isMobile && canDismiss && (
               <Button
                 type="button"
                 variant="ghost"
@@ -227,16 +263,16 @@ const LoginWelcomeOverlay: React.FC<LoginWelcomeOverlayProps> = ({ user, visible
                 transition={{ delay: 0.2 }}
               >
                 <p className="text-xs font-medium uppercase tracking-[0.28em] text-sky-200/85">
-                  {getGreeting()}
+                  {greeting}
                 </p>
                 <h2 className="mt-2 text-2xl font-semibold tracking-tight sm:text-4xl">
-                  Welcome back, {user.name}.
+                  {welcomeMessage}
                 </h2>
               </motion.div>
             </div>
           )}
 
-          {playbackBlocked && !videoFailed && (
+          {!isMobile && playbackBlocked && !videoFailed && (
             <motion.div
               className="absolute inset-0 z-30 flex items-center justify-center bg-black/55 px-6 backdrop-blur-sm"
               initial={{ opacity: 0 }}
