@@ -7,9 +7,13 @@ import jwt from 'jsonwebtoken';
 import { v4 as uuidv4 } from 'uuid';
 import { sendOTP } from '../utils/emailService';
 import { normalizeEmail, validateEmailAddress } from '../utils/emailValidation';
+import Notification from '../models/Notification';
+import { createAndSendNotification } from '../utils/notificationUtils';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
 const SESSION_DURATION_MS = 24 * 60 * 60 * 1000;
+const BLOCKED_LOGIN_NOTIFICATION_TITLE = 'Another device tried to sign in';
+const BLOCKED_LOGIN_NOTIFICATION_COOLDOWN_MS = 5 * 60 * 1000;
 const normalizePhoneNumber = (value?: string) => value ? value.replace(/\D/g, '') : '';
 const isValidPhoneNumber = (value?: string) => !value || normalizePhoneNumber(value).length === 10;
 const buildSessionExpiry = () => new Date(Date.now() + SESSION_DURATION_MS);
@@ -19,6 +23,30 @@ const sanitizeUser = (user: any) => {
     delete userWithoutPassword.password;
     userWithoutPassword.id = user._id;
     return userWithoutPassword;
+};
+
+const notifyBlockedLoginAttempt = async (userId: string) => {
+    const cooldownThreshold = new Date(Date.now() - BLOCKED_LOGIN_NOTIFICATION_COOLDOWN_MS);
+    const recentSimilarNotification = await Notification.findOne({
+        userId,
+        title: BLOCKED_LOGIN_NOTIFICATION_TITLE,
+        type: 'warning',
+        createdAt: { $gte: cooldownThreshold },
+    })
+        .select('_id')
+        .lean();
+
+    if (recentSimilarNotification) {
+        return;
+    }
+
+    await createAndSendNotification({
+        userId,
+        title: BLOCKED_LOGIN_NOTIFICATION_TITLE,
+        message: 'Someone just tried to use this account from another device, but the sign-in was blocked because your session is still active. If this was not you, please log out and change your password.',
+        type: 'warning',
+        actionUrl: '/dashboard',
+    });
 };
 
 export const register = async (req: Request, res: Response): Promise<void> => {
@@ -236,6 +264,10 @@ export const login = async (req: Request, res: Response): Promise<void> => {
         );
 
         if (!sessionBoundUser) {
+            void notifyBlockedLoginAttempt(String(user._id)).catch((notificationError) => {
+                console.error('Blocked login notification error:', notificationError);
+            });
+
             res.status(409).json({
                 message: 'This account is already signed in on another device. Please log out from that device first.',
                 code: 'ACCOUNT_IN_USE'
