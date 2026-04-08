@@ -11,8 +11,8 @@ interface LoginWelcomeOverlayProps {
   onClose: () => void;
 }
 
-const WELCOME_VIDEO_PATH = '/welcome-animation.mp4';
-const LEGACY_WELCOME_VIDEO_PATH = '/welcome-animation.mp4.mp4';
+const DESKTOP_VIDEO_SOURCES = ['/welcome-animation.mp4', '/welcome-animation.mp4.mp4'];
+const MOBILE_VIDEO_SOURCES = ['/welcome-animation_mob.mp4', '/welcome-animation.mp4', '/welcome-animation.mp4.mp4'];
 const MIN_CLOSE_MS = 5000;
 const MAX_CLOSE_MS = 10000;
 
@@ -25,6 +25,8 @@ const getGreeting = () => {
 
 const LoginWelcomeOverlay: React.FC<LoginWelcomeOverlayProps> = ({ user, visible, onClose }) => {
   const isMobile = useIsMobile();
+  const activeVideoSources = isMobile ? MOBILE_VIDEO_SOURCES : DESKTOP_VIDEO_SOURCES;
+  const primaryVideoPath = activeVideoSources[0];
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const closeTimerRef = useRef<number | null>(null);
   const minTimerRef = useRef<number | null>(null);
@@ -147,8 +149,9 @@ const LoginWelcomeOverlay: React.FC<LoginWelcomeOverlayProps> = ({ user, visible
         >
           {!videoFailed ? (
             <video
+              key={primaryVideoPath}
               ref={videoRef}
-              className={isMobile ? 'h-full w-full bg-slate-950 object-contain object-center' : 'h-full w-full object-cover'}
+              className="h-full w-full object-cover object-center"
               autoPlay
               playsInline
               preload="auto"
@@ -156,8 +159,9 @@ const LoginWelcomeOverlay: React.FC<LoginWelcomeOverlayProps> = ({ user, visible
               onEnded={handleVideoEnded}
               onError={handleVideoError}
             >
-              <source src={WELCOME_VIDEO_PATH} type="video/mp4" />
-              <source src={LEGACY_WELCOME_VIDEO_PATH} type="video/mp4" />
+              {activeVideoSources.map((source) => (
+                <source key={source} src={source} type="video/mp4" />
+              ))}
             </video>
           ) : (
             <div className="flex h-full items-center justify-center bg-[radial-gradient(circle_at_top,rgba(59,130,246,0.32),transparent_42%),linear-gradient(180deg,#020617_0%,#0f172a_100%)] px-5 text-center sm:px-10">
@@ -184,7 +188,7 @@ const LoginWelcomeOverlay: React.FC<LoginWelcomeOverlayProps> = ({ user, visible
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.22 }}
                 >
-                  Add your intro video at <span className="font-semibold text-white">{WELCOME_VIDEO_PATH}</span> to show it on the full-screen welcome experience after login.
+                  Add your intro video at <span className="font-semibold text-white">{primaryVideoPath}</span> to show it on the full-screen welcome experience after login.
                 </motion.p>
               </div>
             </div>
