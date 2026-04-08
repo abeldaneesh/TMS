@@ -28,7 +28,7 @@ const LoginWelcomeOverlay: React.FC<LoginWelcomeOverlayProps> = ({ user, visible
   const activeVideoSources = isMobile ? MOBILE_VIDEO_SOURCES : DESKTOP_VIDEO_SOURCES;
   const primaryVideoPath = activeVideoSources[0];
   const videoClassName = isMobile
-    ? 'absolute inset-0 h-full w-full scale-[1.06] object-cover object-[58%_center]'
+    ? 'absolute inset-0 h-full w-full scale-[1.06] object-cover object-[54%_center]'
     : 'h-full w-full object-cover object-center';
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const closeTimerRef = useRef<number | null>(null);
