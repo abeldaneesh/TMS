@@ -6,12 +6,14 @@ import { cn } from './ui/utils';
 interface DateInputWithPickerIconProps extends React.ComponentProps<typeof Input> {
   wrapperClassName?: string;
   buttonClassName?: string;
+  iconPosition?: 'leading' | 'trailing';
 }
 
 const DateInputWithPickerIcon: React.FC<DateInputWithPickerIconProps> = ({
   wrapperClassName,
   buttonClassName,
   className,
+  iconPosition = 'leading',
   ...props
 }) => {
   const inputRef = useRef<HTMLInputElement>(null);
@@ -35,7 +37,8 @@ const DateInputWithPickerIcon: React.FC<DateInputWithPickerIconProps> = ({
         onClick={openDatePicker}
         aria-label="Open date picker"
         className={cn(
-          'absolute left-3 top-1/2 z-10 flex size-5 -translate-y-1/2 items-center justify-center text-foreground/85 transition-colors hover:text-foreground',
+          'absolute top-1/2 z-10 flex size-5 -translate-y-1/2 items-center justify-center text-foreground/85 transition-colors hover:text-foreground',
+          iconPosition === 'leading' ? 'left-3' : 'right-3',
           buttonClassName,
         )}
       >
@@ -44,7 +47,11 @@ const DateInputWithPickerIcon: React.FC<DateInputWithPickerIconProps> = ({
       <Input
         ref={inputRef}
         type="date"
-        className={cn('date-input-with-leading-icon pl-10', className)}
+        className={cn(
+          'date-input-with-leading-icon',
+          iconPosition === 'leading' ? 'pl-10' : 'pr-10',
+          className,
+        )}
         {...props}
       />
     </div>

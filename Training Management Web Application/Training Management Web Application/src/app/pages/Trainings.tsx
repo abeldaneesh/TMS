@@ -13,11 +13,12 @@ import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Badge } from '../components/ui/badge';
 import { safeFormatDate } from '../../utils/date';
-import { getTrainingStatusPresentation } from '../../utils/trainingStatus';
+import { getTrainingStartDateTime, getTrainingStatusPresentation } from '../../utils/trainingStatus';
 import { toast } from 'sonner';
 
 import FilterChips from '../components/FilterChips';
 import LoadingScreen from '../components/LoadingScreen';
+import DateInputWithPickerIcon from '../components/DateInputWithPickerIcon';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../components/ui/dialog';
 
 const Trainings: React.FC = () => {
@@ -157,25 +158,45 @@ const Trainings: React.FC = () => {
     const matchesOwnership = ownershipFilter === 'all' || training.createdById === user?.id;
     const hasDateRange = Boolean(startDateFilter && endDateFilter);
     const trainingDateStr = getTrainingFilterDate(training);
-    const statusPresentation = getTrainingStatusPresentation(training);
 
     let matchesDate = true;
     if (hasDateRange) {
       matchesDate = Boolean(trainingDateStr) &&
-        trainingDateStr > startDateFilter &&
-        trainingDateStr < endDateFilter;
-    } else if (statusFilter === 'all') {
-      matchesDate = statusPresentation === 'scheduled' || statusPresentation === 'ongoing';
+        trainingDateStr >= startDateFilter &&
+        trainingDateStr <= endDateFilter;
     }
 
     return matchesSearch && matchesStatus && matchesOwnership && matchesDate;
   });
 
-  const getTrainingDateSortValue = (training: Training) =>
-    new Date(`${training.date}T${training.startTime || '00:00'}`).getTime();
+  const getTrainingDateSortValue = (training: Training) => {
+    const timestamp = getTrainingStartDateTime(training).getTime();
+    return Number.isNaN(timestamp) ? 0 : timestamp;
+  };
 
-  const sortedTrainings = [...filteredTrainings].sort(
-    (a, b) => getTrainingDateSortValue(b) - getTrainingDateSortValue(a)
+  const compareAllDeploymentsTrainings = (a: Training, b: Training) => {
+    const aStatusPresentation = getTrainingStatusPresentation(a);
+    const bStatusPresentation = getTrainingStatusPresentation(b);
+    const aIsUpcoming = aStatusPresentation === 'scheduled' || aStatusPresentation === 'ongoing';
+    const bIsUpcoming = bStatusPresentation === 'scheduled' || bStatusPresentation === 'ongoing';
+    const aStart = getTrainingDateSortValue(a);
+    const bStart = getTrainingDateSortValue(b);
+
+    if (aIsUpcoming !== bIsUpcoming) {
+      return aIsUpcoming ? -1 : 1;
+    }
+
+    if (aIsUpcoming && bIsUpcoming) {
+      return aStart - bStart;
+    }
+
+    return bStart - aStart;
+  };
+
+  const sortedTrainings = [...filteredTrainings].sort((a, b) =>
+    statusFilter === 'all'
+      ? compareAllDeploymentsTrainings(a, b)
+      : getTrainingDateSortValue(b) - getTrainingDateSortValue(a)
   );
 
   const handleViewAttendance = (training: Training) => {
@@ -269,21 +290,21 @@ const Trainings: React.FC = () => {
           </div>
 
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] sm:items-center">
-            <Input
-              type="date"
+            <DateInputWithPickerIcon
               value={startDateFilter}
               onChange={(e) => setStartDateFilter(e.target.value)}
-              className="bg-secondary/30 border-transparent focus:border-[#3d3d3d] rounded-full h-12 text-foreground px-4 w-full cursor-pointer"
+              iconPosition="trailing"
+              className="bg-secondary/30 border-transparent focus:border-[#3d3d3d] rounded-full h-12 text-foreground pl-4 pr-10 w-full cursor-pointer"
               title={t('trainings.startDate', 'Start date')}
             />
             <span className="hidden sm:block text-center text-xs uppercase tracking-[0.2em] text-muted-foreground">
               {t('trainings.to', 'to')}
             </span>
-            <Input
-              type="date"
+            <DateInputWithPickerIcon
               value={endDateFilter}
               onChange={(e) => setEndDateFilter(e.target.value)}
-              className="bg-secondary/30 border-transparent focus:border-[#3d3d3d] rounded-full h-12 text-foreground px-4 w-full cursor-pointer"
+              iconPosition="trailing"
+              className="bg-secondary/30 border-transparent focus:border-[#3d3d3d] rounded-full h-12 text-foreground pl-4 pr-10 w-full cursor-pointer"
               title={t('trainings.endDate', 'End date')}
             />
           </div>
