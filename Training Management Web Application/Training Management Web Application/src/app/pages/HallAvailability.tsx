@@ -678,92 +678,94 @@ const HallAvailability: React.FC = () => {
         </div>
       </section>
 
-      <section className={cn(PANEL_CARD, 'p-6 md:p-8')}>
-        <div className="mb-6 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-          <div>
-            <p className="text-xs uppercase tracking-[0.32em] text-muted-foreground">{t('hallAvailability.protocolLabel', { defaultValue: 'Availability Protocol' })}</p>
-            <h2 className="mt-2 text-2xl font-semibold text-foreground">{t('hallAvailability.decisionWindowTitle', { defaultValue: 'Set your decision window' })}</h2>
-            <p className="mt-2 max-w-xl text-sm text-muted-foreground">
-              {t('hallAvailability.decisionWindowDesc', { defaultValue: 'Pick the time range you want to inspect. Cards update with clearer status signals and more precise booking context.' })}
-            </p>
-          </div>
-          <div className="flex items-center gap-3 rounded-2xl border border-border bg-background px-4 py-3 text-sm text-muted-foreground">
-            <Sparkles className="size-4 text-primary" />
-            {checking
-              ? t('hallAvailability.refreshing', { defaultValue: 'Refreshing availability...' })
-              : t('hallAvailability.hallsInView', { count: filteredHalls.length, defaultValue: `${filteredHalls.length} halls in view` })}
-          </div>
-        </div>
-
-        <div className="mb-6 rounded-[22px] border border-primary/20 bg-primary/5 p-4 sm:p-5">
-          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+      {viewMode === 'list' && (
+        <section className={cn(PANEL_CARD, 'p-6 md:p-8')}>
+          <div className="mb-6 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
             <div>
-              <p className="text-xs uppercase tracking-[0.28em] text-primary/80">
-                {t('hallAvailability.allowedBookingRangeLabel', { defaultValue: 'Allowed Booking Range' })}
-              </p>
-              <p className="mt-2 text-lg font-semibold text-foreground">
-                {t('hallAvailability.allowedBookingRangeValue', {
-                  defaultValue: `${formatMonthDay(bookingWindowStartDate)} - ${formatMonthDay(bookingWindowEndDate)}`,
-                })}
-              </p>
-              <p className="mt-1 text-sm text-muted-foreground">
-                {t('hallAvailability.allowedBookingRangeHint', {
-                  defaultValue: `Bookings can only be reviewed from ${formatWeekdayMonthDay(bookingWindowStartDate)} through ${formatWeekdayMonthDay(bookingWindowEndDate)}.`,
-                })}
+              <p className="text-xs uppercase tracking-[0.32em] text-muted-foreground">{t('hallAvailability.protocolLabel', { defaultValue: 'Availability Protocol' })}</p>
+              <h2 className="mt-2 text-2xl font-semibold text-foreground">{t('hallAvailability.decisionWindowTitle', { defaultValue: 'Set your decision window' })}</h2>
+              <p className="mt-2 max-w-xl text-sm text-muted-foreground">
+                {t('hallAvailability.decisionWindowDesc', { defaultValue: 'Pick the time range you want to inspect. Cards update with clearer status signals and more precise booking context.' })}
               </p>
             </div>
-            <Badge className="w-fit rounded-full border border-primary/25 bg-background px-3 py-1 text-xs font-medium text-foreground">
-              <Calendar className="mr-2 size-3.5 text-primary" />
-              {t('hallAvailability.selectedBookingDate', {
-                defaultValue: `Selected: ${formatWeekdayMonthDay(parseIsoDateToLocal(selectedDate))}`,
-              })}
-            </Badge>
-          </div>
-        </div>
-
-        <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_auto]">
-          <div className="space-y-2">
-            <Label className="text-xs font-medium uppercase tracking-[0.24em] text-muted-foreground">{t('hallAvailability.date')}</Label>
-            <DateInputWithPickerIcon
-              value={selectedDate}
-              onChange={(e) => setSelectedDate(clampDateToBookingWindow(e.target.value))}
-              min={bookingWindowStart}
-              max={bookingWindowEnd}
-              className="h-12 rounded-2xl border-border bg-background pl-11 text-foreground focus:border-primary/50 focus:ring-2 focus:ring-primary/10"
-              buttonClassName="left-4 text-foreground/80 hover:text-foreground"
-            />
+            <div className="flex items-center gap-3 rounded-2xl border border-border bg-background px-4 py-3 text-sm text-muted-foreground">
+              <Sparkles className="size-4 text-primary" />
+              {checking
+                ? t('hallAvailability.refreshing', { defaultValue: 'Refreshing availability...' })
+                : t('hallAvailability.hallsInView', { count: filteredHalls.length, defaultValue: `${filteredHalls.length} halls in view` })}
+            </div>
           </div>
 
-          <div className="space-y-2">
-            <Label className="text-xs font-medium uppercase tracking-[0.24em] text-muted-foreground">{t('hallAvailability.startTime')}</Label>
-            <div className="rounded-2xl border border-border bg-background px-3 focus-within:border-primary/50 focus-within:ring-2 focus-within:ring-primary/10">
-              <div className="flex items-center gap-3">
-                <Clock3 className="size-4 text-muted-foreground" />
-                <ClockTimePicker value={startTime} onChange={setStartTime} className="border-0 bg-transparent shadow-none" />
+          <div className="mb-6 rounded-[22px] border border-primary/20 bg-primary/5 p-4 sm:p-5">
+            <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+              <div>
+                <p className="text-xs uppercase tracking-[0.28em] text-primary/80">
+                  {t('hallAvailability.allowedBookingRangeLabel', { defaultValue: 'Booking Window' })}
+                </p>
+                <p className="mt-2 text-lg font-semibold text-foreground">
+                  {t('hallAvailability.allowedBookingRangeValue', {
+                    defaultValue: `${formatMonthDay(bookingWindowStartDate)} to ${formatMonthDay(bookingWindowEndDate)}`,
+                  })}
+                </p>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  {t('hallAvailability.allowedBookingRangeHint', {
+                    defaultValue: `Choose any date from ${formatCompactWeekdayMonthDay(bookingWindowStartDate)} to ${formatCompactWeekdayMonthDay(bookingWindowEndDate)}. Dates outside this window are unavailable.`,
+                  })}
+                </p>
+              </div>
+              <Badge className="w-fit rounded-full border border-primary/25 bg-background px-3 py-1 text-xs font-medium text-foreground">
+                <Calendar className="mr-2 size-3.5 text-primary" />
+                {t('hallAvailability.selectedBookingDate', {
+                  defaultValue: `Viewing ${formatCompactWeekdayMonthDay(parseIsoDateToLocal(selectedDate))}`,
+                })}
+              </Badge>
+            </div>
+          </div>
+
+          <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_auto]">
+            <div className="space-y-2">
+              <Label className="text-xs font-medium uppercase tracking-[0.24em] text-muted-foreground">{t('hallAvailability.date')}</Label>
+              <DateInputWithPickerIcon
+                value={selectedDate}
+                onChange={(e) => setSelectedDate(clampDateToBookingWindow(e.target.value))}
+                min={bookingWindowStart}
+                max={bookingWindowEnd}
+                className="h-12 rounded-2xl border-border bg-background pl-11 text-foreground focus:border-primary/50 focus:ring-2 focus:ring-primary/10"
+                buttonClassName="left-4 text-foreground/80 hover:text-foreground"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-xs font-medium uppercase tracking-[0.24em] text-muted-foreground">{t('hallAvailability.startTime')}</Label>
+              <div className="rounded-2xl border border-border bg-background px-3 focus-within:border-primary/50 focus-within:ring-2 focus-within:ring-primary/10">
+                <div className="flex items-center gap-3">
+                  <Clock3 className="size-4 text-muted-foreground" />
+                  <ClockTimePicker value={startTime} onChange={setStartTime} className="border-0 bg-transparent shadow-none" />
+                </div>
               </div>
             </div>
-          </div>
 
-          <div className="space-y-2">
-            <Label className="text-xs font-medium uppercase tracking-[0.24em] text-muted-foreground">{t('hallAvailability.endTime')}</Label>
-            <div className="rounded-2xl border border-border bg-background px-3 focus-within:border-primary/50 focus-within:ring-2 focus-within:ring-primary/10">
-              <div className="flex items-center gap-3">
-                <Clock3 className="size-4 text-muted-foreground" />
-                <ClockTimePicker value={endTime} onChange={setEndTime} className="border-0 bg-transparent shadow-none" />
+            <div className="space-y-2">
+              <Label className="text-xs font-medium uppercase tracking-[0.24em] text-muted-foreground">{t('hallAvailability.endTime')}</Label>
+              <div className="rounded-2xl border border-border bg-background px-3 focus-within:border-primary/50 focus-within:ring-2 focus-within:ring-primary/10">
+                <div className="flex items-center gap-3">
+                  <Clock3 className="size-4 text-muted-foreground" />
+                  <ClockTimePicker value={endTime} onChange={setEndTime} className="border-0 bg-transparent shadow-none" />
+                </div>
               </div>
             </div>
-          </div>
 
-          <div className="flex items-end">
-            <Button
-              onClick={checkAvailability}
-              className="h-12 w-full rounded-2xl bg-gradient-to-r from-violet-500 via-indigo-500 to-sky-500 px-6 text-sm font-medium text-white shadow-[0_18px_40px_rgba(79,70,229,0.28)] transition-all duration-200 hover:scale-[1.02] hover:shadow-[0_22px_50px_rgba(59,130,246,0.35)] active:scale-[0.98]"
-            >
-              {checking ? t('hallAvailability.refreshingShort', { defaultValue: 'Refreshing...' }) : t('hallAvailability.checkAvail')}
-            </Button>
+            <div className="flex items-end">
+              <Button
+                onClick={checkAvailability}
+                className="h-12 w-full rounded-2xl bg-gradient-to-r from-violet-500 via-indigo-500 to-sky-500 px-6 text-sm font-medium text-white shadow-[0_18px_40px_rgba(79,70,229,0.28)] transition-all duration-200 hover:scale-[1.02] hover:shadow-[0_22px_50px_rgba(59,130,246,0.35)] active:scale-[0.98]"
+              >
+                {checking ? t('hallAvailability.refreshingShort', { defaultValue: 'Refreshing...' }) : t('hallAvailability.checkAvail')}
+              </Button>
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       {viewMode === 'grid' ? (
         <MonthlyGridView holidayDates={holidayDates} />
