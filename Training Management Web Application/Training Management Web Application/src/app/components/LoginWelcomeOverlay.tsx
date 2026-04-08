@@ -27,6 +27,9 @@ const LoginWelcomeOverlay: React.FC<LoginWelcomeOverlayProps> = ({ user, visible
   const isMobile = useIsMobile();
   const activeVideoSources = isMobile ? MOBILE_VIDEO_SOURCES : DESKTOP_VIDEO_SOURCES;
   const primaryVideoPath = activeVideoSources[0];
+  const videoClassName = isMobile
+    ? 'absolute inset-0 h-full w-full scale-[1.06] object-cover object-[58%_center]'
+    : 'h-full w-full object-cover object-center';
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const closeTimerRef = useRef<number | null>(null);
   const minTimerRef = useRef<number | null>(null);
@@ -151,7 +154,7 @@ const LoginWelcomeOverlay: React.FC<LoginWelcomeOverlayProps> = ({ user, visible
             <video
               key={primaryVideoPath}
               ref={videoRef}
-              className="h-full w-full object-cover object-center"
+              className={videoClassName}
               autoPlay
               playsInline
               preload="auto"
