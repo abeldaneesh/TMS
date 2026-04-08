@@ -195,10 +195,10 @@ const LoginWelcomeOverlay: React.FC<LoginWelcomeOverlayProps> = ({ user, visible
           )}
 
           <div className={isMobile
-            ? 'pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(2,6,23,0.48)_0%,rgba(2,6,23,0.12)_28%,rgba(2,6,23,0.22)_56%,rgba(2,6,23,0.88)_100%)]'
+            ? 'pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(2,6,23,0.18)_0%,rgba(2,6,23,0.03)_24%,rgba(2,6,23,0.02)_58%,rgba(2,6,23,0.26)_100%)]'
             : 'pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(2,6,23,0.32)_0%,rgba(2,6,23,0.04)_34%,rgba(2,6,23,0.62)_100%)]'} />
           <div className={isMobile
-            ? 'pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(59,130,246,0.14),transparent_24%),radial-gradient(circle_at_bottom_right,rgba(14,165,233,0.16),transparent_22%)]'
+            ? 'pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(59,130,246,0.08),transparent_18%),radial-gradient(circle_at_bottom_right,rgba(14,165,233,0.10),transparent_18%)]'
             : 'pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(59,130,246,0.2),transparent_28%),radial-gradient(circle_at_bottom_right,rgba(14,165,233,0.18),transparent_26%)]'} />
 
           <div className={`absolute inset-x-0 top-0 z-20 flex items-start justify-end px-4 pb-4 pt-[calc(1rem+env(safe-area-inset-top))] sm:px-6 sm:pt-[calc(1.5rem+env(safe-area-inset-top))]`}>
@@ -208,33 +208,14 @@ const LoginWelcomeOverlay: React.FC<LoginWelcomeOverlayProps> = ({ user, visible
                 variant="ghost"
                 size="icon"
                 onClick={onClose}
-                className="size-10 rounded-full border border-white/15 bg-black/35 text-white shadow-lg hover:bg-black/55 hover:text-white"
+                className="size-9 rounded-full border border-white/12 bg-black/28 text-white shadow-lg hover:bg-black/45 hover:text-white"
               >
                 <X className="size-4" />
               </Button>
             )}
           </div>
 
-          {isMobile ? (
-            <div className="absolute inset-x-0 bottom-0 z-20 px-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
-              <motion.div
-                className="rounded-[24px] border border-white/12 bg-slate-950/72 px-4 py-4 text-white shadow-[0_22px_60px_-24px_rgba(0,0,0,0.75)] backdrop-blur-md"
-                initial={{ opacity: 0, y: 18 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2 }}
-              >
-                <p className="text-[11px] font-medium uppercase tracking-[0.22em] text-sky-200/80">
-                  {getGreeting()}
-                </p>
-                <h2 className="mt-2 text-[clamp(1.55rem,6vw,2.2rem)] font-semibold leading-tight tracking-tight">
-                  Welcome back, {user.name}.
-                </h2>
-                <p className="mt-2 text-sm leading-6 text-slate-300">
-                  Your dashboard is ready.
-                </p>
-              </motion.div>
-            </div>
-          ) : (
+          {!isMobile && (
             <div className="absolute inset-x-0 top-0 z-20 flex items-start justify-between p-4 sm:p-6">
               <motion.div
                 className="max-w-xl text-white"
