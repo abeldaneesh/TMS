@@ -21,6 +21,10 @@ export interface IUser extends Omit<Document, '_id'> {
     department?: string;
     profilePicture?: string;
     fcmToken?: string;
+    activeSessionId?: string;
+    activeSessionDeviceId?: string;
+    activeSessionStartedAt?: Date;
+    activeSessionExpiresAt?: Date;
     createdAt: Date;
     isApproved: boolean;
     isDeleted?: boolean;
@@ -45,6 +49,10 @@ const UserSchema: Schema = new Schema({
     department: { type: String },
     profilePicture: { type: String },
     fcmToken: { type: String },
+    activeSessionId: { type: String },
+    activeSessionDeviceId: { type: String },
+    activeSessionStartedAt: { type: Date },
+    activeSessionExpiresAt: { type: Date },
     createdAt: { type: Date, default: Date.now },
     isApproved: { type: Boolean, default: false },
     isDeleted: { type: Boolean, default: false },

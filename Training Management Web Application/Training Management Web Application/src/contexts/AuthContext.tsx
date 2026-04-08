@@ -40,6 +40,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     initAuth();
   }, []);
 
+  useEffect(() => {
+    const handleAuthInvalidated = () => {
+      setUser(null);
+    };
+
+    window.addEventListener('dmo-auth-invalidated', handleAuthInvalidated);
+    return () => window.removeEventListener('dmo-auth-invalidated', handleAuthInvalidated);
+  }, []);
+
   const login = async (email: string, password: string, allowedRoles?: string[]): Promise<User> => {
     try {
       const { user: loggedInUser, token } = await authApi.login(email, password);

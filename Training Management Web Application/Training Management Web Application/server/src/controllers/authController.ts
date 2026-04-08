@@ -4,12 +4,22 @@ import User from '../models/User';
 import PendingUser from '../models/PendingUser';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import { v4 as uuidv4 } from 'uuid';
 import { sendOTP } from '../utils/emailService';
 import { normalizeEmail, validateEmailAddress } from '../utils/emailValidation';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
+const SESSION_DURATION_MS = 24 * 60 * 60 * 1000;
 const normalizePhoneNumber = (value?: string) => value ? value.replace(/\D/g, '') : '';
 const isValidPhoneNumber = (value?: string) => !value || normalizePhoneNumber(value).length === 10;
+const buildSessionExpiry = () => new Date(Date.now() + SESSION_DURATION_MS);
+
+const sanitizeUser = (user: any) => {
+    const userWithoutPassword = user.toObject();
+    delete userWithoutPassword.password;
+    userWithoutPassword.id = user._id;
+    return userWithoutPassword;
+};
 
 export const register = async (req: Request, res: Response): Promise<void> => {
     try {
@@ -163,9 +173,19 @@ export const verifyEmailOtp = async (req: Request, res: Response): Promise<void>
 export const login = async (req: Request, res: Response): Promise<void> => {
     try {
         const { email, password } = req.body;
+        const deviceId = String(req.body?.deviceId || '').trim();
+        const normalizedEmail = normalizeEmail(email);
+
+        if (!deviceId) {
+            res.status(400).json({
+                message: 'Device identifier is required for login.',
+                code: 'DEVICE_ID_REQUIRED'
+            });
+            return;
+        }
 
         // Find user
-        const user = await User.findOne({ email, isDeleted: { $ne: true } });
+        const user = await User.findOne({ email: normalizedEmail, isDeleted: { $ne: true } });
 
         if (!user) {
             res.status(401).json({ message: 'Invalid credentials' });
@@ -189,21 +209,57 @@ export const login = async (req: Request, res: Response): Promise<void> => {
             return;
         }
 
-        // Generate token
-        const token = jwt.sign(
-            { userId: user._id, email: user.email, role: user.role, institutionId: user.institutionId },
-            JWT_SECRET,
-            { expiresIn: '24h' }
+        const now = new Date();
+        const sessionId = uuidv4();
+        const sessionExpiresAt = buildSessionExpiry();
+
+        const sessionBoundUser = await User.findOneAndUpdate(
+            {
+                _id: user._id,
+                $or: [
+                    { activeSessionId: { $exists: false } },
+                    { activeSessionId: null },
+                    { activeSessionExpiresAt: { $exists: false } },
+                    { activeSessionExpiresAt: { $lte: now } },
+                    { activeSessionDeviceId: deviceId },
+                ],
+            },
+            {
+                $set: {
+                    activeSessionId: sessionId,
+                    activeSessionDeviceId: deviceId,
+                    activeSessionStartedAt: now,
+                    activeSessionExpiresAt: sessionExpiresAt,
+                },
+            },
+            { new: true }
         );
 
-        const { password: _, ...userWithoutPassword } = user.toObject();
-        // @ts-ignore
-        userWithoutPassword.id = user._id;
+        if (!sessionBoundUser) {
+            res.status(409).json({
+                message: 'This account is already signed in on another device. Please log out from that device first.',
+                code: 'ACCOUNT_IN_USE'
+            });
+            return;
+        }
+
+        // Generate token
+        const token = jwt.sign(
+            {
+                userId: sessionBoundUser._id,
+                email: sessionBoundUser.email,
+                role: sessionBoundUser.role,
+                institutionId: sessionBoundUser.institutionId,
+                sessionId,
+            },
+            JWT_SECRET,
+            { expiresIn: Math.floor(SESSION_DURATION_MS / 1000) }
+        );
 
         res.status(200).json({
             message: 'Login successful',
             token,
-            user: userWithoutPassword,
+            user: sanitizeUser(sessionBoundUser),
         });
     } catch (error) {
         console.error('Login error:', error);
@@ -269,9 +325,22 @@ export const updateDeviceToken = async (req: AuthRequest, res: Response): Promis
 export const logout = async (req: AuthRequest, res: Response): Promise<void> => {
     try {
         const userId = req.user!.userId;
+        const sessionId = req.user?.sessionId;
 
-        // Clear the device token on logout so they stop receiving notifications on this device
-        await User.findByIdAndUpdate(userId, { $unset: { fcmToken: "" } });
+        const sessionFilter = sessionId
+            ? { _id: userId, activeSessionId: sessionId }
+            : { _id: userId };
+
+        // Clear the device token and active session on logout
+        await User.findOneAndUpdate(sessionFilter, {
+            $unset: {
+                fcmToken: "",
+                activeSessionId: "",
+                activeSessionDeviceId: "",
+                activeSessionStartedAt: "",
+                activeSessionExpiresAt: "",
+            }
+        });
 
         res.status(200).json({ message: 'Logged out successfully' });
     } catch (error) {

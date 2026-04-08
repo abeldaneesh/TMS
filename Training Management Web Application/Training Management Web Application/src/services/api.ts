@@ -4,6 +4,7 @@ import {
     TrainingAnalytics, InstitutionReport, DashboardStats, QRCodeData, NominationStatus, HallBlock, HallBookingRequest,
     TrainingFeedback, TrainingFeedbackListResponse, TrainingFeedbackSubmission, MyFeedbackSubmission
 } from '../types';
+import { getOrCreateDeviceId } from '../utils/deviceId';
 
 const API_URL = (import.meta as any).env.VITE_API_URL || '/api';
 export const BASE_URL = API_URL.replace(/\/api\/?$/, '');
@@ -28,6 +29,17 @@ const api = axios.create({
     withCredentials: true,
 });
 
+const clearStoredAuth = (notify = false, reason?: string) => {
+    const hadAuth = Boolean(localStorage.getItem('token') || localStorage.getItem('dmo_user'));
+
+    localStorage.removeItem('token');
+    localStorage.removeItem('dmo_user');
+
+    if (notify && hadAuth && typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('dmo-auth-invalidated', { detail: { reason } }));
+    }
+};
+
 // Add a request interceptor to include the auth token
 api.interceptors.request.use(
     (config) => {
@@ -47,10 +59,7 @@ api.interceptors.response.use(
     (response) => response,
     (error) => {
         if (error.response && error.response.status === 401) {
-            // Token expired or invalid
-            localStorage.removeItem('token');
-            localStorage.removeItem('dmo_user');
-            // Optional: Redirect to login or let the AuthContext handle it via state
+            clearStoredAuth(true, error.response?.data?.message);
         }
         return Promise.reject(error);
     }
@@ -58,7 +67,7 @@ api.interceptors.response.use(
 
 export const authApi = {
     login: async (email: string, password: string): Promise<{ user: User; token: string }> => {
-        const response = await api.post('/auth/login', { email, password });
+        const response = await api.post('/auth/login', { email, password, deviceId: getOrCreateDeviceId() });
         return { user: response.data.user, token: response.data.token };
     },
 
@@ -83,8 +92,7 @@ export const authApi = {
         } catch (error) {
             console.error('Server logout failed:', error);
         } finally {
-            localStorage.removeItem('token');
-            localStorage.removeItem('dmo_user');
+            clearStoredAuth();
         }
     }
 };
