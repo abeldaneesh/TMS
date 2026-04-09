@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import User from '../models/User';
+import { buildSessionLeaseExpiry, SESSION_EXTENSION_THRESHOLD_MS } from '../utils/sessionLease';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
 
@@ -39,8 +40,11 @@ export const authenticateToken = (req: AuthRequest, res: Response, next: NextFun
                 return;
             }
 
-            const sessionExpired = !activeUser.activeSessionExpiresAt || new Date(activeUser.activeSessionExpiresAt) <= new Date();
-            if (!user.sessionId || !activeUser.activeSessionId || activeUser.activeSessionId !== user.sessionId || sessionExpired) {
+            const now = new Date();
+            const activeSessionExpiresAt = activeUser.activeSessionExpiresAt
+                ? new Date(activeUser.activeSessionExpiresAt)
+                : null;
+            if (!user.sessionId || !activeUser.activeSessionId || activeUser.activeSessionId !== user.sessionId || !activeSessionExpiresAt || activeSessionExpiresAt <= now) {
                 res.status(401).json({
                     message: 'Your session is no longer active. Please sign in again.',
                     code: 'SESSION_INVALIDATED'
@@ -55,6 +59,15 @@ export const authenticateToken = (req: AuthRequest, res: Response, next: NextFun
                 institutionId: activeUser.institutionId ? String(activeUser.institutionId) : null,
                 sessionId: activeUser.activeSessionId ? String(activeUser.activeSessionId) : null,
             };
+
+            const msUntilExpiry = activeSessionExpiresAt.getTime() - now.getTime();
+            if (msUntilExpiry <= SESSION_EXTENSION_THRESHOLD_MS) {
+                await User.updateOne(
+                    { _id: activeUser._id, activeSessionId: user.sessionId },
+                    { $set: { activeSessionExpiresAt: buildSessionLeaseExpiry() } }
+                );
+            }
+
             next();
         } catch (lookupError) {
             res.status(500).json({ message: 'Authentication lookup failed' });

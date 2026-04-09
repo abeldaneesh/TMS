@@ -86,6 +86,39 @@ export const authApi = {
         return response.data;
     },
 
+    heartbeat: async (): Promise<{ expiresAt: string }> => {
+        const response = await api.post('/auth/session/heartbeat');
+        return response.data;
+    },
+
+    notifySessionClosing: () => {
+        if (typeof window === 'undefined') {
+            return;
+        }
+
+        const token = localStorage.getItem('token');
+        if (!token) {
+            return;
+        }
+
+        const closingUrl = `${API_URL.replace(/\/$/, '')}/auth/session/closing`;
+        const payload = new URLSearchParams({ token });
+
+        if (typeof navigator !== 'undefined' && typeof navigator.sendBeacon === 'function') {
+            navigator.sendBeacon(closingUrl, payload);
+            return;
+        }
+
+        void fetch(closingUrl, {
+            method: 'POST',
+            body: payload,
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8',
+            },
+            keepalive: true,
+        }).catch(() => undefined);
+    },
+
     logout: async () => {
         try {
             await api.post('/auth/logout');

@@ -46,6 +46,7 @@ const corsOptions: cors.CorsOptions = {
 
 app.use(cors(corsOptions));
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 // Enhanced logging to debug CORS/Preflight
 app.use((req, res, next) => {

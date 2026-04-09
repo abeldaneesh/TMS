@@ -269,7 +269,7 @@ export interface InstitutionReport {
 export interface AuthContextType {
   user: User | null;
   login: (email: string, password: string, allowedRoles?: string[]) => Promise<User>;
-  logout: () => void;
+  logout: () => Promise<void>;
   isAuthenticated: boolean;
   updateUser: (userData: User) => void;
 }

@@ -9,14 +9,17 @@ import { sendOTP } from '../utils/emailService';
 import { normalizeEmail, validateEmailAddress } from '../utils/emailValidation';
 import Notification from '../models/Notification';
 import { createAndSendNotification } from '../utils/notificationUtils';
+import {
+    buildSessionLeaseExpiry,
+    JWT_SESSION_DURATION_MS,
+    SESSION_CLOSE_GRACE_MS,
+} from '../utils/sessionLease';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
-const SESSION_DURATION_MS = 24 * 60 * 60 * 1000;
 const BLOCKED_LOGIN_NOTIFICATION_TITLE = 'Another device tried to sign in';
 const BLOCKED_LOGIN_NOTIFICATION_COOLDOWN_MS = 5 * 60 * 1000;
 const normalizePhoneNumber = (value?: string) => value ? value.replace(/\D/g, '') : '';
 const isValidPhoneNumber = (value?: string) => !value || normalizePhoneNumber(value).length === 10;
-const buildSessionExpiry = () => new Date(Date.now() + SESSION_DURATION_MS);
 
 const sanitizeUser = (user: any) => {
     const userWithoutPassword = user.toObject();
@@ -239,7 +242,7 @@ export const login = async (req: Request, res: Response): Promise<void> => {
 
         const now = new Date();
         const sessionId = uuidv4();
-        const sessionExpiresAt = buildSessionExpiry();
+        const sessionExpiresAt = buildSessionLeaseExpiry();
 
         const sessionBoundUser = await User.findOneAndUpdate(
             {
@@ -285,7 +288,7 @@ export const login = async (req: Request, res: Response): Promise<void> => {
                 sessionId,
             },
             JWT_SECRET,
-            { expiresIn: Math.floor(SESSION_DURATION_MS / 1000) }
+            { expiresIn: Math.floor(JWT_SESSION_DURATION_MS / 1000) }
         );
 
         res.status(200).json({
@@ -351,6 +354,89 @@ export const updateDeviceToken = async (req: AuthRequest, res: Response): Promis
     } catch (error) {
         console.error('Error updating device token:', error);
         res.status(500).json({ message: 'Error updating device token' });
+    }
+};
+
+export const refreshSession = async (req: AuthRequest, res: Response): Promise<void> => {
+    try {
+        const userId = req.user!.userId;
+        const sessionId = req.user?.sessionId;
+
+        if (!sessionId) {
+            res.status(401).json({
+                message: 'Your session is no longer active. Please sign in again.',
+                code: 'SESSION_INVALIDATED',
+            });
+            return;
+        }
+
+        const nextExpiry = buildSessionLeaseExpiry();
+
+        const updatedUser = await User.findOneAndUpdate(
+            { _id: userId, activeSessionId: sessionId, isDeleted: { $ne: true } },
+            { $set: { activeSessionExpiresAt: nextExpiry } },
+            { new: true }
+        )
+            .select('activeSessionExpiresAt')
+            .lean();
+
+        if (!updatedUser?.activeSessionExpiresAt) {
+            res.status(401).json({
+                message: 'Your session is no longer active. Please sign in again.',
+                code: 'SESSION_INVALIDATED',
+            });
+            return;
+        }
+
+        res.status(200).json({
+            message: 'Session refreshed',
+            expiresAt: updatedUser.activeSessionExpiresAt,
+        });
+    } catch (error) {
+        console.error('Session refresh error:', error);
+        res.status(500).json({ message: 'Error refreshing session' });
+    }
+};
+
+export const markSessionClosing = async (req: Request, res: Response): Promise<void> => {
+    try {
+        const rawToken = typeof req.body?.token === 'string' ? req.body.token.trim() : '';
+
+        if (!rawToken) {
+            res.status(200).json({ message: 'No session token supplied' });
+            return;
+        }
+
+        const decoded = jwt.verify(rawToken, JWT_SECRET) as {
+            userId?: string;
+            sessionId?: string;
+        };
+
+        if (!decoded.userId || !decoded.sessionId) {
+            res.status(200).json({ message: 'Session closing signal ignored' });
+            return;
+        }
+
+        await User.findOneAndUpdate(
+            {
+                _id: decoded.userId,
+                activeSessionId: decoded.sessionId,
+                isDeleted: { $ne: true },
+            },
+            {
+                $set: {
+                    activeSessionExpiresAt: buildSessionLeaseExpiry(Date.now(), SESSION_CLOSE_GRACE_MS),
+                }
+            }
+        );
+
+        res.status(200).json({ message: 'Session marked for graceful close' });
+    } catch (error) {
+        if ((error as Error).name !== 'JsonWebTokenError' && (error as Error).name !== 'TokenExpiredError') {
+            console.error('Session closing signal error:', error);
+        }
+
+        res.status(200).json({ message: 'Session closing signal ignored' });
     }
 };
 
